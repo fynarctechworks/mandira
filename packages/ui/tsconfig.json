@@ -1,0 +1,6 @@
+{
+  "extends": "@mandhira/config/tsconfig/library.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["src", "eslint.config.js"],
+  "exclude": ["node_modules"]
+}

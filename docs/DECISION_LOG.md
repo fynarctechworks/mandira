@@ -1,0 +1,26 @@
+# Decision Log
+
+Only decisions actually made in the PRD/TRD/founder responses or this foundation process. Format: ID · Date · Decision · Context · Reason · Alternatives · Consequences · Related requirements.
+
+| ID | Date | Decision | Context / Reason | Alternatives considered | Consequences | Related |
+|---|---|---|---|---|---|---|
+| D-001 | 2026-08 | Next.js PWA for traveler + Next.js Ops; no native app in M1 | One ecosystem, founder's stack, no app-store gate, faster iteration | Expo RN + separate Ops | PWA constraints on iOS push/offline; architecture must not block later Expo shell | TRD-ARCH-001 |
+| D-002 | 2026-08 | Supabase (Postgres) over Firebase | Knowledge model is deeply relational; trust records need joins/constraints | Firebase/Firestore | Own the offline layer (Dexie) instead of Firestore sync | TRD-DB-* |
+| D-003 | 2026-08 | Monorepo pnpm+turbo with shared packages | Engine/UI/db shared across two apps | Two repos | Single CI; enforced import boundaries | TRD-ARCH-001 |
+| D-004 | 2026-08 | Translatable content as `_i18n` jsonb columns | Simpler for AI tooling and queries | translations table | Locale-completeness reporting scans jsonb (Ops tooling accepts) | PRD-LANG-002 |
+| D-005 | 2026-08 | Pure Journey Engine; KnowledgeBundle = Dexie snapshot = engine input | One deterministic codepath online/offline; offline replanning becomes wiring | Server-only engine | Invariant must be protected (Dexie versioning, no I/O in engine) | TRD-ARCH-002 |
+| D-006 | 2026-08 | Gemini first behind Vercel AI SDK abstraction; grounding enforced in code | Cheapest reliable structured output; provider swap = env var | Claude/OpenAI primary | Must run te/hi eval before public launch (OPEN-004) | TRD-AI-* |
+| D-007 | 2026-08 | Rate limiting via Postgres table, not Redis | One less service at this scale | Upstash | Swap path documented if contention appears | TRD-SEC-001 |
+| D-008 | 2026-08 | OSM ecosystem (MapLibre+MapTiler tiles, ORS routing, Nominatim) behind provider abstraction; not ideological | Near-zero cost; abstraction allows Google later if Indian routing quality demands | Google Maps Platform | Routing quality risk logged (R-005); travel_estimates cache mandatory | INTEGRATIONS |
+| D-009 | 2026-08 | Auth = magic link (Resend SMTP) + Google; no SMS in M1 | Zero SMS cost; model extensible to phone OTP later | Phone OTP primary | Resend domain setup required before auth works | PRD-ACCT-001 |
+| D-010 | 2026-08 | Traveler reads only `v_published_*` views with aggregated trust jsonb | Structural enforcement of publish gate + trust visibility | App-level filtering | View shape = client contract; changes need version discipline | TRD-ARCH-004 |
+| D-011 | 2026-08 | Search: tsvector first; pgvector hybrid at M3 | Semantic value requires content volume | pgvector day one | embedding columns created early (no later migration churn) | TRD-DB-005 |
+| D-012 | 2026-08 | Offline M1 = read-only journey+knowledge+NOW/NEXT/LATER; outbox/replanning M3; tiles M5 | Progressive offline per founder | Full offline day one | Airplane-mode read test is an M1 gate | PRD-OFFL-* |
+| D-013 | 2026-08 | Permanent exclusions: payments, reviews/social, ads, popularity ranking, auto-apply, AI-published facts, turn-by-turn | PRD §8 | — | Any future change = founder-level product decision | PRD §8 |
+| D-014 | 2026-08 | Launch locales en/te/hi; te/hi content lands M4 | Audience assumption (founder may swap) | en-only launch | Locale-as-data requirement from M0 (strings externalised) | PRD-LANG-003 |
+| D-015 | 2026-08 | Forward-only additive migrations; two-release column drops | Safe with instant Vercel rollback | Reversible down-migrations | Slight schema debt tolerated | TRD-DB-006 |
+| D-016 | 2026-08 | Reports text-only until M4 photos | Avoid media/privacy surface early | Photos day one | reports bucket + media_id column exist from M0 (schema-complete) | PRD-REPT-005 |
+| D-017 | 2026-08 | Supabase region ap-south-1 (Mumbai); pg_cron+Edge for jobs; no AWS/GCP infra | Latency to Indian users; free-tier fit | Multi-cloud | keepalive cron required on free tier | TRD-DEPL |
+| D-018 | 2026-08-24 | Foundation docs created before any code; registry granularity = 132 requirements; status tracked per feature in PROJECT_STATUS.md | This project-foundation task | Track per-requirement status inline in registry | Two files must be updated together (rule in CLAUDE.md §6.11) | — |
+| D-019 | 2026-08-24 | Staging Supabase project deferred to M3; previews use local/seed fixtures | Cost + solo simplicity | Staging from day one | E2E against prod-like env only from M3; acceptable given pilot size | TRD-DEPL-001 |
+| D-020 | 2026-08-24 | Tailwind 4 preset ships as CSS (`@mandhira/config/tailwind/preset.css` with `@theme inline`), not a JS preset; tokens live in `@mandhira/ui/tokens.css` and apps import `tailwindcss` themselves | Tailwind 4 removed JS presets; `@import "tailwindcss"` cannot resolve from inside packages/ui under pnpm strict node_modules | tailwind.config.ts preset (not supported in v4); duplicating tokens per app | Both apps import `tailwindcss` then `@mandhira/ui/styles.css`; new shared UI source dirs must be added to each app's `@source` | TRD-ARCH-006, PRD-DSGN-001 |

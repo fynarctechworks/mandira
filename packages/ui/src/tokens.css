@@ -1,0 +1,135 @@
+/*
+ * Mandhira design tokens - PRD 12.1 (colour), 12.3 (spacing/shape/elevation).
+ * Single source of truth for colour in both apps. Light is the default; dark applies
+ * via OS preference or an explicit `.dark` class on <html> (`.light` forces light).
+ * Every text/background pair below meets >= 4.5:1 (PRD 12.1).
+ */
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --brand-primary: #ff660e;
+  --brand-primary-pressed: #d9520a;
+  --brand-primary-soft: #ffefe5;
+  --brand-ink: #2b1a10;
+
+  /* Neutrals (warm) */
+  --bg-canvas: #fbf7f2;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #ffffff;
+  --border-subtle: #ede4da;
+  --text-primary: #1f1a17;
+  --text-secondary: #6b625c;
+  --text-tertiary: #9a908a;
+  --text-on-primary: #ffffff;
+
+  /* Status - never colour-only; always paired with icon + word */
+  --status-comfortable: #2e7d4f;
+  --status-tight: #b8860b;
+  --status-at-risk: #d9702b;
+  --status-broken: #b3261e;
+  --status-info: #2f6fa8;
+
+  /* Priority tier chips */
+  --tier-fixed-fill: #e8e2dc;
+  --tier-fixed-text: var(--text-primary);
+  --tier-protected-fill: #ff660e;
+  --tier-protected-text: #ffffff;
+  --tier-important-fill: #ffefe5;
+  --tier-important-text: #b24708;
+  --tier-optional-fill: #f4efea;
+  --tier-optional-text: var(--text-secondary);
+
+  /* Spacing - 4-pt grid (12.3) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --screen-padding-mobile: 16px;
+  --screen-padding-tablet: 24px;
+  --screen-padding-ops: 32px;
+
+  /* Shape (12.3) */
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+  --radius-chip: 999px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+
+  /* Elevation (12.3) - light uses shadow; dark uses surface tint instead */
+  --shadow-card: 0 1px 2px rgba(31, 26, 23, 0.06);
+  --shadow-raised: 0 8px 24px rgba(31, 26, 23, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+
+    --brand-primary: #ff7a30;
+    --brand-primary-pressed: #e6652a;
+    --brand-primary-soft: #3a2416;
+    --brand-ink: #f3e9e1;
+
+    --bg-canvas: #141110;
+    --bg-surface: #1e1917;
+    --bg-surface-raised: #272120;
+    --border-subtle: #352d2a;
+    --text-primary: #f5efe8;
+    --text-secondary: #b8ada5;
+    --text-tertiary: #857b74;
+    --text-on-primary: #1a0e06;
+
+    --status-comfortable: #5bbf87;
+    --status-tight: #e3b341;
+    --status-at-risk: #f09a5c;
+    --status-broken: #f28b82;
+    --status-info: #7fb3e3;
+
+    --tier-fixed-fill: #3a332f;
+    --tier-protected-fill: #ff7a30;
+    --tier-protected-text: #1a0e06;
+    --tier-important-fill: #3a2416;
+    --tier-important-text: #ffb98c;
+    --tier-optional-fill: #2a2421;
+
+    --shadow-card: none;
+    --shadow-raised: none;
+  }
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --brand-primary: #ff7a30;
+  --brand-primary-pressed: #e6652a;
+  --brand-primary-soft: #3a2416;
+  --brand-ink: #f3e9e1;
+
+  --bg-canvas: #141110;
+  --bg-surface: #1e1917;
+  --bg-surface-raised: #272120;
+  --border-subtle: #352d2a;
+  --text-primary: #f5efe8;
+  --text-secondary: #b8ada5;
+  --text-tertiary: #857b74;
+  --text-on-primary: #1a0e06;
+
+  --status-comfortable: #5bbf87;
+  --status-tight: #e3b341;
+  --status-at-risk: #f09a5c;
+  --status-broken: #f28b82;
+  --status-info: #7fb3e3;
+
+  --tier-fixed-fill: #3a332f;
+  --tier-protected-fill: #ff7a30;
+  --tier-protected-text: #1a0e06;
+  --tier-important-fill: #3a2416;
+  --tier-important-text: #ffb98c;
+  --tier-optional-fill: #2a2421;
+
+  --shadow-card: none;
+  --shadow-raised: none;
+}

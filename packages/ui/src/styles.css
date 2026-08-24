@@ -1,0 +1,28 @@
+/*
+ * Mandhira base stylesheet: tokens + preset + base element styles.
+ * The importing app must `@import "tailwindcss"` BEFORE this file — tailwindcss is a
+ * dependency of the apps, not of this package (pnpm strict resolution).
+ */
+@import "./tokens.css";
+@import "@mandhira/config/tailwind/preset.css";
+
+@layer base {
+  html {
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--brand-ink);
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@mandhira/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/next": "./eslint/next.js",
+    "./tailwind/preset.css": "./tailwind/preset.css"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.34.0",
+    "eslint": "^9.34.0",
+    "@next/eslint-plugin-next": "^15.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "typescript-eslint": "^8.41.0"
+  }
+}

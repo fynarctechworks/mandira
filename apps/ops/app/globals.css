@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@mandhira/ui/styles.css";
+
+/* Tailwind scans this file's directory by default; add the shared UI package sources. */
+@source "../../../packages/ui/src";
+
+/* Ops is desktop-first: PRD 12.2 body 14/20 */
+@layer base {
+  html {
+    font-size: 14px;
+  }
+}

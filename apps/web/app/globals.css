@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@mandhira/ui/styles.css";
+
+/* Tailwind scans this file's directory by default; add the shared UI package sources. */
+@source "../../../packages/ui/src";

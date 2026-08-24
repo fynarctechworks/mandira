@@ -1,0 +1,19 @@
+{
+  "name": "@mandhira/journey-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure journey engine (health, replanning, NOW/NEXT/LATER)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@mandhira/config": "workspace:*",
+    "eslint": "^9.34.0",
+    "typescript": "^5.9.2"
+  }
+}

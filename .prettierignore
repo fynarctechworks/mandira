@@ -1,0 +1,8 @@
+node_modules
+.next
+.turbo
+dist
+pnpm-lock.yaml
+docs
+README.md
+CLAUDE.md

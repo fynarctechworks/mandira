@@ -1,0 +1,8 @@
+# Normalise to LF in the repository so Windows dev and Linux CI agree.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.woff2 binary
+pnpm-lock.yaml -diff

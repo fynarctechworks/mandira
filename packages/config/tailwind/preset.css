@@ -1,0 +1,71 @@
+/*
+ * Mandhira Tailwind 4 preset (Tailwind 4 has no JS presets; this CSS is the preset).
+ * Maps the PRD §12 design tokens (defined as CSS variables in @mandhira/ui/tokens.css)
+ * onto Tailwind theme variables so utilities like bg-canvas, text-secondary,
+ * bg-status-tight, rounded-card, font-display work in both apps.
+ * App code must never use hex literals — use these utilities or var(--token).
+ */
+@theme inline {
+  /* Brand */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-pressed: var(--brand-primary-pressed);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+  --color-brand-ink: var(--brand-ink);
+
+  /* Neutrals */
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-surface-raised: var(--bg-surface-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-on-primary: var(--text-on-primary);
+
+  /* Status */
+  --color-status-comfortable: var(--status-comfortable);
+  --color-status-tight: var(--status-tight);
+  --color-status-at-risk: var(--status-at-risk);
+  --color-status-broken: var(--status-broken);
+  --color-status-info: var(--status-info);
+
+  /* Priority tier chips */
+  --color-tier-fixed-fill: var(--tier-fixed-fill);
+  --color-tier-fixed-text: var(--tier-fixed-text);
+  --color-tier-protected-fill: var(--tier-protected-fill);
+  --color-tier-protected-text: var(--tier-protected-text);
+  --color-tier-important-fill: var(--tier-important-fill);
+  --color-tier-important-text: var(--tier-important-text);
+  --color-tier-optional-fill: var(--tier-optional-fill);
+  --color-tier-optional-text: var(--tier-optional-text);
+
+  /* Typography (§12.2) — font families come from next/font variables */
+  --font-sans:
+    var(--font-inter), var(--font-noto-telugu), var(--font-noto-devanagari), system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --text-display: 2rem;
+  --text-display--line-height: 2.5rem;
+  --text-h1: 1.625rem;
+  --text-h1--line-height: 2.125rem;
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.875rem;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.625rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* Shape (§12.3) */
+  --radius-card: var(--radius-card);
+  --radius-sheet: var(--radius-sheet);
+  --radius-chip: var(--radius-chip);
+  --radius-button: var(--radius-button);
+  --radius-input: var(--radius-input);
+
+  /* Elevation (§12.3) */
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+}
