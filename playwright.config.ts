@@ -1,17 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Scaffold only (B-001). Starts both apps on dedicated ports; wired to preview URLs in B-025.
-// reuseExistingServer stays false so an unrelated dev server on a common port can never be
-// mistaken for ours.
-const WEB_PORT = 4300;
-const OPS_PORT = 4301;
+/*
+ * Dedicated high ports, not 3000/3001.
+ *
+ * The dev machine runs other projects' servers on the common ports, and a suite that
+ * silently tests someone else's app is worse than one that fails — during B-007 a probe
+ * against :3001 was answered by an unrelated application.
+ */
+const WEB_PORT = Number(process.env["MANDHIRA_WEB_PORT"] ?? 3986);
+const OPS_PORT = Number(process.env["MANDHIRA_OPS_PORT"] ?? 3987);
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  forbidOnly: !!process.env["CI"],
+  retries: process.env["CI"] ? 2 : 0,
+  reporter: process.env["CI"] ? "github" : "list",
   use: { trace: "on-first-retry" },
   projects: [
     {
@@ -29,13 +33,13 @@ export default defineConfig({
     {
       command: `pnpm --filter @mandhira/web exec next start --port ${WEB_PORT}`,
       url: `http://localhost:${WEB_PORT}`,
-      reuseExistingServer: false,
+      reuseExistingServer: !process.env["CI"],
       timeout: 120_000,
     },
     {
       command: `pnpm --filter @mandhira/ops exec next start --port ${OPS_PORT}`,
       url: `http://localhost:${OPS_PORT}`,
-      reuseExistingServer: false,
+      reuseExistingServer: !process.env["CI"],
       timeout: 120_000,
     },
   ],

@@ -27,9 +27,9 @@ insert into user_roles (user_id, role) values
   ('a0000000-0000-4000-8000-000000000003', 'admin'),
   ('a0000000-0000-4000-8000-000000000004', 'support');
 
-insert into profiles (id, display_name) values
-  ('a0000000-0000-4000-8000-000000000001', 'Traveler A'),
-  ('a0000000-0000-4000-8000-000000000002', 'Traveler B');
+-- Profiles are NOT inserted here: the on_auth_user_created trigger (0009) creates one for
+-- each of the four users above. Letting it do so keeps this test on the real path rather
+-- than a hand-built approximation of it.
 
 -- Traveler A's private data.
 insert into traveler_profiles (id, owner_user_id, label, mobility, age_band)
@@ -203,9 +203,13 @@ select isnt_empty(
   'select 1 from destinations',
   'an Ops role can read the knowledge base tables'
 );
+-- Scoped to the fixture users rather than a bare count: the local dev seed also creates
+-- an admin, and a test that breaks when seed data changes is noise, not signal.
 select is(
-  (select count(*)::int from profiles), 2,
-  'admin can read all profiles (§4.9 allows profiles, and only profiles)'
+  (select count(*)::int from profiles
+    where id::text like 'a0000000-0000-4000-8000-%'),
+  4,
+  'admin can read every fixture profile (§4.9 allows profiles, and only profiles)'
 );
 
 /*

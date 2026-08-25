@@ -6,7 +6,11 @@
   "description": "Generated Supabase types, Zod schemas, query helpers",
   "exports": {
     ".": "./src/index.ts",
-    "./types": "./types.ts"
+    "./types": "./types.ts",
+    "./client/browser": "./src/client/browser.ts",
+    "./client/server": "./src/client/server.ts",
+    "./client/middleware": "./src/client/middleware.ts",
+    "./client/roles": "./src/client/roles.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -14,12 +18,23 @@
   },
   "devDependencies": {
     "@mandhira/config": "workspace:*",
-    "eslint": "^9.34.0",
-    "typescript": "^5.9.2",
     "@types/node": "^22.17.0",
+    "eslint": "^9.34.0",
+    "next": "^15.5.23",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.112.4",
     "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "next": "^15.5.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   }
 }

@@ -142,7 +142,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-ACCT — Accounts & Personalization (F13)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-ACCT-001 | Auth methods | Magic link primary, Google secondary; guest mode; draft migrates on sign-in; model extensible to phone/social later | P0 | — |
+| PRD-ACCT-001 | Auth methods | Magic link primary, Google secondary; guest mode; draft migrates on sign-in; model extensible to phone/social later | P0 | —  **Implemented (B-007):** magic link + Google per D-009 (no phone/SMS in M1); guest browsing needs no account; draft claim-on-sign-in wired in B-019. |
 | PRD-ACCT-002 | Profile | Name, locale, notification prefs, journeys by status, saved places | P0 | ACCT-001 |
 | PRD-ACCT-003 | Traveler profiles | Label/mobility/age_band/dietary/locale; owner-only sensitivity | P0 | PRIV-002 |
 | PRD-ACCT-004 | Explicit-signal personalization | Only explicit signals; "Because you protected X" explanations; no dwell-time inference | P1 | — |
@@ -188,7 +188,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-OPS-WF-006 | Freshness monitor | Filters stale/aging/expiring-30/low/conflict; bulk reverify assignment | P1 | KNOW-006 |
 | PRD-OPS-WF-007 | Impact before publish | Affected active/upcoming journey count + preview; publish raises ADPT triggers | P1 | ADPT-001 |
 | PRD-OPS-WF-008 | Audit & versions | Who/when/what/why + previous value; any version restorable by Admin | P0 | — |
-| PRD-OPS-WF-009 | RBAC + separation of duties | 9 roles; reviewer ≠ approver on same change | P0 | AUTH |
+| PRD-OPS-WF-009 | RBAC + separation of duties | 9 roles; reviewer ≠ approver on same change | P0 | AUTH  **Implemented (B-007):** enforced by a `review_tasks` trigger against the last `entity_versions.changed_by` (D-037), with pgTAP coverage. |
 | PRD-OPS-WF-010 | Ops throughput | New destination (≥30–40 places) draft→published ≤5–10 working days by ≤3 people | P1 | OPS-WF-004 |
 | PRD-OPS-CNT-001 | Structured entity editors | All F1 entities; no free-form HTML on critical fields; inline trust panel; preview-as-app | P0 | KNOW-001 |
 | PRD-OPS-CNT-002 | Relationships & circuits | Place↔experience↔route↔facility links; nearby curation; circuit builder; editorial weight 1–5 | P1 | OPS-CNT-001 |
