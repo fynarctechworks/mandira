@@ -12,10 +12,15 @@
   },
   "dependencies": {
     "@mandhira/db": "workspace:*",
+    "@mandhira/i18n": "workspace:*",
     "@mandhira/ui": "workspace:*",
+    "@serwist/next": "^9.5.12",
+    "lucide-react": "^1.34.0",
     "next": "^15.5.0",
+    "next-intl": "^4.13.7",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "serwist": "^9.5.12"
   },
   "devDependencies": {
     "@mandhira/config": "workspace:*",

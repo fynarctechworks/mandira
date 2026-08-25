@@ -9,6 +9,10 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 
 ## Blocking now
 
+> **B-013 (seed destination #1) is stopped on OPEN-001.** Development is continuing down the
+> unblocked path — B-014 (traveler shell + PWA), then the journey engine (B-016/B-017),
+> which needs no content and no decisions. B-015 discovery needs both B-013 and OPEN-009.
+
 | ID | What's needed | Blocks | Why it can't be worked around |
 |---|---|---|---|
 | GIT-01 | **Push credentials for `fynarctechworks/mandira`.** The stored credential is for `stimuliIQ`, which has no write access. Either grant that account write access, or clear `git:https://github.com` from Windows Credential Manager and re-auth. | Every commit so far (8 unpushed); all CI | CI has never executed. Two workflow jobs and ~10 steps are unverified, including `supabase/setup-cli` on a clean runner and the generated-types staleness diff. |
@@ -21,7 +25,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 | ACCT-01 | **Resend account + verified sending domain.** Supabase's built-in SMTP allows ~2 emails/hour, which is unusable for magic links. | Production/preview sign-in | Before any deploy (B-025). Local dev is unaffected — Mailpit catches mail. |
 | ACCT-03 | **MapTiler key** (`NEXT_PUBLIC_MAPTILER_KEY`, free tier). The coordinate picker works without it (search + decimal degrees), but map confirmation of pins needs a tile source. | Map confirmation in the editors; B-020 mapping | Before B-020 |
 | ACCT-02 | **Google Cloud OAuth client** (client ID + secret). The provider is wired and config-ready but `enabled = false`. | "Continue with Google" in both apps | Before B-025. Magic link works without it. |
-| OPEN-009 | **Traveler access to accessibility, route-stop, circuit and destination-link data.** TRD §4.4 defines 9 published views; none covers `accessibility_records`, `route_places`, `circuits`, `destination_links` or `live_feed_readings` — yet PRD-DISC-003 requires accessibility icons on experience cards. Deny-by-default since B-006 (D-033). **Recommendation:** extend `v_published_places`/`v_published_experiences` with an accessibility jsonb rather than adding a tenth view. | B-015 (discovery), B-031 (live feeds) | Before B-014 |
+| OPEN-009 | **Traveler access to accessibility, route-stop, circuit and destination-link data.** TRD §4.4 defines 9 published views; none covers `accessibility_records`, `route_places`, `circuits`, `destination_links` or `live_feed_readings` — yet PRD-DISC-003 requires accessibility icons on experience cards. Deny-by-default since B-006 (D-033). **Recommendation:** extend `v_published_places`/`v_published_experiences` with an accessibility jsonb rather than adding a tenth view. | B-015 (discovery), B-031 (live feeds) | Before B-015 |
 
 ## Not yet blocking
 

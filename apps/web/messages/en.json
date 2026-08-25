@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "Home",
+    "journey": "Journey",
+    "prepare": "Prepare",
+    "profile": "Profile"
+  },
+  "offline": {
+    "banner": "You're offline — showing information saved on {when}.",
+    "bannerNoDate": "You're offline — showing saved information."
+  },
+  "install": {
+    "title": "Add Mandhira to your home screen",
+    "body": "It opens like an app and your journey stays readable without a signal.",
+    "action": "Add to home screen",
+    "dismiss": "Not now"
+  },
+  "update": {
+    "title": "A new version is ready",
+    "action": "Reload"
+  },
+  "home": {
+    "title": "Plan around what matters.",
+    "intro": "Tell Mandhira what your journey has to include, and it works out whether the days hold together."
+  }
+}

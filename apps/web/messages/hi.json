@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "",
+    "journey": "",
+    "prepare": "",
+    "profile": ""
+  },
+  "offline": {
+    "banner": "",
+    "bannerNoDate": ""
+  },
+  "install": {
+    "title": "",
+    "body": "",
+    "action": "",
+    "dismiss": ""
+  },
+  "update": {
+    "title": "",
+    "action": ""
+  },
+  "home": {
+    "title": "",
+    "intro": ""
+  }
+}
