@@ -3656,6 +3656,16 @@ export type Database = {
           },
         ]
       }
+      v_published_travel_estimates: {
+        Row: {
+          distance_m: number | null
+          duration_seconds: number | null
+          from_place_id: string | null
+          mode: Database["public"]["Enums"]["travel_mode_enum"] | null
+          to_place_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accessibility_for: {

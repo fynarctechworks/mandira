@@ -58,6 +58,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </button>
       </form>
 
+      {/* PRD A02: the primary action on the home screen. */}
+      <Link
+        href={`/${locale}/plan`}
+        className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 py-3 text-body font-medium text-brand-primary-on"
+      >
+        Plan a journey
+      </Link>
+
       <section aria-labelledby="destinations-heading" className="flex flex-col gap-3">
         <h2 id="destinations-heading" className="text-h2">
           Where you could go

@@ -1,4 +1,5 @@
 import { Constants, type Enums } from "@mandhira/db";
+import type { KnowledgeBundle } from "@mandhira/journey-engine";
 import { getI18n } from "@mandhira/i18n";
 
 import { webSupabase } from "./supabase";
@@ -620,4 +621,127 @@ export async function searchKnowledge(
 function isStepFree(entity: { accessibility: Accessibility | null }): boolean {
   const value = entity.accessibility?.step_free;
   return value === "yes" || value === "partial";
+}
+
+// ── The engine's input bundle ────────────────────────────────────────────────
+
+/**
+ * Everything the journey engine may read, for one destination (D-005).
+ *
+ * This is the SAME type the Dexie snapshot will hold in B-023 and the same shape the
+ * snapshot API returns — one type, so the engine behaves identically online and offline
+ * because there is no second code path to keep in step.
+ *
+ * Locale is resolved here rather than in the engine: the engine renders no language, and
+ * fields like `advance_booking_how` reach it already in the traveler's own words.
+ */
+export async function getKnowledgeBundle(
+  destinationId: string,
+  locale: string,
+): Promise<KnowledgeBundle> {
+  const supabase = await webSupabase();
+
+  const [places, experiences, rules, routes, transport, estimates] = await Promise.all([
+    supabase
+      .from("v_published_places")
+      .select(
+        "id, opening_schedule, dress_code_i18n, entry_requirements_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, accessibility",
+      )
+      .eq("destination_id", destinationId),
+    supabase
+      .from("v_published_experiences")
+      .select(
+        "id, place_id, route_id, duration_min_minutes, duration_likely_minutes, duration_max_minutes, is_outdoor, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before",
+      )
+      .eq("destination_id", destinationId),
+    supabase
+      .from("v_published_availability_rules")
+      .select(
+        "id, experience_id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority, valid_from, valid_to",
+      ),
+    supabase
+      .from("v_published_routes")
+      .select("id, distance_m, duration_likely_minutes, duration_max_minutes")
+      .eq("destination_id", destinationId),
+    supabase
+      .from("v_published_transport_connections")
+      .select("id, from_place_id, to_place_id, mode, duration_likely_minutes, duration_max_minutes")
+      .eq("destination_id", destinationId),
+    supabase
+      .from("v_published_travel_estimates")
+      .select("from_place_id, to_place_id, mode, distance_m, duration_seconds"),
+  ]);
+
+  return {
+    places: (places.data ?? []).map((row) => ({
+      id: row.id as string,
+      // `?? null` throughout: the view returns a nullable column, and the engine models
+      // "not recorded" as null rather than as an absent property (exactOptionalPropertyTypes).
+      opening_schedule:
+        (row.opening_schedule as KnowledgeBundle["places"][number]["opening_schedule"]) ?? null,
+      dress_code: text(row.dress_code_i18n, locale).text || null,
+      entry_requirements: text(row.entry_requirements_i18n, locale).text || null,
+      step_free: stepFreeOf(row.accessibility),
+      visit_duration_min_minutes: row.visit_duration_min_minutes,
+      visit_duration_likely_minutes: row.visit_duration_likely_minutes,
+      visit_duration_max_minutes: row.visit_duration_max_minutes,
+    })),
+    experiences: (experiences.data ?? []).map((row) => ({
+      id: row.id as string,
+      place_id: row.place_id,
+      route_id: row.route_id,
+      duration_min_minutes: row.duration_min_minutes,
+      duration_likely_minutes: row.duration_likely_minutes,
+      duration_max_minutes: row.duration_max_minutes,
+      is_outdoor: row.is_outdoor ?? false,
+      advance_booking_required: row.advance_booking_required ?? false,
+      advance_booking_how: text(row.advance_booking_how_i18n, locale).text || null,
+      advance_booking_opens_days_before: row.advance_booking_opens_days_before,
+    })),
+    availability_rules: (rules.data ?? []).map((row) => ({
+      id: row.id as string,
+      experience_id: row.experience_id as string,
+      kind: row.kind as KnowledgeBundle["availability_rules"][number]["kind"],
+      daily_times:
+        (row.daily_times as KnowledgeBundle["availability_rules"][number]["daily_times"]) ?? null,
+      weekly_pattern:
+        (row.weekly_pattern as KnowledgeBundle["availability_rules"][number]["weekly_pattern"]) ??
+        null,
+      date_start: row.date_start,
+      date_end: row.date_end,
+      calendar_dates: row.calendar_dates,
+      priority: row.priority ?? 1,
+      valid_from: row.valid_from,
+      valid_to: row.valid_to,
+    })),
+    routes: (routes.data ?? []).map((row) => ({
+      id: row.id as string,
+      distance_m: row.distance_m,
+      duration_likely_minutes: row.duration_likely_minutes,
+      duration_max_minutes: row.duration_max_minutes,
+    })),
+    transport_connections: (transport.data ?? []).map((row) => ({
+      id: row.id as string,
+      from_place_id: row.from_place_id,
+      to_place_id: row.to_place_id,
+      mode: row.mode as KnowledgeBundle["transport_connections"][number]["mode"],
+      duration_likely_minutes: row.duration_likely_minutes,
+      duration_max_minutes: row.duration_max_minutes,
+    })),
+    travel_estimates: (estimates.data ?? []).map((row) => ({
+      from_place_id: row.from_place_id as string,
+      to_place_id: row.to_place_id as string,
+      mode: row.mode as KnowledgeBundle["transport_connections"][number]["mode"],
+      distance_m: row.distance_m,
+      duration_seconds: row.duration_seconds,
+    })),
+    trust: {},
+  };
+}
+
+/** The engine reads one accessibility field; the rest is presentation. */
+function stepFreeOf(value: unknown): "yes" | "no" | "partial" | null {
+  if (!value || typeof value !== "object") return null;
+  const step = (value as Record<string, unknown>)["step_free"];
+  return step === "yes" || step === "no" || step === "partial" ? step : null;
 }
