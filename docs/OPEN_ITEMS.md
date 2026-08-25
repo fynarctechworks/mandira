@@ -70,9 +70,9 @@ same reason — they are pure, and they needed no content.
 Every remaining item that renders anything to a traveler waits on OPEN-001, because there
 is nothing to render. What is still buildable without it:
 
-- **B-027 infrastructure** — VAPID keys are self-generated, and the `notification_subscriptions`
-  schema already exists (0006). The push sender, `schedule_notifications` and the
-  `journey_status_roller` are server-side and testable with fixtures.
+- ~~**B-027 infrastructure**~~ — done: notification scheduling in the engine and the Web Push
+  adapter. What is left of B-027 needs B-019 (subscribe UI, in-app list) or B-025 (the two
+  Edge Functions, which need a deployable Supabase project).
 - ~~**pg_cron job wiring** (TRD §5.4)~~ — done: `0013` ships all three pg_cron jobs plus the
   jobs contract (`job_runs`, single-flight runner, `v_job_health`).
 - ~~**`withApi`**~~ — done, along with the `keepalive` cron route.
