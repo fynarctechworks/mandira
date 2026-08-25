@@ -621,6 +621,8 @@ export type Database = {
           state: string | null
           status: Database["public"]["Enums"]["publish_status_enum"]
           updated_at: string
+          latitude: number | null
+          longitude: number | null
         }
         Insert: {
           best_seasons_i18n?: Json
@@ -1899,6 +1901,8 @@ export type Database = {
           visit_duration_likely_minutes: number | null
           visit_duration_max_minutes: number | null
           visit_duration_min_minutes: number | null
+          latitude: number | null
+          longitude: number | null
         }
         Insert: {
           address?: string | null
@@ -3529,6 +3533,32 @@ export type Database = {
       }
       i18n_text: { Args: { p: Json }; Returns: string }
       is_ops: { Args: never; Returns: boolean }
+      latitude:
+        | {
+            Args: { "": Database["public"]["Tables"]["destinations"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.latitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["places"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.latitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+      longitude:
+        | {
+            Args: { "": Database["public"]["Tables"]["destinations"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.longitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["places"]["Row"] }
+            Returns: {
+              error: true
+            } & "the function public.longitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+          }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
       source_tier_label: {

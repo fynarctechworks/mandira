@@ -1,2 +1,8 @@
-// @mandhira/providers - workspace stub created in B-001. Populated from B-018.
-export {};
+// @mandhira/providers — the ONLY package where vendor SDKs and third-party HTTP APIs may
+// be imported (ARCHITECTURE §1; enforced by a no-restricted-imports lint rule in apps).
+//
+// One interface per capability, concrete adapters swappable by environment.
+// AiProvider, RoutingProvider, WeatherProvider, EmailProvider and PushProvider arrive with
+// the features that need them (B-018 onward).
+
+export * from "./geocoding";

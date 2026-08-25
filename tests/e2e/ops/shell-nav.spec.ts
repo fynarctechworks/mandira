@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { NAV_ITEMS, availableNavItems } from "../../../apps/ops/lib/nav";
 import { seriousViolations } from "../axe-exceptions";
 
 /**
@@ -23,17 +24,23 @@ test.describe("Ops shell", () => {
       await expect(nav.getByRole("heading", { name: section, exact: true })).toBeVisible();
     }
 
-    // Unbuilt screens are shown, not hidden, and say when they arrive.
-    await expect(nav.getByText("Destinations", { exact: true })).toBeVisible();
-    await expect(nav.getByText("B-009", { exact: true }).first()).toBeVisible();
+    // Unbuilt screens are shown, not hidden, and say when they arrive. Picked from the
+    // model rather than hardcoded, so shipping a screen doesn't break this test.
+    const pending = NAV_ITEMS.find((item) => item.href === null)!;
+    await expect(nav.getByText(pending.label, { exact: true })).toBeVisible();
+    await expect(nav.getByText(pending.comingIn!, { exact: true }).first()).toBeVisible();
   });
 
-  test("only the built screen is a link; the rest are inert", async ({ page }) => {
+  test("exactly the built screens are links; the rest are inert", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Operations sections" });
-    const links = nav.getByRole("link");
 
-    await expect(links).toHaveCount(1);
-    await expect(links.first()).toHaveText("Home");
+    // Derived from the nav model: a screen shipping should not require editing this test,
+    // but a screen that is marked available while having no link should fail it.
+    const built = availableNavItems();
+    await expect(nav.getByRole("link")).toHaveCount(built.length);
+    for (const item of built) {
+      await expect(nav.getByRole("link", { name: item.label, exact: true })).toBeVisible();
+    }
   });
 
   test("the command palette opens with the keyboard and lists screens", async ({ page }) => {

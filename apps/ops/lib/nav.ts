@@ -52,13 +52,12 @@ export const NAV_ITEMS: NavItem[] = [
   },
 
   // ── Knowledge ───────────────────────────────────────────────────────────────
-  { id: "O02", label: "Destinations", section: "entities", href: null, comingIn: "B-009" },
+  { id: "O02", label: "Destinations", section: "entities", href: "/destinations" },
   {
     id: "O03",
     label: "Places",
     section: "entities",
-    href: null,
-    comingIn: "B-009",
+    href: "/places",
     keywords: ["temple", "ghat", "facility"],
   },
   {

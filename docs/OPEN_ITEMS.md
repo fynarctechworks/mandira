@@ -19,6 +19,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 | ID | What's needed | Blocks | Needed by |
 |---|---|---|---|
 | ACCT-01 | **Resend account + verified sending domain.** Supabase's built-in SMTP allows ~2 emails/hour, which is unusable for magic links. | Production/preview sign-in | Before any deploy (B-025). Local dev is unaffected — Mailpit catches mail. |
+| ACCT-03 | **MapTiler key** (`NEXT_PUBLIC_MAPTILER_KEY`, free tier). The coordinate picker works without it (search + decimal degrees), but map confirmation of pins needs a tile source. | Map confirmation in the editors; B-020 mapping | Before B-020 |
 | ACCT-02 | **Google Cloud OAuth client** (client ID + secret). The provider is wired and config-ready but `enabled = false`. | "Continue with Google" in both apps | Before B-025. Magic link works without it. |
 | OPEN-009 | **Traveler access to accessibility, route-stop, circuit and destination-link data.** TRD §4.4 defines 9 published views; none covers `accessibility_records`, `route_places`, `circuits`, `destination_links` or `live_feed_readings` — yet PRD-DISC-003 requires accessibility icons on experience cards. Deny-by-default since B-006 (D-033). **Recommendation:** extend `v_published_places`/`v_published_experiences` with an accessibility jsonb rather than adding a tenth view. | B-015 (discovery), B-031 (live feeds) | Before B-014 |
 

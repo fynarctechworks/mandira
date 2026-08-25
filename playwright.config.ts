@@ -50,7 +50,7 @@ export default defineConfig({
         storageState: OPS_STORAGE_STATE,
       },
       dependencies: ["ops-setup"],
-      testMatch: /ops[\\/]shell-nav\.spec\.ts/,
+      testMatch: /ops[\\/](shell-nav|editors)\.spec\.ts/,
     },
   ],
   webServer: [

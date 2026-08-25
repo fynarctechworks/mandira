@@ -11,12 +11,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@mandhira/db": "workspace:*",
+    "@mandhira/providers": "workspace:*",
     "@mandhira/ui": "workspace:*",
+    "@tanstack/react-table": "^8.21.3",
     "cmdk": "^1.1.1",
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.86.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@mandhira/config": "workspace:*",
