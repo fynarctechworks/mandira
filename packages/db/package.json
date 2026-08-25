@@ -10,7 +10,9 @@
     "./client/browser": "./src/client/browser.ts",
     "./client/server": "./src/client/server.ts",
     "./client/middleware": "./src/client/middleware.ts",
-    "./client/roles": "./src/client/roles.ts"
+    "./client/roles": "./src/client/roles.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./ai-store": "./src/ai-store.ts"
   },
   "scripts": {
     "lint": "eslint .",

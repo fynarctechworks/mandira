@@ -14,6 +14,9 @@ export * from "./schemas/place";
 export * from "./schemas/experience";
 export * from "./schemas/journey";
 
+// `rate-limit` is a subpath too: it needs a service-role client, and nothing that reaches
+// a browser bundle should be able to import it by accident.
+
 // Clients are exported from subpaths (`@mandhira/db/client/browser`, `/server`, …) rather
 // than here, so that importing a Zod schema never pulls a server-only module — and in
 // particular never pulls the service-role client — into a client bundle.

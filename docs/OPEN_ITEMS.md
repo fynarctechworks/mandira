@@ -12,8 +12,8 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 > **B-013 (seed destination #1) is stopped on OPEN-001, and as of B-017 that is now the
 > critical path.** Everything buildable without content has been built: B-014 (traveler
 > shell + PWA) and B-016/B-017 (the whole journey engine) are done. B-015 needs B-013 and
-> OPEN-009; B-018 needs B-015; B-019..B-025 chain off B-018. Work continues on the parts of
-> B-018 that need no content — the AI provider package, grounding and rate limits — but the
+> OPEN-009; B-018 needs B-015; B-019..B-025 chain off B-018. The parts of B-018 that need no
+> content — the AI provider package, grounding, cache and rate limits — are now done; the
 > brief-review and builder screens cannot be finished until there is a destination.
 
 | ID | What's needed | Blocks | Why it can't be worked around |
@@ -27,6 +27,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 |---|---|---|---|
 | ACCT-01 | **Resend account + verified sending domain.** Supabase's built-in SMTP allows ~2 emails/hour, which is unusable for magic links. | Production/preview sign-in | Before any deploy (B-025). Local dev is unaffected — Mailpit catches mail. |
 | ACCT-03 | **MapTiler key** (`NEXT_PUBLIC_MAPTILER_KEY`, free tier). The coordinate picker works without it (search + decimal degrees), but map confirmation of pins needs a tile source. | Map confirmation in the editors; B-020 mapping | Before B-020 |
+| ACCT-04 | **Gemini API key** (`GOOGLE_GENERATIVE_AI_API_KEY`, free tier). The AI provider package, grounding, cache, log and rate limits are built and tested; no call has ever been made to a model. Optionally `ANTHROPIC_API_KEY` too — the fallback chain degrades to no fallback without it rather than erroring. | Live intent extraction (F3); the ≥85 % extraction-accuracy acceptance test | Before B-018 can be finished (also needs B-013 content) |
 | ACCT-02 | **Google Cloud OAuth client** (client ID + secret). The provider is wired and config-ready but `enabled = false`. | "Continue with Google" in both apps | Before B-025. Magic link works without it. |
 | OPEN-009 | **Traveler access to accessibility, route-stop, circuit and destination-link data.** TRD §4.4 defines 9 published views; none covers `accessibility_records`, `route_places`, `circuits`, `destination_links` or `live_feed_readings` — yet PRD-DISC-003 requires accessibility icons on experience cards. Deny-by-default since B-006 (D-033). **Recommendation:** extend `v_published_places`/`v_published_experiences` with an accessibility jsonb rather than adding a tenth view. | B-015 (discovery), B-031 (live feeds) | Before B-015 |
 
@@ -60,6 +61,6 @@ and needed no content at all.
 
 The first genuinely blocked item is **B-013** (seed destination #1), which needs OPEN-001.
 After it, the whole M1 traveler chain B-015 → B-018 → B-019 → B-020/B-021 → B-022 → B-025
-waits behind it. Still buildable without a destination: the AI provider package,
-ID-grounding and rate limits from B-018, and the M2 engine work (B-026 `evaluateChange` /
-`applyOption`), which is pure like the rest of the engine.
+waits behind it. What is still buildable without a destination: the M2 engine work
+(**B-026** `evaluateChange` / `applyOption` and the option ladder), which is pure like the
+rest of the engine and needs no content at all.

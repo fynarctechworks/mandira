@@ -6,7 +6,7 @@
 -- so `has_enum_labels` compares the full ordered list.
 
 begin;
-select plan(27);
+select plan(28);
 
 -- Every enum type from §4.1 must exist.
 select has_type('public', 'publish_status_enum', 'publish_status_enum exists');
@@ -35,6 +35,7 @@ select has_type('public', 'review_task_type_enum', 'review_task_type_enum exists
 select has_type('public', 'task_status_enum', 'task_status_enum exists');
 select has_type('public', 'change_trigger_enum', 'change_trigger_enum exists');
 select has_type('public', 'notification_type_enum', 'notification_type_enum exists');
+select has_type('public', 'ai_task_enum', 'ai_task_enum exists');
 
 -- Exact labels, in order, for every enum in one comparison.
 select is(
@@ -75,7 +76,8 @@ select is(
     "review_task_type_enum": ["review","verify","conflict","approve","report","reverify"],
     "task_status_enum": ["open","in_progress","done","rejected"],
     "change_trigger_enum": ["user_late","user_done_delta","user_stay_longer","knowledge_update","live_transport","live_weather","item_added","item_removed","preferences_changed","availability_changed"],
-    "notification_type_enum": ["prepare_deadline","journey_tomorrow","leave_by","journey_change","report_resolved","advisory","suggestion"]
+    "notification_type_enum": ["prepare_deadline","journey_tomorrow","leave_by","journey_change","report_resolved","advisory","suggestion"],
+    "ai_task_enum": ["intent_extract","explain","search_query","conversational_plan","extract_knowledge","detect_changes","contradiction_check","suggest_translation","classify","embed"]
   }'::jsonb,
   'every enum has exactly the TRD §4.1 labels, in order'
 );

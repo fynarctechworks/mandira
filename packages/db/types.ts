@@ -175,6 +175,84 @@ export type Database = {
           },
         ]
       }
+      ai_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          grounding_hash: string
+          input_hash: string
+          model: string
+          output: Json
+          provider: string
+          task: Database["public"]["Enums"]["ai_task_enum"]
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          grounding_hash: string
+          input_hash: string
+          model: string
+          output: Json
+          provider: string
+          task: Database["public"]["Enums"]["ai_task_enum"]
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          grounding_hash?: string
+          input_hash?: string
+          model?: string
+          output?: Json
+          provider?: string
+          task?: Database["public"]["Enums"]["ai_task_enum"]
+        }
+        Relationships: []
+      }
+      ai_calls: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          grounding_hash: string | null
+          id: string
+          is_fallback: boolean
+          latency_ms: number | null
+          model: string
+          ok: boolean
+          provider: string
+          task: Database["public"]["Enums"]["ai_task_enum"]
+          tokens_in: number | null
+          tokens_out: number | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          grounding_hash?: string | null
+          id?: string
+          is_fallback?: boolean
+          latency_ms?: number | null
+          model: string
+          ok: boolean
+          provider: string
+          task: Database["public"]["Enums"]["ai_task_enum"]
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          grounding_hash?: string | null
+          id?: string
+          is_fallback?: boolean
+          latency_ms?: number | null
+          model?: string
+          ok?: boolean
+          provider?: string
+          task?: Database["public"]["Enums"]["ai_task_enum"]
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Relationships: []
+      }
       ai_extractions: {
         Row: {
           capture_id: string
@@ -2088,6 +2166,30 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          scope: string
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          scope: string
+          updated_at?: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          scope?: string
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       review_tasks: {
         Row: {
           assigned_to: string | null
@@ -3497,6 +3599,19 @@ export type Database = {
       }
     }
     Functions: {
+      consume_rate_limit: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_scope: string
+          p_window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       critical_fields_gated: {
         Args: {
           p_entity_id: string
@@ -3562,6 +3677,8 @@ export type Database = {
           }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
+      prune_ai_cache: { Args: never; Returns: number }
+      prune_rate_limits: { Args: { p_older_than?: string }; Returns: number }
       publish_entity: {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: Json
@@ -3587,6 +3704,17 @@ export type Database = {
     }
     Enums: {
       age_band_enum: "child" | "adult" | "senior"
+      ai_task_enum:
+        | "intent_extract"
+        | "explain"
+        | "search_query"
+        | "conversational_plan"
+        | "extract_knowledge"
+        | "detect_changes"
+        | "contradiction_check"
+        | "suggest_translation"
+        | "classify"
+        | "embed"
       availability_kind_enum:
         | "always_during_opening"
         | "daily_fixed_times"
@@ -3852,6 +3980,18 @@ export const Constants = {
   public: {
     Enums: {
       age_band_enum: ["child", "adult", "senior"],
+      ai_task_enum: [
+        "intent_extract",
+        "explain",
+        "search_query",
+        "conversational_plan",
+        "extract_knowledge",
+        "detect_changes",
+        "contradiction_check",
+        "suggest_translation",
+        "classify",
+        "embed",
+      ],
       availability_kind_enum: [
         "always_during_opening",
         "daily_fixed_times",

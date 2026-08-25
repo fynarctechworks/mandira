@@ -13,12 +13,15 @@
   },
   "devDependencies": {
     "@mandhira/config": "workspace:*",
+    "@types/node": "^22.17.0",
     "eslint": "^9.34.0",
     "typescript": "^5.9.2",
-    "@types/node": "^22.17.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.42",
+    "@ai-sdk/google": "^4.0.51",
+    "ai": "^7.0.79",
     "zod": "^4.4.3"
   }
 }
