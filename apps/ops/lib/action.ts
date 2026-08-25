@@ -101,3 +101,16 @@ export function opsAction<TSchema extends z.ZodType, TResult>(config: {
     }
   };
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any --
+ * Supabase's generated Insert/Update types widen every jsonb column to `Json`, which our
+ * concrete validated shapes (OpeningSchedule, the `_i18n` records, availability payloads)
+ * do not structurally satisfy even though they are correct at runtime.
+ *
+ * Rather than scatter a cast — and an eslint-disable that formatting can detach from the
+ * line it suppresses — the widening is contained here. Every call site passes a payload
+ * that `opsAction` has already validated with Zod against the same shape the database
+ * enforces, so the type hole is bounded by that validation.
+ */
+export const asRow = (value: unknown): any => value;
+/* eslint-enable @typescript-eslint/no-explicit-any */

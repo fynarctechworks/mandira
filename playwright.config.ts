@@ -15,6 +15,12 @@ const OPS_STORAGE_STATE = "tests/e2e/.auth/ops-admin.json";
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  /*
+   * Capped workers. This machine cannot sustain many browser workers alongside the two
+   * Next servers and the Supabase stack — an uncapped run died with a hard worker crash
+   * (0xC0000409). The same constraint already forced serial vitest (D-024).
+   */
+  workers: 3,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 2 : 0,
   reporter: process.env["CI"] ? "github" : "list",
@@ -50,7 +56,7 @@ export default defineConfig({
         storageState: OPS_STORAGE_STATE,
       },
       dependencies: ["ops-setup"],
-      testMatch: /ops[\\/](shell-nav|editors)\.spec\.ts/,
+      testMatch: /ops[\\/](shell-nav|editors|knowledge)\.spec\.ts/,
     },
   ],
   webServer: [

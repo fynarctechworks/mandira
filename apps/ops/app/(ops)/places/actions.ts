@@ -3,7 +3,7 @@
 import { crowdPatternSchema, i18nText, openingScheduleSchema, uuid } from "@mandhira/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { opsAction } from "@/lib/action";
+import { asRow, opsAction } from "@/lib/action";
 
 /**
  * Place write paths (O03, OPS-EDIT-02).
@@ -116,8 +116,7 @@ export const createPlace = opsAction({
   handler: async ({ input, supabase }) => {
     const { data, error } = await supabase
       .from("places")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row is validated above
-      .insert(toRow(input as Record<string, unknown>) as any)
+      .insert(asRow(toRow(input as Record<string, unknown>)))
       .select("id")
       .single();
     if (error) throw error;
@@ -133,8 +132,7 @@ export const updatePlace = opsAction({
   handler: async ({ input, supabase }) => {
     const { error } = await supabase
       .from("places")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- row is validated above
-      .update(toRow(input as Record<string, unknown>) as any)
+      .update(asRow(toRow(input as Record<string, unknown>)))
       .eq("id", input.id);
     if (error) throw error;
 

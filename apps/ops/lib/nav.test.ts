@@ -11,8 +11,12 @@ describe("Ops nav model", () => {
     expect(new Set(ids).size).toBe(ids.length);
 
     // O01–O22, no gaps: a missing screen would silently vanish from the platform map.
+    // O05 is split into Routes and Transport (O05b) because they are separate screens in
+    // practice; every PRD id must still be present.
     const expected = Array.from({ length: 22 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`);
-    expect([...ids].sort()).toEqual(expected.sort());
+    for (const id of expected) {
+      expect(ids, `${id} missing from the nav`).toContain(id);
+    }
   });
 
   it("places every item in a declared section", () => {

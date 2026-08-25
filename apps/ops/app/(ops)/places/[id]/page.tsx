@@ -1,11 +1,24 @@
 import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
 import { notFound } from "next/navigation";
+import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
 import { PlaceForm, type PlaceDraft } from "@/components/place-form";
 import { destinationOptions } from "@/lib/destinations";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Place · Mandhira Ops" };
+
+/** Existing accessibility record, or an all-"not recorded" starting point. */
+function toAccessibility(row: Record<string, unknown> | null): AccessibilityValues {
+  return {
+    step_free: (row?.["step_free"] as string | null) ?? null,
+    wheelchair_access: (row?.["wheelchair_access"] as string | null) ?? null,
+    queue_assistance: (row?.["queue_assistance"] as boolean | null) ?? null,
+    rest_seating: (row?.["rest_seating"] as boolean | null) ?? null,
+    distance_from_dropoff_m: (row?.["distance_from_dropoff_m"] as number | null) ?? null,
+    notes_i18n: (row?.["notes_i18n"] as Record<string, string> | null) ?? {},
+  };
+}
 
 const text = (value: unknown): Record<string, string> =>
   value && typeof value === "object" ? (value as Record<string, string>) : {};
@@ -14,13 +27,14 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, locales, destinations] = await Promise.all([
+  const [{ data, error }, accessResult, locales, destinations] = await Promise.all([
     supabase
       .from("places")
       .select("*, latitude, longitude")
       .eq("id", id)
       .is("deleted_at", null)
       .maybeSingle(),
+    supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
     activeLocales(),
     destinationOptions(),
   ]);
@@ -56,6 +70,14 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
         <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
         <p className="mt-1 text-body text-text-secondary">Editing a draft place.</p>
       </header>
+      <div className="max-w-2xl">
+        <AccessibilityPanel
+          locales={locales}
+          target={{ placeId: data.id }}
+          initial={toAccessibility(accessResult.data)}
+        />
+      </div>
+
       <PlaceForm locales={locales} destinations={destinations} initial={initial} />
     </div>
   );

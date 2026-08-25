@@ -60,7 +60,10 @@ export function OpeningScheduleBuilder({
   return (
     <fieldset className="flex flex-col gap-3">
       <legend className="text-body-sm font-medium">Opening hours</legend>
-      <p id={`${groupId}-help`} className="text-caption text-text-tertiary">
+      {/* text-secondary, not tertiary: this sits on the tinted "critical information"
+          panel, where caption-sized tertiary text falls under AA — and it is guidance an
+          operator needs to read, not de-emphasised chrome. */}
+      <p id={`${groupId}-help`} className="text-caption text-text-secondary">
         Leave a day untouched if the hours aren&apos;t known. Mark it closed to record that it
         genuinely has no opening hours — the engine treats those differently.
       </p>
