@@ -6,6 +6,7 @@ import { setRequestLocale } from "next-intl/server";
 import { AccessibilityIcons } from "../../../../../../components/accessibility-icons";
 import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
+import { OpenInMaps } from "../../../../../../components/open-in-maps";
 import { getPlaceDetail } from "../../../../../../lib/knowledge";
 import {
   accessibilityIcons,
@@ -53,6 +54,19 @@ export default async function PlaceDetailPage({
         <h1 className="text-display">{place.name.text}</h1>
         {place.address ? <p className="text-body-sm text-text-secondary">{place.address}</p> : null}
         {place.summary.text ? <p className="text-body">{place.summary.text}</p> : null}
+
+        {/*
+         * MAPS-03. Rendered only when there is a pin — a place can be published without
+         * one, and a hand-off to coordinates nobody recorded sends a traveler to 0,0 in
+         * the Atlantic with complete confidence.
+         */}
+        {place.latitude != null && place.longitude != null ? (
+          <OpenInMaps
+            latitude={place.latitude}
+            longitude={place.longitude}
+            label={place.name.text}
+          />
+        ) : null}
       </header>
 
       {week.length > 0 ? (

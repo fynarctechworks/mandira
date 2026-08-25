@@ -322,6 +322,15 @@ export type PlaceDetail = PlaceCard & {
   visitDurationMinMinutes: number | null;
   visitDurationMaxMinutes: number | null;
   guidance: GuidanceBlock[];
+  /**
+   * Where it is, for the Open-in-Maps hand-off (MAPS-03).
+   *
+   * Null when nothing is recorded, and that is a real state — a place can be published
+   * without a pin. The hand-off simply does not render rather than sending someone to
+   * coordinates of 0,0 in the Atlantic.
+   */
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type ExperienceDetail = ExperienceCard & {
@@ -356,7 +365,7 @@ export async function getPlaceDetail(
   const { data } = await supabase
     .from("v_published_places")
     .select(
-      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, trust, accessibility, destination_id",
+      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, trust, accessibility, destination_id, latitude, longitude",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -376,6 +385,8 @@ export async function getPlaceDetail(
     visitDurationMinMinutes: (data.visit_duration_min_minutes as number | null) ?? null,
     visitDurationMaxMinutes: (data.visit_duration_max_minutes as number | null) ?? null,
     guidance: await getGuidance("places", data.id as string, locale),
+    latitude: (data.latitude as number | null) ?? null,
+    longitude: (data.longitude as number | null) ?? null,
   };
 }
 

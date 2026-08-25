@@ -127,6 +127,37 @@ test.describe("The trust sheet", () => {
   });
 });
 
+test.describe("Open in Maps (MAPS-03)", () => {
+  test("hands the place off to the traveler's own maps app, by name", async ({ page }) => {
+    await page.goto(TEMPLE);
+
+    const link = page.getByRole("link", { name: /Open in Maps/ });
+    await expect(link).toBeVisible();
+
+    /*
+     * The device emulation reports an Android user agent, so this should be a `geo:` URI
+     * rather than a Google Maps URL — someone who installed OsmAnd for offline pilgrimage
+     * routes should not be pulled into a different app by us.
+     *
+     * The coordinates are asserted in full because the failure mode is silent: PostGIS
+     * ST_X is longitude and ST_Y is latitude, and a swap renders a confident pin in
+     * western China that looks perfectly normal on a map.
+     */
+    const href = await link.getAttribute("href");
+    expect(href).toMatch(/^geo:17\.386,78\.478\?q=17\.386,78\.478\(/);
+    expect(href).toContain("Hill%20Temple");
+  });
+
+  test("says that it leaves the app, for anyone not looking at the icon", async ({ page }) => {
+    await page.goto(TEMPLE);
+
+    const link = page.getByRole("link", { name: /Open in Maps/ });
+    await expect(link).toHaveAttribute("target", "_blank");
+    // WCAG 2.2 AA: a link that leaves the app says so in its accessible name.
+    await expect(link).toHaveAccessibleName(/opens Hill Temple \(fixture\) in your maps app/);
+  });
+});
+
 test("a place in another destination is a 404, not someone else's page", async ({ page }) => {
   // A URL that lies about where something is will be shared, and then quoted.
   const response = await page.goto("/en/destinations/not-real/places/fixture-hill-temple");
