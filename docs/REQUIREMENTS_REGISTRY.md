@@ -224,10 +224,10 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-ARCH-004 | Published-views-only | Traveler reads exclusively `v_published_*` with aggregated trust jsonb | P0 | TRD-DB-003 |
 | TRD-ARCH-005 | Offline-first read path | Dexie-first + SWR revalidate; React Query persistence | P0 | — |
 | TRD-ARCH-006 | Stack pins | Next 15/React 19/TS strict/Tailwind 4/shadcn/TanStack Query 5/Dexie 4/Zustand 5/Serwist/next-intl/date-fns per TRD §3 | P0 | — |
-| TRD-DB-001 | Schema-as-migrations | All §4 tables/enums/views/triggers from `supabase/migrations`; `db reset` clean; generated types only | P0 | — |
-| TRD-DB-002 | Naming & conventions | snake_case; uuid pks; `_i18n` jsonb; created/updated_at triggers; soft-delete where specified | P0 | — |
+| TRD-DB-001 | Schema-as-migrations | All §4 tables/enums/views/triggers from `supabase/migrations`; `db reset` clean; generated types only. **Partially implemented (B-003):** §4.1–§4.3 in `0001_enums.sql` + `0002_locales_sources_trust.sql`; `db reset` clean and CI-enforced. §4.4–§4.7 + views → B-004; generated types → B-005. | P0 | — |
+| TRD-DB-002 | Naming & conventions | snake_case; uuid pks; `_i18n` jsonb; created/updated_at triggers; soft-delete where specified. **Implemented for §4.2/§4.3 (B-003):** all 26 enums pinned by a pgTAP contract test; a pgTAP test also fails any table that has `updated_at` without its trigger. | P0 | — |
 | TRD-DB-003 | RLS complete | §4.9 matrix; automated RLS tests; anon/traveler/ops separation; service-role server-only | P0 | AUTH |
-| TRD-DB-004 | Versioning triggers | entity_versions on every knowledge table; audit_log on ops mutations | P0 | — |
+| TRD-DB-004 | Versioning triggers | entity_versions on every knowledge table; audit_log on ops mutations. **Foundation implemented (B-003):** `entity_versions` + `audit_log` tables and the reusable `record_entity_version()` trigger function, tested. Attaching it to each knowledge table happens in B-004; audit triggers on Ops mutations in B-012. | P0 | — |
 | TRD-DB-005 | Geo & search infra | PostGIS points+GiST; tsvector generated columns; embedding vector(768) columns ready | P0 | — |
 | TRD-DB-006 | Forward-only migrations | Additive; never drop columns in same release as code stops using them | P0 | — |
 | TRD-API-001 | Response envelope & validation | `{ok,data}|{ok,error{code,message}}`; Zod on all inputs; no stack traces | P0 | — |

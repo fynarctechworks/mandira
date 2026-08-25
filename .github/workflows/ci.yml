@@ -26,3 +26,25 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  database:
+    name: Migrations · db lint · pgTAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # `db reset` proves the migrations apply cleanly to an empty database —
+      # the same guarantee production gets, since migrations are forward-only (D-015).
+      - name: Start local Supabase
+        run: supabase start
+      - name: Apply migrations from scratch
+        run: supabase db reset
+      # Scoped to `public`: the extensions schema carries PostGIS's own pre-existing
+      # lint findings, which are not ours to fix.
+      - name: Lint schema
+        run: supabase db lint --schema public --level warning
+      - name: Run pgTAP tests
+        run: supabase test db
