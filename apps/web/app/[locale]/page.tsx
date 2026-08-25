@@ -1,23 +1,27 @@
-import { HealthPill, ItemCard, NowCard, SourcesFooter, TrustBadge } from "@mandhira/ui";
-import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+
+import { getDestinationCards } from "../../lib/knowledge";
 
 /**
- * Traveler home (A02) — shell only.
+ * Traveler home (A02).
  *
- * Real discovery, search and the continue-journey card arrive with B-015, which needs
- * published content to show. Until then this renders the design system honestly rather
- * than mocking a feed that does not exist.
+ * PRD F2: up to three destination cards, a primary "Plan a journey" action, and no
+ * infinite feed. There is deliberately no "trending" and no rating anywhere on this
+ * screen — ranking comes from the editorial weight Ops set, which is a judgement someone
+ * is accountable for, rather than from whatever was popular last week.
  */
+export const dynamic = "force-dynamic";
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  return <HomeContent />;
-}
-
-function HomeContent() {
-  const t = useTranslations("home");
+  const [t, destinations] = await Promise.all([
+    getTranslations("home"),
+    getDestinationCards(locale),
+  ]);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -27,40 +31,46 @@ function HomeContent() {
         <p className="text-body text-text-secondary">{t("intro")}</p>
       </header>
 
-      <NowCard
-        eyebrow="NOW"
-        title="Morning darshan"
-        detail="Queue is usually shortest before 07:00."
-      />
+      <section aria-labelledby="destinations-heading" className="flex flex-col gap-3">
+        <h2 id="destinations-heading" className="text-h2">
+          Where you could go
+        </h2>
 
-      <section aria-label="Day 1" className="flex flex-col">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-h3">Day 1</h2>
-          <HealthPill state="comfortable" />
-        </div>
-        <ItemCard
-          time="06:30"
-          title="Morning darshan"
-          place="Main temple"
-          duration="1 h 30 m"
-          tier="PROTECTED"
-          travelLeg="25 min by car"
-          trailing={<TrustBadge state="verified" />}
-        />
-        <ItemCard
-          time="09:00"
-          title="Riverside walk"
-          place="Ghat road"
-          duration="45 m"
-          tier="OPTIONAL"
-          trailing={<TrustBadge state="verified_earlier" />}
-        />
+        {destinations.length === 0 ? (
+          /*
+           * An honest empty state rather than a skeleton that implies something is loading.
+           * Until B-013 publishes a destination this is the true state of the product, and
+           * a shimmer pretending otherwise would be the first thing the app lies about.
+           */
+          <p className="text-body-sm text-text-secondary">
+            No destinations have been published yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {destinations.map((destination) => (
+              <li key={destination.id}>
+                <Link
+                  href={`/${locale}/destinations/${destination.slug}`}
+                  className="flex min-h-11 flex-col gap-1 rounded-lg border border-border bg-bg-surface p-4 transition-colors hover:border-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-h3">{destination.name.text}</span>
+                    <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+                  </span>
+                  {destination.region ? (
+                    <span className="text-caption text-text-secondary">{destination.region}</span>
+                  ) : null}
+                  {destination.overview.text ? (
+                    <span className="text-body-sm text-text-secondary">
+                      {destination.overview.text}
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
-
-      <SourcesFooter
-        sources={[{ name: "Temple administration", tierLabel: "Official authority" }]}
-        oldestVerified="12 August 2026"
-      />
     </main>
   );
 }

@@ -1,0 +1,75 @@
+import { CalendarClock, Clock, Ticket } from "lucide-react";
+import { TrustBadge } from "@mandhira/ui";
+
+import type { ExperienceCard as Experience } from "../lib/knowledge";
+import { weakestTrustState } from "../lib/knowledge";
+import { accessibilityIcons, availabilityLine, bookingLine, durationLabel } from "../lib/present";
+import { AccessibilityIcons } from "./accessibility-icons";
+
+/**
+ * PRD F2's experience card: name, one-line significance, availability in plain language,
+ * likely duration, advance-booking flag, accessibility icons, trust badge.
+ *
+ * Every one of those is required by the acceptance criterion — a traveler must be able to
+ * tell what the three most significant experiences are, whether they run on their dates,
+ * and whether any need booking, in sixty seconds. A card missing the booking flag is a
+ * card that fails that quietly, on the one experience that needed sixty days' notice.
+ *
+ * The badge shows the WEAKEST state across the card's fields. One "Verified" beside an
+ * unshown "Check locally" would be technically true and practically a lie.
+ */
+export function ExperienceCard({ experience, locale }: { experience: Experience; locale: string }) {
+  const availability = availabilityLine(experience.availability, locale);
+  const duration = durationLabel(experience.durationLikelyMinutes);
+  const booking = bookingLine(
+    experience.advanceBookingRequired,
+    experience.advanceBookingOpensDaysBefore,
+  );
+  const trust = weakestTrustState(experience.trust);
+
+  return (
+    <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-h3">{experience.name.text}</h3>
+        {trust ? <TrustBadge state={trust} /> : null}
+      </div>
+
+      {experience.significance.text ? (
+        <p className="text-body-sm text-text-secondary">{experience.significance.text}</p>
+      ) : null}
+
+      <dl className="flex flex-col gap-1 text-caption text-text-secondary">
+        {availability ? (
+          <div className="flex items-center gap-1.5">
+            <CalendarClock className="size-4 shrink-0" aria-hidden />
+            <dt className="sr-only">Availability</dt>
+            <dd>{availability}</dd>
+          </div>
+        ) : null}
+
+        {duration ? (
+          <div className="flex items-center gap-1.5">
+            <Clock className="size-4 shrink-0" aria-hidden />
+            <dt className="sr-only">Usually takes</dt>
+            <dd>Usually {duration}</dd>
+          </div>
+        ) : null}
+
+        {booking ? (
+          <div className="flex items-center gap-1.5 text-text-primary">
+            <Ticket className="size-4 shrink-0" aria-hidden />
+            <dt className="sr-only">Booking</dt>
+            <dd>{booking}</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      <AccessibilityIcons icons={accessibilityIcons(experience.accessibility)} />
+
+      {/* PRD-KNOW-005: a traveler reading English instead of their language is told so. */}
+      {experience.name.isFallback ? (
+        <p className="text-caption text-text-secondary">Not yet available in your language</p>
+      ) : null}
+    </article>
+  );
+}
