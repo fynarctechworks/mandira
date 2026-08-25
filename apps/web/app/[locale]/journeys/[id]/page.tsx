@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ListChecks, Share2 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
@@ -73,6 +73,28 @@ export default async function JourneyPage({
       </header>
 
       <JourneyHealth report={health} />
+
+      {/*
+        PRD F7 makes Prepare available on demand rather than only inside 30 days — the
+        traveler planning three months out is exactly the one who needs the booking
+        deadlines, and a tab that appears later appears too late.
+      */}
+      <div className="flex gap-2">
+        <Link
+          href={`/${locale}/journeys/${journey.id}/prepare`}
+          className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
+        >
+          <ListChecks className="size-4" aria-hidden />
+          Prepare
+        </Link>
+        <Link
+          href={`/${locale}/journeys/${journey.id}/summary`}
+          className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
+        >
+          <Share2 className="size-4" aria-hidden />
+          Summary
+        </Link>
+      </div>
 
       {dayIndexes.map((dayIndex) => {
         const day = health.days.find((d) => d.dayIndex === dayIndex);

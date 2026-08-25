@@ -2092,6 +2092,7 @@ export type Database = {
           created_at: string
           done_at: string | null
           due_at: string | null
+          engine_key: string | null
           group_name: string
           id: string
           is_done: boolean
@@ -2107,6 +2108,7 @@ export type Database = {
           created_at?: string
           done_at?: string | null
           due_at?: string | null
+          engine_key?: string | null
           group_name: string
           id?: string
           is_done?: boolean
@@ -2122,6 +2124,7 @@ export type Database = {
           created_at?: string
           done_at?: string | null
           due_at?: string | null
+          engine_key?: string | null
           group_name?: string
           id?: string
           is_done?: boolean
@@ -3727,6 +3730,10 @@ export type Database = {
         Returns: boolean
       }
       is_ops: { Args: never; Returns: boolean }
+      journey_summary_payload: {
+        Args: { p_journey_id: string; p_locale: string }
+        Returns: Json
+      }
       latitude:
         | {
             Args: { "": Database["public"]["Tables"]["destinations"]["Row"] }
@@ -3753,6 +3760,10 @@ export type Database = {
               error: true
             } & "the function public.longitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
           }
+      my_journey_summary: {
+        Args: { p_journey_id: string; p_locale?: string }
+        Returns: Json
+      }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
       prune_ai_cache: { Args: never; Returns: number }
@@ -3776,6 +3787,10 @@ export type Database = {
       roll_journey_statuses: { Args: never; Returns: Json }
       route_stops_for: { Args: { p_route_id: string }; Returns: Json }
       run_scheduled_job: { Args: { p_name: string }; Returns: Json }
+      share_summary: {
+        Args: { p_locale?: string; p_token: string }
+        Returns: Json
+      }
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string

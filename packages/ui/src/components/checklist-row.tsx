@@ -2,7 +2,7 @@
 
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { Check, ChevronDown } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { cn } from "../lib/cn";
 
 type ChecklistRowProps = {
@@ -14,6 +14,14 @@ type ChecklistRowProps = {
   why?: string;
   /** Localised label for the expander control. */
   whyLabel?: string;
+  /**
+   * A trust badge, where this task came from knowledge (PRD-PREP-001).
+   *
+   * Rendered OUTSIDE the `<label>` deliberately: the badge is a button that opens its own
+   * sheet, and nesting it inside the label would make tapping it toggle the checkbox —
+   * a traveler reaching for "where does this come from" would tick the task instead.
+   */
+  badge?: ReactNode;
   className?: string;
 };
 
@@ -25,6 +33,7 @@ export function ChecklistRow({
   onCheckedChange,
   why,
   whyLabel = "Why?",
+  badge,
   className,
 }: ChecklistRowProps) {
   const generatedId = useId();
@@ -49,6 +58,8 @@ export function ChecklistRow({
         <label htmlFor={checkboxId} className="flex-1 cursor-pointer text-body">
           {label}
         </label>
+
+        {badge}
 
         {why ? (
           <button

@@ -59,7 +59,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-PLAN-001 | Journey/day/item model | Item types experience/travel_leg/rest/meal/fixed_commitment/free_time; day timeline view | P0 | KNOW-001 |
 | PRD-PLAN-002 ✅ | Priority tiers + engine rules | FIXED never moved/removed; PROTECTED never removed, move only with confirmation; IMPORTANT move/swap with confirmation; OPTIONAL removed first, always asked | P0 | ENG-001 |
 | PRD-PLAN-003 ✅ | Item actions | Tier change, move, preferred window, dependency ("after X"), note, remove | P0 | PLAN-001 |
-| PRD-PLAN-004 | Prep propagation | Experience requirements auto-generate Prepare tasks | P0 | PREP-001 |
+| PRD-PLAN-004 ✅ | Prep propagation | Experience requirements auto-generate Prepare tasks | P0 | PREP-001 |
 | PRD-PLAN-005 ✅ | Buffers | Visible/editable; 15 min base; ×1.5 senior/limited_walking; ×2 wheelchair/needs_rest | P0 | ENG-001 |
 | PRD-PLAN-006 ✅ | Return guard | Last FIXED anchored; breach → Broken; engine blocks breaching plans | P0 | ENG-001 |
 | PRD-PLAN-007 | Simplify-this-day | Proposes OPTIONAL removal then IMPORTANT moves as change card; never auto-applies | P1 | ADPT-001 |
@@ -89,12 +89,18 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-ADPT-008 | Matrix acceptance | 50 journeys × 8 triggers: option restoring Tight+ whenever mathematically possible; zero forbidden moves | P0 | ADPT-002 |
 
 ## PRD-PREP — Prepare (F7)
+
+> ✅ = implemented and verified in B-021 (docs/plans/PREP-01.md §9). PRD-PREP-002
+> (deadline notifications) has its engine half done in NOTF-01 and its `due_at` persisted
+> here; delivery is B-027. PRD-PREP-003 (booked-slot promotion) is P1, B-028.
+> One A4 per day is measured against Chromium's print renderer, not asserted in a test —
+> page count depends on the renderer (PREP-01 §5b).
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-PREP-001 | Auto checklist | Groups: bookings/documents/carry/know/travelers/downloads; deduplicated; trust badge + Why? per item | P0 | PLAN-004 |
+| PRD-PREP-001 ✅ | Auto checklist | Groups: bookings/documents/carry/know/travelers/downloads; deduplicated; trust badge + Why? per item | P0 | PLAN-004 |
 | PRD-PREP-002 | Booking deadlines | Dated tasks with how-to text; notifications 7d & 1d | P0 | NOTF-001 |
 | PRD-PREP-003 | Booked-slot promotion | User enters booked time → item becomes FIXED with confirmation | P1 | PLAN-002 |
-| PRD-PREP-004 | Journey Summary | Shareable read-only + printable; one A4/day; excludes traveler profiles/notes | P0 | SHARE-001 |
+| PRD-PREP-004 ✅ | Journey Summary | Shareable read-only + printable; one A4/day; excludes traveler profiles/notes | P0 | SHARE-001 |
 
 ## PRD-LIVE — Live Journey (F8)
 | ID | Name | Description / Acceptance | Priority | Deps |
@@ -249,7 +255,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-SEC-001 | Rate limits | §6.2 table via rate_limits helper; 429 + Retry-After | P0 | — |
 | TRD-SEC-002 | Headers & CSP | §6.1 CSP; storage bucket policies; signed URLs 15 min | P0 | — |
 | TRD-SEC-003 | Secrets & audit hygiene | Env-only secrets; .env.example; ip_hash salted; pnpm audit in CI | P0 | — |
-| TRD-SEC-004 | Share-token safety | 32-byte, expiring, revocable; excludes profiles/notes | P0 | — |
+| TRD-SEC-004 ✅ | Share-token safety | 32-byte, expiring, revocable; excludes profiles/notes | P0 | — |
 | TRD-PERF-001 | M1 targets | LCP ≤3.0 s ref-device; ≤180 kB route JS; Live-from-cache ≤800 ms; Lighthouse ≥80/95/installable | P0 | — |
 | TRD-PERF-002 | Production targets | TRD §9 production column + 99.5% availability | P1 | PERF-001 |
 | TRD-PERF-003 | Mandated techniques | RSC-first, dynamic imports, font subsetting, virtualisation, memoized timeline, worker offload | P0 | — |

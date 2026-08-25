@@ -3,3 +3,57 @@
 
 /* Tailwind scans this file's directory by default; add the shared UI package sources. */
 @source "../../../packages/ui/src";
+
+/* ────────────────────────────────────────────────────────────────────────────
+   The printable Journey Summary (PRD-PREP-004).
+
+   PRD F7's acceptance is "one A4 page per day", so each day is a break-after
+   block and the page margin is set here rather than left to the browser's
+   default, which differs enough between them to cost a page.
+
+   Everything interactive is hidden. A printed page with a greyed-out "Stop
+   sharing" button on it is a page that confuses whoever was handed it — and
+   several of these end up in a pocket, carried by someone who was not there
+   when the journey was planned.
+   ──────────────────────────────────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .summary-day {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .summary-day:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Never split an item across two pages: a time on one sheet and what it is on
+     the next is worse than a shorter page. */
+  .summary-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* Tier is carried by the WORD, not by the chip's colour — these are read in
+     monochrome more often than not (PRD §12.8: icon plus text, never colour
+     alone). */
+  .summary-tier {
+    border: 1px solid #000;
+    color: #000;
+    background: transparent;
+  }
+}

@@ -59,6 +59,50 @@ describe("generatePrepareTasks", () => {
     });
   });
 
+  /**
+   * PRD F7's acceptance criterion, in its own words: "A journey with 3 advance-booking
+   * experiences produces 3 dated booking tasks with instructions."
+   *
+   * Asserted here rather than end-to-end because the fixture destination carries one
+   * bookable experience, and inventing two more in the seed to satisfy a test would
+   * change what every other fixture assertion is counting.
+   */
+  it("turns three advance-booking experiences into three dated tasks with instructions", () => {
+    const bookable = [1, 2, 3].map((n) => ({
+      id: `e${n}`,
+      advance_booking_required: true,
+      advance_booking_how: `Book number ${n} at the counter.`,
+      advance_booking_opens_days_before: 30 * n,
+    }));
+
+    const tasks = generatePrepareTasks({
+      journey,
+      knowledge: { ...emptyKnowledge, experiences: bookable },
+      items: bookable.map((experience, index) =>
+        item({ id: `i${index + 1}`, experience_id: experience.id, day_index: index }),
+      ),
+    });
+
+    const bookings = tasks.filter((task) => task.group === "bookings");
+
+    expect(bookings).toHaveLength(3);
+    // "Dated" and "with instructions" are the two halves that make the task actionable —
+    // a booking reminder with no deadline and no how-to is just anxiety.
+    expect(bookings.every((task) => !!task.dueDate)).toBe(true);
+    expect(bookings.map((task) => task.body)).toEqual([
+      "Book number 1 at the counter.",
+      "Book number 2 at the counter.",
+      "Book number 3 at the counter.",
+    ]);
+
+    // Each counts back from ITS OWN day, not from the journey's start.
+    expect(bookings.map((task) => task.dueDate)).toEqual([
+      "2026-09-12", // day 0, 30 days before
+      "2026-08-14", // day 1, 60 days before
+      "2026-07-16", // day 2, 90 days before
+    ]);
+  });
+
   it("falls back to the day itself when no booking lead time is recorded", () => {
     const knowledge: KnowledgeBundle = {
       ...emptyKnowledge,

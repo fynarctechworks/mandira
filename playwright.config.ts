@@ -42,7 +42,7 @@ export default defineConfig({
       name: "web-mobile",
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
-      testIgnore: /web[\\/]journey-builder\.spec\.ts/,
+      testIgnore: /web[\\/](journey-builder|prepare)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -53,7 +53,9 @@ export default defineConfig({
       testMatch: /web[\\/]auth\.setup\.ts/,
     },
 
-    // The builder is the one traveler surface that needs an account.
+    // The builder and Prepare are the traveler surfaces that need an account. The share
+    // link they produce is deliberately opened from a fresh, signed-out context inside
+    // those specs rather than from a project of its own.
     {
       name: "web-traveler",
       use: {
@@ -61,7 +63,7 @@ export default defineConfig({
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE,
       },
-      testMatch: /web[\\/]journey-builder\.spec\.ts/,
+      testMatch: /web[\\/](journey-builder|prepare)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 
