@@ -3519,7 +3519,18 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: Json
       }
+      has_any_role: {
+        Args: { p_roles: Database["public"]["Enums"]["ops_role_enum"][] }
+        Returns: boolean
+      }
+      has_role: {
+        Args: { p_role: Database["public"]["Enums"]["ops_role_enum"] }
+        Returns: boolean
+      }
       i18n_text: { Args: { p: Json }; Returns: string }
+      is_ops: { Args: never; Returns: boolean }
+      owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
+      owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string

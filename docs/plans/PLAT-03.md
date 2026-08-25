@@ -142,3 +142,44 @@ Vitest: 20 schema tests covering the critical-field shapes (`opening_schedule` e
 - [x] Zod schemas for all five entities with insert/update shapes.
 - [x] Enum drift breaks `pnpm typecheck` (verified by deliberate breakage).
 - [x] lint / typecheck / test / build / format all green.
+
+---
+
+# Part 4 — B-006 (Day 4): RLS policies + automated authorization tests
+
+Tracked under **PLAT-04** in PROJECT_STATUS (authorization is its own feature), but kept in this plan file because it completes the schema work started above.
+
+- **Related requirements:** TRD-DB-003, PRD-PRIV-002
+- **Backlog item:** B-006 · **Milestone:** M0 (D4)
+- **Objective:** Turn the deny-all database into the §4.9 access matrix, and prove it with tests that fail loudly if a future change widens access.
+
+## Scope
+- `has_role()`, `has_any_role()`, `is_ops()`, `owns_journey()`, `owns_journey_item()` — all SECURITY DEFINER, because they read RLS-protected tables from inside policies.
+- Policies **and grants** for every §4.9 row. Both are required: tables created by migration start with no DML privileges for anon/authenticated, so a policy alone is inert.
+- pgTAP role tests: anon, traveler A, traveler B (IDOR), ops admin, ops support.
+
+## Out of scope
+- Route guards (`withApi({ roles })`) and the Ops layout gate → **B-007**.
+- Workflow constraints (separation of duties on approve, publish validation) → **B-012**.
+- The `journey_shares` token RPC → **B-021**.
+
+## Permission changes
+The whole item is permission change. Key positions taken:
+- Base knowledge tables get no traveler policy, preserving views-only reads (D-029).
+- `traveler_profiles` gets no Ops policy at all — absence is the enforcement (PRD-PRIV-002).
+- `entity_versions`/`audit_log` are append-only to everyone including admin (D-035).
+- `user_reports.user_id` is withheld by column grant (D-034).
+- Three unlisted tables opened deliberately; five others flagged as OPEN-009 (D-033).
+
+## Risks
+1. **A future migration silently widens public access.** Mitigation: a test enumerating every anon-reachable policy against an allowlist of exactly five.
+2. **Someone "helpfully" adds an Ops policy to `traveler_profiles`.** Mitigation: the denial test — verified to fail by temporarily adding such a policy.
+3. **Policies without grants (or vice versa) look correct but do nothing.** Mitigation: tests assert real reads/writes as each role, not policy existence.
+
+## Testing strategy
+33 pgTAP assertions covering allow and deny per role, the IDOR cases (another user's journey, items, reports, profile), write attempts across ownership boundaries, privilege escalation (granting oneself admin), audit immutability, and the anon allowlist.
+
+## Acceptance criteria
+- [x] §4.9 matrix implemented with helpers named per TRD Day 4.
+- [x] 33 role tests pass; both privacy guards verified to fail when violated.
+- [x] `db lint` clean; generated types regenerated for the new functions.
