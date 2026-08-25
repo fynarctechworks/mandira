@@ -72,7 +72,8 @@ export type Place = {
   dress_code?: string | null;
   entry_requirements?: string | null;
   /**
-   * From `accessibility_records.step_free`, with its vocabulary intact.
+   * From `v_published_places.accessibility ->> 'step_free'` (0015), with its vocabulary
+   * intact.
    *
    * "partial" and "not recorded" are distinct answers to a wheelchair user, and neither
    * rounds safely to yes or no — flattening them to a boolean would either alarm someone

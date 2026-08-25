@@ -3119,6 +3119,7 @@ export type Database = {
       }
       v_published_experiences: {
         Row: {
+          accessibility: Json | null
           advance_booking_how_i18n: Json | null
           advance_booking_opens_days_before: number | null
           advance_booking_required: boolean | null
@@ -3146,6 +3147,7 @@ export type Database = {
           trust: Json | null
         }
         Insert: {
+          accessibility?: never
           advance_booking_how_i18n?: Json | null
           advance_booking_opens_days_before?: number | null
           advance_booking_required?: boolean | null
@@ -3173,6 +3175,7 @@ export type Database = {
           trust?: never
         }
         Update: {
+          accessibility?: never
           advance_booking_how_i18n?: Json | null
           advance_booking_opens_days_before?: number | null
           advance_booking_required?: boolean | null
@@ -3353,6 +3356,7 @@ export type Database = {
       }
       v_published_places: {
         Row: {
+          accessibility: Json | null
           address: string | null
           closure_rules_i18n: Json | null
           crowd_pattern: Json | null
@@ -3378,6 +3382,7 @@ export type Database = {
           visit_duration_min_minutes: number | null
         }
         Insert: {
+          accessibility?: never
           address?: string | null
           closure_rules_i18n?: Json | null
           crowd_pattern?: Json | null
@@ -3403,6 +3408,7 @@ export type Database = {
           visit_duration_min_minutes?: number | null
         }
         Update: {
+          accessibility?: never
           address?: string | null
           closure_rules_i18n?: Json | null
           crowd_pattern?: Json | null
@@ -3446,6 +3452,7 @@ export type Database = {
       }
       v_published_routes: {
         Row: {
+          accessibility: Json | null
           destination_id: string | null
           difficulty: Database["public"]["Enums"]["difficulty_enum"] | null
           distance_m: number | null
@@ -3459,9 +3466,11 @@ export type Database = {
           name_i18n: Json | null
           published_at: string | null
           slug: string | null
+          stops: Json | null
           trust: Json | null
         }
         Insert: {
+          accessibility?: never
           destination_id?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_enum"] | null
           distance_m?: number | null
@@ -3475,9 +3484,11 @@ export type Database = {
           name_i18n?: Json | null
           published_at?: string | null
           slug?: string | null
+          stops?: never
           trust?: never
         }
         Update: {
+          accessibility?: never
           destination_id?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_enum"] | null
           distance_m?: number | null
@@ -3491,6 +3502,7 @@ export type Database = {
           name_i18n?: Json | null
           published_at?: string | null
           slug?: string | null
+          stops?: never
           trust?: never
         }
         Relationships: [
@@ -3637,6 +3649,10 @@ export type Database = {
       }
     }
     Functions: {
+      accessibility_for: {
+        Args: { p_place_id: string; p_route_id: string }
+        Returns: Json
+      }
       consume_rate_limit: {
         Args: {
           p_key: string
@@ -3739,6 +3755,7 @@ export type Database = {
         Returns: undefined
       }
       roll_journey_statuses: { Args: never; Returns: Json }
+      route_stops_for: { Args: { p_route_id: string }; Returns: Json }
       run_scheduled_job: { Args: { p_name: string }; Returns: Json }
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
