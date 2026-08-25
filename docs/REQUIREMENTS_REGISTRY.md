@@ -19,9 +19,9 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-KNOW — Knowledge Model (PRD F1)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-KNOW-001 | Entity model | Destination/Place/Experience/Availability/Route/Transport/Facility/Accessibility/Guidance/Media/Phrase per F1 tables; 50 places+120 experiences per destination without schema change | P0 | — |
+| PRD-KNOW-001 | Entity model | Destination/Place/Experience/Availability/Route/Transport/Facility/Accessibility/Guidance/Media/Phrase per F1 tables; 50 places+120 experiences per destination without schema change. **Implemented (B-004):** all §4.4 tables created. | P0 | — |
 | PRD-KNOW-002 | Trust record on every entity & critical field | Fields per F1: source tier T1–T5, verification status, verified_at/by, valid_until, freshness, confidence, conflict_flag | P0 | KNOW-001 |
-| PRD-KNOW-003 | Publish gate | `unverified`/`ai_extracted` never visible to travelers; minimum `human_reviewed` | P0 | KNOW-002 |
+| PRD-KNOW-003 | Publish gate | `unverified`/`ai_extracted` never visible to travelers; minimum `human_reviewed`. **Implemented (B-004):** enforced inside the `v_published_*` views by `critical_fields_gated()`; a missing trust record also fails the gate. Covered by pgTAP. | P0 | KNOW-002 |
 | PRD-KNOW-004 | Critical-field independence | Timings/availability/closures/requirements carry their own trust records | P0 | KNOW-002 |
 | PRD-KNOW-005 | Locale fallback | Missing locale falls back to en with visible "Not yet available in [language]" | P0 | KNOW-001 |
 | PRD-KNOW-006 | Freshness computation | fresh ≤90d, aging 91–180d, stale >180d/expired; confidence matrix per F1 | P0 | KNOW-002 |
@@ -221,14 +221,14 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-ARCH-001 | Monorepo layout | pnpm+turbo; apps web/ops; packages ui/db/journey-engine/providers/i18n/config | P0 | — |
 | TRD-ARCH-002 | Pure Journey Engine | No I/O; KnowledgeBundle input = Dexie snapshot byte-for-byte; deterministic; browser+server identical | P0 | — |
 | TRD-ARCH-003 | Provider abstraction | Ai/Routing/Geocoding/Weather/Email/Push interfaces; no vendor SDK outside packages/providers (lint-enforced) | P0 | — |
-| TRD-ARCH-004 | Published-views-only | Traveler reads exclusively `v_published_*` with aggregated trust jsonb | P0 | TRD-DB-003 |
+| TRD-ARCH-004 | Published-views-only | Traveler reads exclusively `v_published_*` with aggregated trust jsonb. **Implemented (B-004):** 9 views; anon holds no grant on base tables and RLS is on, so the gate is structural. Critical-field trust >= human_reviewed enforced per entity. | P0 | TRD-DB-003 |
 | TRD-ARCH-005 | Offline-first read path | Dexie-first + SWR revalidate; React Query persistence | P0 | — |
 | TRD-ARCH-006 | Stack pins | Next 15/React 19/TS strict/Tailwind 4/shadcn/TanStack Query 5/Dexie 4/Zustand 5/Serwist/next-intl/date-fns per TRD §3 | P0 | — |
-| TRD-DB-001 | Schema-as-migrations | All §4 tables/enums/views/triggers from `supabase/migrations`; `db reset` clean; generated types only. **Partially implemented (B-003):** §4.1–§4.3 in `0001_enums.sql` + `0002_locales_sources_trust.sql`; `db reset` clean and CI-enforced. §4.4–§4.7 + views → B-004; generated types → B-005. | P0 | — |
+| TRD-DB-001 | Schema-as-migrations | All §4 tables/enums/views/triggers from `supabase/migrations`; `db reset` clean; generated types only. **Implemented (B-003+B-004):** §4.1–§4.7 across `0001`–`0006` plus `0007_published_views.sql`; 51 tables, 9 published views, `db reset` clean and CI-enforced. Generated types → B-005. | P0 | — |
 | TRD-DB-002 | Naming & conventions | snake_case; uuid pks; `_i18n` jsonb; created/updated_at triggers; soft-delete where specified. **Implemented for §4.2/§4.3 (B-003):** all 26 enums pinned by a pgTAP contract test; a pgTAP test also fails any table that has `updated_at` without its trigger. | P0 | — |
 | TRD-DB-003 | RLS complete | §4.9 matrix; automated RLS tests; anon/traveler/ops separation; service-role server-only | P0 | AUTH |
-| TRD-DB-004 | Versioning triggers | entity_versions on every knowledge table; audit_log on ops mutations. **Foundation implemented (B-003):** `entity_versions` + `audit_log` tables and the reusable `record_entity_version()` trigger function, tested. Attaching it to each knowledge table happens in B-004; audit triggers on Ops mutations in B-012. | P0 | — |
-| TRD-DB-005 | Geo & search infra | PostGIS points+GiST; tsvector generated columns; embedding vector(768) columns ready | P0 | — |
+| TRD-DB-004 | Versioning triggers | entity_versions on every knowledge table; audit_log on ops mutations. **Implemented for knowledge (B-004):** `record_entity_version()` attached to all 11 publishable/trust-bearing tables, with a pgTAP test that fails if any table carrying a publish status lacks it. Ops audit triggers → B-012. | P0 | — |
+| TRD-DB-005 | Geo & search infra | PostGIS points+GiST; tsvector generated columns; embedding vector(768) columns ready. **Implemented (B-004):** GiST on `places.location`/`destinations.centre`, GIN tsvector + pg_trgm on names, `embedding vector(768)` on destinations/places/experiences. `search_tsv` is locale-agnostic via `i18n_text()`, so te/hi are searchable without a migration. | P0 | — |
 | TRD-DB-006 | Forward-only migrations | Additive; never drop columns in same release as code stops using them | P0 | — |
 | TRD-API-001 | Response envelope & validation | `{ok,data}|{ok,error{code,message}}`; Zod on all inputs; no stack traces | P0 | — |
 | TRD-API-002 | Traveler API surface | Routes per TRD §5.2 exactly (names verbatim) | P0 | — |

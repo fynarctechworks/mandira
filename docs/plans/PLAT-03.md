@@ -70,3 +70,41 @@ None.
 
 ## Rollback considerations
 Forward-only. Nothing deployed and no data yet, so a mistake is corrected by editing the migration and re-running `supabase db reset` until B-025 promotes anything to a real environment.
+
+---
+
+# Part 2 — B-004 (Day 3): knowledge, users, journeys, reports, published views
+
+- **Related requirements:** TRD-DB-001/004/005, TRD-ARCH-004, PRD-KNOW-001, PRD-KNOW-003
+- **Backlog item:** B-004 · **Milestone:** M0 (D3)
+- **Objective:** Complete the schema — the knowledge model travelers read, the journey model the engine writes, and the `v_published_*` views that make the publish gate structural rather than a convention.
+
+## Scope
+- `0003_knowledge.sql` — §4.4 in FK-safe order (media → destinations → places/routes → experiences → the rest), with tsvector generated columns, `embedding vector(768)`, GiST/GIN/trgm indexes, and `record_entity_version()` attached to every publishable table.
+- `0004_users.sql` — §4.5 profiles, user_roles, traveler_profiles (sensitive), saved_places, personalization_signals.
+- `0005_journeys.sql` — §4.6 journeys, items, dependencies, change events, prepare tasks, records, notes, shares.
+- `0006_reports_notifications.sql` — §4.7 reports, push subscriptions, notifications, analytics, feature flags.
+- `0007_published_views.sql` — the 9 `v_published_*` views plus `entity_trust()`, `source_tier_label()` and `critical_fields_gated()`.
+
+## Out of scope
+RLS policies (B-006), generated types + Zod (B-005), any Ops editor that writes these tables (B-009+), pg_cron schedules, embedding population (B-032).
+
+## Database changes
+51 tables total, 9 views, 11 version triggers. All additive and forward-only (D-015). Constraints encode product rules rather than leaving them to application code: a FIXED item must carry `fixed_start_at` (the return guard's anchor, PRD-PLAN-006); an experience anchors to exactly one of place/route; a journey belongs to a user or a device draft; duration triples must be ordered.
+
+## Permission changes
+Every new table has RLS enabled at creation. `anon`/`authenticated` are granted SELECT on the published views only — see D-029 for why the views are definer's-rights.
+
+## Risks
+1. **The publish gate is the highest-consequence code in the schema.** Mitigation: pgTAP drives a place through every gate state (no trust → partial trust → gated → unpublished → soft-deleted) rather than asserting the view exists.
+2. **A later migration adds a publishable table and forgets its version trigger.** Mitigation: a schema-driven test fails on any table with a publish status lacking one — this is how `circuits` was caught during this very item.
+3. **Locale-blind search.** Mitigation: `i18n_text()` (D-028), with a Telugu search assertion in the tests.
+
+## Testing strategy
+pgTAP: structure, RLS universality, the version-trigger invariant, search across scripts, the four product constraints, the analytics no-`user_id` guarantee, the full publish-gate walk, `trust jsonb` shape, and the anon grant posture.
+
+## Acceptance criteria
+- [x] `supabase db reset` clean from empty across all 7 migrations.
+- [x] 9 `v_published_*` views exposing aggregated `trust jsonb`.
+- [x] Critical-field gate proven at every state; `anon` denied on base tables.
+- [x] `db lint` clean; 119 pgTAP assertions pass.
