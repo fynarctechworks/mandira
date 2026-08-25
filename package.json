@@ -6,10 +6,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build --concurrency=2",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint --concurrency=2",
+    "typecheck": "turbo run typecheck --concurrency=2",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
@@ -18,6 +18,10 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
+    "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2",

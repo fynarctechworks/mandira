@@ -68,4 +68,20 @@
   /* Elevation (§12.3) */
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
+
+  /* Motion (§12.6) — durations collapse to 0ms under prefers-reduced-motion */
+  --ease-standard: var(--ease-standard);
+  --duration-state: var(--duration-state);
+  --duration-sheet: var(--duration-sheet);
+  --duration-screen: var(--duration-screen);
+}
+
+/* Shared focus treatment (§12.8): 2px brand.primary ring, offset from the control. */
+@utility focus-ring {
+  outline: none;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
 }

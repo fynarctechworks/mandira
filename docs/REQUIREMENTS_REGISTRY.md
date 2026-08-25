@@ -203,10 +203,10 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 |---|---|---|---|---|
 | PRD-DSGN-001 | Design tokens | Exact palette/tiers/status colors PRD §12.1; light+dark; ≥4.5:1. **⚠️ CONFLICT (OPEN-008, 2026-08-24):** the exact §12.1 light-mode palette does not meet the ≥4.5:1 that this row and §12.1 both assert — 5 pairs measure below AA (dark mode fully compliant). Tokens implemented verbatim in B-001; awaiting founder decision — see PROJECT_READINESS_REPORT OPEN-008. | P0 | — |
 | PRD-DSGN-002 | Typography | Inter/Fraunces/Noto Telugu/Devanagari; scale §12.2; 200% text scale | P0 | — |
-| PRD-DSGN-003 | Component library | §12.5 list incl. Change Card, NOW card, trust badge, health pill | P0 | DSGN-001 |
-| PRD-DSGN-004 | Motion | Durations/easing §12.6; reduce-motion honored | P1 | — |
+| PRD-DSGN-003 | Component library | §12.5 list incl. Change Card, NOW card, trust badge, health pill. **Partially implemented (B-002):** 13 of 15 §12.5 components shipped in `packages/ui`, presentational-only (D-021). Ops data table → B-008, Ops side-by-side review → B-012 (D-022). | P0 | DSGN-001 |
+| PRD-DSGN-004 | Motion | Durations/easing §12.6; reduce-motion honored. **Implemented (B-002):** duration/easing tokens in `tokens.css`, collapsed to 0 ms under `prefers-reduced-motion`. | P1 | — |
 | PRD-DSGN-005 | Voice | §12.7 rules + reference strings; forbidden vocabulary enforced in copy review | P0 | — |
-| PRD-DSGN-006 | Accessibility | WCAG 2.2 AA; 44 px targets; icon+text status everywhere | P0 | — |
+| PRD-DSGN-006 | Accessibility | WCAG 2.2 AA; 44 px targets; icon+text status everywhere. **Partially implemented (B-002):** icon+text enforced by unit tests on every tier/trust/health state; 44 px minimums on interactive controls; axe smoke green on both shells except the OPEN-008 contrast pairs. | P0 | — |
 | PRD-PRIV-001 | Data minimisation | Only feature-necessary data; individual deletability | P0 | — |
 | PRD-PRIV-002 | Sensitive traveler attributes | Mobility/age never to Ops/exports/analytics/targeting | P0 | ACCT-003 |
 | PRD-PRIV-003 | Location discipline | On-device, Live-mode-only; no server location history; background off by default | P0 | LIVE-001 |
