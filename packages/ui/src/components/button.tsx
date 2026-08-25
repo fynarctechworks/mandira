@@ -17,8 +17,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-brand-primary text-text-on-primary active:bg-brand-primary-pressed",
-        secondary: "border-[1.5px] border-brand-primary bg-transparent text-brand-primary",
-        tertiary: "bg-transparent text-brand-primary underline-offset-4 hover:underline",
+        secondary: "border-[1.5px] border-brand-primary bg-transparent text-brand-primary-text",
+        tertiary: "bg-transparent text-brand-primary-text underline-offset-4 hover:underline",
       },
       size: {
         // Heights are minimums so 200% OS text scale grows the control instead of clipping it.

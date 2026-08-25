@@ -201,7 +201,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-DSGN / PRD-PRIV / PRD-ANLY (PRD §10–§12)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-DSGN-001 | Design tokens | Exact palette/tiers/status colors PRD §12.1; light+dark; ≥4.5:1. **⚠️ CONFLICT (OPEN-008, 2026-08-24):** the exact §12.1 light-mode palette does not meet the ≥4.5:1 that this row and §12.1 both assert — 5 pairs measure below AA (dark mode fully compliant). Tokens implemented verbatim in B-001; awaiting founder decision — see PROJECT_READINESS_REPORT OPEN-008. | P0 | — |
+| PRD-DSGN-001 | Design tokens | Exact palette/tiers/status colors PRD §12.1; light+dark; ≥4.5:1. **RESOLVED 2026-08-25 (OPEN-008 → D-025):** the original §12.1 light palette had 17 sub-AA pairings; revised values now pass on every pair in both modes, verified programmatically and by axe on both shells. `brand.primary` #FF660E unchanged; brand-coloured text uses the new `brand.primary.text` token. | P0 | — |
 | PRD-DSGN-002 | Typography | Inter/Fraunces/Noto Telugu/Devanagari; scale §12.2; 200% text scale | P0 | — |
 | PRD-DSGN-003 | Component library | §12.5 list incl. Change Card, NOW card, trust badge, health pill. **Partially implemented (B-002):** 13 of 15 §12.5 components shipped in `packages/ui`, presentational-only (D-021). Ops data table → B-008, Ops side-by-side review → B-012 (D-022). | P0 | DSGN-001 |
 | PRD-DSGN-004 | Motion | Durations/easing §12.6; reduce-motion honored. **Implemented (B-002):** duration/easing tokens in `tokens.css`, collapsed to 0 ms under `prefers-reduced-motion`. | P1 | — |

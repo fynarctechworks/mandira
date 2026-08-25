@@ -6,6 +6,7 @@ export const colorTokens = [
   "brand-primary",
   "brand-primary-pressed",
   "brand-primary-soft",
+  "brand-primary-text",
   "brand-ink",
   "bg-canvas",
   "bg-surface",

@@ -11,6 +11,9 @@
   --brand-primary: #ff660e;
   --brand-primary-pressed: #d9520a;
   --brand-primary-soft: #ffefe5;
+  /* Accessible accent for brand-coloured TEXT/icons on light backgrounds (OPEN-008, D-025).
+     brand.primary itself stays #ff660e and is used for fills, borders and accents. */
+  --brand-primary-text: #c64800;
   --brand-ink: #2b1a10;
 
   /* Neutrals (warm) */
@@ -20,21 +23,21 @@
   --border-subtle: #ede4da;
   --text-primary: #1f1a17;
   --text-secondary: #6b625c;
-  --text-tertiary: #9a908a;
-  --text-on-primary: #ffffff;
+  --text-tertiary: #7b706a;
+  --text-on-primary: #2b1a10;
 
   /* Status - never colour-only; always paired with icon + word */
-  --status-comfortable: #2e7d4f;
-  --status-tight: #b8860b;
-  --status-at-risk: #d9702b;
+  --status-comfortable: #2b7449;
+  --status-tight: #856108;
+  --status-at-risk: #a0511d;
   --status-broken: #b3261e;
-  --status-info: #2f6fa8;
+  --status-info: #2d6aa1;
 
   /* Priority tier chips */
   --tier-fixed-fill: #e8e2dc;
   --tier-fixed-text: var(--text-primary);
   --tier-protected-fill: #ff660e;
-  --tier-protected-text: #ffffff;
+  --tier-protected-text: #2b1a10;
   --tier-important-fill: #ffefe5;
   --tier-important-text: #b24708;
   --tier-optional-fill: #f4efea;
@@ -93,6 +96,7 @@
     --brand-primary: #ff7a30;
     --brand-primary-pressed: #e6652a;
     --brand-primary-soft: #3a2416;
+    --brand-primary-text: var(--brand-primary);
     --brand-ink: #f3e9e1;
 
     --bg-canvas: #141110;
@@ -101,7 +105,7 @@
     --border-subtle: #352d2a;
     --text-primary: #f5efe8;
     --text-secondary: #b8ada5;
-    --text-tertiary: #857b74;
+    --text-tertiary: #908780;
     --text-on-primary: #1a0e06;
 
     --status-comfortable: #5bbf87;
@@ -128,6 +132,7 @@
   --brand-primary: #ff7a30;
   --brand-primary-pressed: #e6652a;
   --brand-primary-soft: #3a2416;
+  --brand-primary-text: var(--brand-primary);
   --brand-ink: #f3e9e1;
 
   --bg-canvas: #141110;
@@ -136,7 +141,7 @@
   --border-subtle: #352d2a;
   --text-primary: #f5efe8;
   --text-secondary: #b8ada5;
-  --text-tertiary: #857b74;
+  --text-tertiary: #908780;
   --text-on-primary: #1a0e06;
 
   --status-comfortable: #5bbf87;

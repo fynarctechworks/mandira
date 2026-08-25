@@ -757,27 +757,29 @@ Feel: calm, premium, meaningful, modern, trustworthy, warm, focused, human. Not 
 | `border.subtle` | `#EDE4DA` | `#352D2A` |
 | `text.primary` | `#1F1A17` | `#F5EFE8` |
 | `text.secondary` | `#6B625C` | `#B8ADA5` |
-| `text.tertiary` | `#9A908A` | `#857B74` |
-| `text.on.primary` | `#FFFFFF` | `#1A0E06` |
+| `text.tertiary` | `#7B706A` | `#908780` |
+| `text.on.primary` | `#2B1A10` | `#1A0E06` |
 
 **Status (never colour-only; always paired with icon + word)**
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `status.comfortable` | `#2E7D4F` | `#5BBF87` | Health: Comfortable; Verified |
-| `status.tight` | `#B8860B` | `#E3B341` | Health: Tight; Verified earlier |
-| `status.at_risk` | `#D9702B` | `#F09A5C` | Health: At Risk |
+| `status.comfortable` | `#2B7449` | `#5BBF87` | Health: Comfortable; Verified |
+| `status.tight` | `#856108` | `#E3B341` | Health: Tight; Verified earlier |
+| `status.at_risk` | `#A0511D` | `#F09A5C` | Health: At Risk |
 | `status.broken` | `#B3261E` | `#F28B82` | Health: Broken; Check locally |
-| `status.info` | `#2F6FA8` | `#7FB3E3` | Live data, offline banner |
+| `status.info` | `#2D6AA1` | `#7FB3E3` | Live data, offline banner |
 
 **Priority tiers**
 | Tier | Chip fill (light / dark) | Text | Icon |
 |---|---|---|---|
 | FIXED | `#E8E2DC` / `#3A332F` | `text.primary` | lock |
-| PROTECTED | `#FF660E` / `#FF7A30` | `#FFFFFF` / `#1A0E06` | shield |
+| PROTECTED | `#FF660E` / `#FF7A30` | `#2B1A10` / `#1A0E06` | shield |
 | IMPORTANT | `#FFEFE5` / `#3A2416` | `#B24708` / `#FFB98C` | star |
 | OPTIONAL | `#F4EFEA` / `#2A2421` | `text.secondary` | circle-dashed |
 
-All text/background pairs above meet ≥4.5:1 contrast.
+`brand.primary` `#FF660E` is a **fill** colour. Brand-coloured *text* and icons on light backgrounds use `brand.primary.text` `#C64800` (light) / `#FF7A30` (dark) — #FF660E as text measures only 2.93:1 on white.
+
+All text/background pairs above meet ≥4.5:1 contrast, verified programmatically over `bg.surface`, `bg.canvas`, raised surfaces and each status colour’s own 12% fill (see D-025). Values were revised on 2026-08-25 to close OPEN-008; the original palette had 17 sub-AA pairings. `brand.primary` itself is unchanged.
 
 ### 12.2 Typography
 - **Latin UI & body:** Inter. **Display/headings:** Fraunces (soft serif, warmth without religiosity). **Telugu:** Noto Sans Telugu. **Hindi:** Noto Sans Devanagari. Fallback: system sans.

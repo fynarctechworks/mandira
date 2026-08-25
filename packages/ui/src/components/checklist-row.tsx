@@ -56,7 +56,7 @@ export function ChecklistRow({
             aria-expanded={expanded}
             aria-controls={panelId}
             onClick={() => setExpanded((v) => !v)}
-            className="focus-ring inline-flex min-h-11 items-center gap-1 px-2 text-body-sm font-medium text-brand-primary"
+            className="focus-ring inline-flex min-h-11 items-center gap-1 px-2 text-body-sm font-medium text-brand-primary-text"
           >
             {whyLabel}
             <ChevronDown
