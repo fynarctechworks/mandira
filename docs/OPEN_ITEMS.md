@@ -9,9 +9,12 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 
 ## Blocking now
 
-> **B-013 (seed destination #1) is stopped on OPEN-001.** Development is continuing down the
-> unblocked path — B-014 (traveler shell + PWA), then the journey engine (B-016/B-017),
-> which needs no content and no decisions. B-015 discovery needs both B-013 and OPEN-009.
+> **B-013 (seed destination #1) is stopped on OPEN-001, and as of B-017 that is now the
+> critical path.** Everything buildable without content has been built: B-014 (traveler
+> shell + PWA) and B-016/B-017 (the whole journey engine) are done. B-015 needs B-013 and
+> OPEN-009; B-018 needs B-015; B-019..B-025 chain off B-018. Work continues on the parts of
+> B-018 that need no content — the AI provider package, grounding and rate limits — but the
+> brief-review and builder screens cannot be finished until there is a destination.
 
 | ID | What's needed | Blocks | Why it can't be worked around |
 |---|---|---|---|
@@ -37,6 +40,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 | OPEN-005 | Confirm launch locales en/te/hi (assumption D-014) | LANG scope | Before M4 |
 | OPEN-006 | Content sourcing stance: approach T1/T2 authorities for permission vs public-data-only | Ingestion scale | M2 |
 | OPEN-007 | Pilot group source (≥10 planners) | M2 exit | During M1 |
+| OPEN-010 | The engine's Web Worker bundling is unexercised: `new URL("./engine.worker.ts", import.meta.url)` is only reached once a page calls the client. Routing, worker reuse and the main-thread fallback are unit-tested over a real Comlink endpoint; the bundler output is not. | Nothing today | Verify during B-019, when the journey builder first calls it |
 
 ## Resolved
 
@@ -50,8 +54,12 @@ Everything through **B-012** builds Ops machinery and needs no founder input:
 B-008 Ops shell · B-009 destination/place editors · B-010 remaining editors ·
 B-011 trust panel + sources registry · B-012 validation and the publish workflow.
 
-**B-014** (traveler shell + PWA) and **B-016/B-017** (the journey engine) are also
-unblocked — the engine is pure TypeScript over types that already exist, and needs no
-content at all.
+**B-014** (traveler shell + PWA) and **B-016/B-017** (the journey engine) were also
+unblocked and are now done — the engine is pure TypeScript over types that already exist,
+and needed no content at all.
 
 The first genuinely blocked item is **B-013** (seed destination #1), which needs OPEN-001.
+After it, the whole M1 traveler chain B-015 → B-018 → B-019 → B-020/B-021 → B-022 → B-025
+waits behind it. Still buildable without a destination: the AI provider package,
+ID-grounding and rate limits from B-018, and the M2 engine work (B-026 `evaluateChange` /
+`applyOption`), which is pure like the rest of the engine.

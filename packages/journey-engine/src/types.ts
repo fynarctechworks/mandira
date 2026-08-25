@@ -27,6 +27,8 @@ export type AvailabilityKind =
   | "calendar_dates"
   | "on_request";
 
+export type StepFree = "yes" | "no" | "partial";
+
 export type Mobility = "full" | "limited_walking" | "wheelchair" | "needs_rest_frequently";
 export type AgeBand = "child" | "adult" | "senior";
 
@@ -66,6 +68,17 @@ export type OpeningSchedule = {
 export type Place = {
   id: string;
   opening_schedule?: OpeningSchedule | null;
+  /** Locale-resolved by the caller, for the same reason as above. */
+  dress_code?: string | null;
+  entry_requirements?: string | null;
+  /**
+   * From `accessibility_records.step_free`, with its vocabulary intact.
+   *
+   * "partial" and "not recorded" are distinct answers to a wheelchair user, and neither
+   * rounds safely to yes or no — flattening them to a boolean would either alarm someone
+   * needlessly or send them somewhere they cannot get into (PRD-HLTH-005).
+   */
+  step_free?: StepFree | null;
   visit_duration_min_minutes?: number | null;
   visit_duration_likely_minutes?: number | null;
   visit_duration_max_minutes?: number | null;
@@ -79,6 +92,11 @@ export type Experience = {
   duration_likely_minutes?: number | null;
   duration_max_minutes?: number | null;
   is_outdoor?: boolean;
+  /** CRITICAL field — drives a Prepare task (PRD F7). */
+  advance_booking_required?: boolean;
+  /** Already resolved to the traveler's locale by the caller; the engine renders nothing. */
+  advance_booking_how?: string | null;
+  advance_booking_opens_days_before?: number | null;
 };
 
 export type TransportConnection = {
@@ -150,6 +168,15 @@ export type Journey = {
  * Everything the engine may read. Nothing outside this is available to it — no network, no
  * database, no clock beyond what the caller passes in.
  */
+/** Trust for one entity, keyed by field name (or "entity"), as the published views emit. */
+export type TrustEntry = {
+  confidence: "high" | "medium" | "low";
+  freshness: "fresh" | "aging" | "stale";
+  conflict_flag: boolean;
+  verified_at?: string | null;
+  valid_until?: string | null;
+};
+
 export type KnowledgeBundle = {
   places: Place[];
   experiences: Experience[];
@@ -157,6 +184,12 @@ export type KnowledgeBundle = {
   routes: Route[];
   transport_connections: TransportConnection[];
   travel_estimates?: TravelEstimate[];
+  /**
+   * Trust records by entity id. Health reports trust exposure from these (PRD F5 check 5),
+   * and the traveler UI renders badges from the same data — one source, so a badge and a
+   * health cause can never disagree.
+   */
+  trust?: Record<string, Record<string, TrustEntry>>;
 };
 
 /** Why the engine could not do what was asked, in terms a person can act on. */
@@ -172,4 +205,50 @@ export type Warning = {
   message: string;
   /** Minutes by which it misses, where that is meaningful. */
   byMinutes?: number;
+};
+
+export type Pace = "relaxed" | "balanced" | "full";
+
+/** One experience the traveler named, at the tier their words placed it in (PRD F3). */
+export type BriefExperience = {
+  experience_id: string;
+  /** Set only when the traveler themselves pinned it to a day. */
+  day_index?: number | null;
+  preferred_window_start?: TimeOfDay | null;
+  preferred_window_end?: TimeOfDay | null;
+};
+
+/** A commitment with a real clock time the journey has to work around (PRD F4 FIXED). */
+export type BriefFixedCommitment = {
+  id?: string;
+  at: string;
+  end_at?: string | null;
+  place_id?: string | null;
+  item_type?: JourneyItemType;
+};
+
+/**
+ * The confirmed Journey Brief (PRD F3), as the traveler approved it.
+ *
+ * Every experience here was named by the traveler or explicitly confirmed by them. The
+ * engine treats it as a closed list and adds nothing to it — PRD F4 is explicit that there
+ * is no "auto-fill my day with top places".
+ */
+export type JourneyBrief = {
+  destination_id?: string | null;
+  start_date: IsoDate;
+  end_date?: IsoDate | null;
+  day_count?: number | null;
+  timezone?: string;
+  day_start_time?: TimeOfDay;
+  day_end_time?: TimeOfDay;
+  pace?: Pace;
+  /** → PROTECTED. */
+  must_do?: BriefExperience[];
+  /** → IMPORTANT. */
+  would_like?: BriefExperience[];
+  /** → OPTIONAL. */
+  might_do?: BriefExperience[];
+  /** → FIXED. */
+  fixed_commitments?: BriefFixedCommitment[];
 };

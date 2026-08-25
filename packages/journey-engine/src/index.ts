@@ -21,3 +21,14 @@ export {
   fromInstant,
   spillsPastMidnight,
 } from "./time";
+export {
+  computeHealth,
+  decideState,
+  type HealthState,
+  type HealthReport,
+  type DayHealth,
+  type Cause,
+  type TrustCause,
+} from "./health";
+export { generatePrepareTasks, type PrepareTask, type PrepareGroup } from "./prepare";
+export { buildInitialJourney, type BuildResult } from "./build";
