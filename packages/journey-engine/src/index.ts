@@ -32,3 +32,14 @@ export {
 } from "./health";
 export { generatePrepareTasks, type PrepareTask, type PrepareGroup } from "./prepare";
 export { buildInitialJourney, type BuildResult } from "./build";
+export {
+  evaluateChange,
+  applyOption,
+  type ChangeCard,
+  type ChangeOption,
+  type ChangeOutcome,
+  type ChangeTrigger,
+  type ChangeTriggerKind,
+  type ItemChange,
+  type LadderStep,
+} from "./change";

@@ -67,9 +67,19 @@ export function scheduleDay(input: {
       continue;
     }
 
+    /*
+     * A buffer the traveler set themselves wins over the computed default.
+     *
+     * PRD F4 says buffers are visible and EDITABLE, so recomputing over an edited one
+     * would quietly undo the edit — and it would also make "absorb the delay into your
+     * buffers" (PRD F6 ladder step a) impossible to actually carry out, because the
+     * absorbed minutes would reappear on the next schedule.
+     */
+    const effectiveBuffer = item.buffer_minutes ?? buffer;
+
     // Travel from the previous item, plus the transition buffer.
     if (previous) {
-      cursor += travelMinutes(previous, item, knowledge) + buffer;
+      cursor += travelMinutes(previous, item, knowledge) + effectiveBuffer;
     }
 
     let start = cursor;
@@ -104,7 +114,7 @@ export function scheduleDay(input: {
 
     scheduled.push({
       ...item,
-      buffer_minutes: previous ? buffer : (item.buffer_minutes ?? 0),
+      buffer_minutes: previous ? effectiveBuffer : (item.buffer_minutes ?? 0),
       planned_start_at: toInstant(date, start, journey.timezone),
       planned_end_at: toInstant(date, end, journey.timezone),
     });

@@ -61,6 +61,7 @@ and needed no content at all.
 
 The first genuinely blocked item is **B-013** (seed destination #1), which needs OPEN-001.
 After it, the whole M1 traveler chain B-015 → B-018 → B-019 → B-020/B-021 → B-022 → B-025
-waits behind it. What is still buildable without a destination: the M2 engine work
-(**B-026** `evaluateChange` / `applyOption` and the option ladder), which is pure like the
-rest of the engine and needs no content at all.
+waits behind it. The engine half of **B-026** (`evaluateChange` / `applyOption`
+and the option ladder) has now been built early for the same reason — it is pure, and it
+needed no content. **Everything else in the backlog now waits on OPEN-001**: the remaining
+M1 chain, the Change Card UI, notifications, reports, and all of M3–M5.
