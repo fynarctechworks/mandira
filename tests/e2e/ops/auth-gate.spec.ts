@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { seriousViolations } from "../axe-exceptions";
+import { latestMagicLink } from "./sign-in-helper";
 
 /**
  * End-to-end authorization gate (AUTH-01, AUTH-05).
@@ -11,28 +12,8 @@ import { seriousViolations } from "../axe-exceptions";
  * hand-built one was silently rejected while the app was perfectly healthy.
  *
  * Requires the local stack (`supabase start` + `supabase db reset`), which seeds
- * admin@mandhira.local with the `admin` role.
+ * ops-e2e@mandhira.local with the `admin` role.
  */
-
-const MAILPIT = process.env["MANDHIRA_MAILPIT_URL"] ?? "http://127.0.0.1:54424";
-
-/** Pulls the most recent sign-in link sent to an address out of the local mail catcher. */
-async function latestMagicLink(email: string): Promise<string> {
-  const listRes = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(email)}`);
-  if (!listRes.ok) throw new Error(`Mailpit search failed: ${listRes.status}`);
-
-  const list = (await listRes.json()) as { messages?: { ID: string }[] };
-  const id = list.messages?.[0]?.ID;
-  if (!id) throw new Error(`No message for ${email}. Is the local stack running?`);
-
-  const bodyRes = await fetch(`${MAILPIT}/api/v1/message/${id}`);
-  const body = (await bodyRes.json()) as { Text?: string; HTML?: string };
-  const source = `${body.Text ?? ""}\n${body.HTML ?? ""}`;
-
-  const match = source.match(/https?:\/\/[^\s"'<>]*(?:verify|callback)[^\s"'<>]*/i);
-  if (!match) throw new Error(`No sign-in link found in the message body.`);
-  return match[0].replace(/&amp;/g, "&");
-}
 
 test.describe("Ops authorization gate", () => {
   test("an anonymous visitor is sent to sign-in, not the Ops shell", async ({ page }) => {
@@ -51,13 +32,13 @@ test.describe("Ops authorization gate", () => {
 
   test("an operator with a role reaches the Ops shell via a real magic link", async ({ page }) => {
     await page.goto("/sign-in");
-    await page.getByLabel("Work email").fill("admin@mandhira.local");
+    await page.getByLabel("Work email").fill("ops-e2e@mandhira.local");
     await page.getByRole("button", { name: /Email me a sign-in link/i }).click();
     await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
-    await page.goto(await latestMagicLink("admin@mandhira.local"));
+    await page.goto(await latestMagicLink("ops-e2e@mandhira.local"));
 
-    await expect(page.getByRole("heading", { name: "Operations shell" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Operations", exact: true })).toBeVisible();
 
     // The authenticated shell is only reachable here, so its axe check belongs here too.
     const results = await new AxeBuilder({ page }).analyze();

@@ -43,3 +43,6 @@ export type {
 
 export { SourcesFooter } from "./components/sources-footer";
 export type { SourceEntry, SourcesFooterProps } from "./components/sources-footer";
+
+export { OpsDataTable } from "./components/ops-data-table";
+export type { OpsDataTableProps } from "./components/ops-data-table";

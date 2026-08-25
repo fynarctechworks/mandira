@@ -1,4 +1,4 @@
-import { SignOutButton } from "./sign-out-button";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export const metadata = { title: "No access · Mandhira Ops" };
 

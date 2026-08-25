@@ -1,67 +1,60 @@
-import { HealthPill, TierChip, TrustBadge, type PriorityTier } from "@mandhira/ui";
+import { NAV_ITEMS, availableNavItems } from "@/lib/nav";
 
-const TIERS: PriorityTier[] = ["FIXED", "PROTECTED", "IMPORTANT", "OPTIONAL"];
+export const metadata = { title: "Home · Mandhira Ops" };
 
 /**
- * Ops shell (B-001/B-002). The real navigation, queues and data tables arrive with B-008;
- * this page exists to prove the shared design system renders in the Ops app too.
+ * Ops home (O01).
+ *
+ * The knowledge-health dashboard this screen eventually carries (PRD F20) arrives in M4.
+ * Until then it says plainly what an operator can and cannot do yet, rather than showing
+ * an empty dashboard that implies the data is simply zero.
  */
-export default function ShellPage() {
+export default function OpsHomePage() {
+  const available = availableNavItems();
+  const pending = NAV_ITEMS.filter((item) => item.href === null);
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-8 py-10">
+    <div className="flex max-w-3xl flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <p className="text-body-sm font-medium text-text-secondary">Mandhira Ops</p>
-        <h1 className="text-h1">Operations shell</h1>
+        <h1 className="text-h1">Operations</h1>
         <p className="text-body text-text-secondary">
-          Queues, editors, sources and dashboards arrive with the next backlog items.
+          The knowledge platform behind Mandhira. Content is drafted here, verified against sources,
+          and only reaches travelers once it passes the publish gate.
         </p>
       </header>
 
       <section
-        aria-label="Priority tiers"
+        aria-labelledby="whats-ready"
         className="rounded-card border border-border-subtle bg-surface p-6 shadow-card"
       >
-        <h2 className="text-h3">Priority tiers</h2>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {TIERS.map((tier) => (
-            <li key={tier}>
-              <TierChip tier={tier} readOnly />
+        <h2 id="whats-ready" className="text-h3">
+          What&apos;s ready
+        </h2>
+        <p className="mt-1 text-body-sm text-text-secondary">
+          The foundation is in place: schema, permissions and sign-in. Editing screens are being
+          built next.
+        </p>
+        <ul className="mt-3 flex flex-col gap-1">
+          {available.map((item) => (
+            <li key={item.id} className="text-body-sm">
+              {item.label}
             </li>
           ))}
         </ul>
       </section>
 
       <section
-        aria-label="Journey health and trust"
+        aria-labelledby="whats-next"
         className="rounded-card border border-border-subtle bg-surface p-6 shadow-card"
       >
-        <h2 className="text-h3">Health &amp; trust</h2>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          <li>
-            <HealthPill state="comfortable" />
-          </li>
-          <li>
-            <HealthPill state="tight" />
-          </li>
-          <li>
-            <HealthPill state="at_risk" />
-          </li>
-          <li>
-            <HealthPill state="broken" />
-          </li>
-        </ul>
-        <ul className="mt-3 flex flex-wrap gap-4">
-          <li>
-            <TrustBadge state="verified" />
-          </li>
-          <li>
-            <TrustBadge state="verified_earlier" />
-          </li>
-          <li>
-            <TrustBadge state="check_locally" />
-          </li>
-        </ul>
+        <h2 id="whats-next" className="text-h3">
+          Still to come
+        </h2>
+        <p className="mt-1 text-body-sm text-text-secondary">
+          {pending.length} screens are mapped but not built. Each shows the milestone that brings
+          it, in the sidebar and the command palette.
+        </p>
       </section>
-    </main>
+    </div>
   );
 }

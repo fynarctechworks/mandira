@@ -10,6 +10,8 @@ import { defineConfig, devices } from "@playwright/test";
 const WEB_PORT = Number(process.env["MANDHIRA_WEB_PORT"] ?? 3986);
 const OPS_PORT = Number(process.env["MANDHIRA_OPS_PORT"] ?? 3987);
 
+const OPS_STORAGE_STATE = "tests/e2e/.auth/ops-admin.json";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -23,10 +25,32 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
     },
+
+    // Signs in once; every other Ops test reuses the session. GoTrue rate-limits
+    // magic-link sends per address, so a suite where each test requests its own link
+    // fails as soon as it grows.
+    {
+      name: "ops-setup",
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${OPS_PORT}` },
+      testMatch: /ops[\\/]auth\.setup\.ts/,
+    },
+
+    // The gate spec must start signed OUT — signing in is what it verifies.
+    {
+      name: "ops-anon",
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${OPS_PORT}` },
+      testMatch: /ops[\\/](auth-gate|shell)\.spec\.ts/,
+    },
+
     {
       name: "ops-desktop",
-      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${OPS_PORT}` },
-      testMatch: /ops[\\/].*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: `http://localhost:${OPS_PORT}`,
+        storageState: OPS_STORAGE_STATE,
+      },
+      dependencies: ["ops-setup"],
+      testMatch: /ops[\\/]shell-nav\.spec\.ts/,
     },
   ],
   webServer: [

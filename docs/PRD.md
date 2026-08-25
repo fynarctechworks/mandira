@@ -777,7 +777,7 @@ Feel: calm, premium, meaningful, modern, trustworthy, warm, focused, human. Not 
 | IMPORTANT | `#FFEFE5` / `#3A2416` | `#B24708` / `#FFB98C` | star |
 | OPTIONAL | `#F4EFEA` / `#2A2421` | `text.secondary` | circle-dashed |
 
-`brand.primary` `#FF660E` is a **fill** colour. Brand-coloured *text* and icons on light backgrounds use `brand.primary.text` `#C64800` (light) / `#FF7A30` (dark) — #FF660E as text measures only 2.93:1 on white.
+`brand.primary` `#FF660E` is a **fill** colour. Brand-coloured *text* and icons on light backgrounds use `brand.primary.text` `#C14600` (light) / `#FF7A30` (dark) — #FF660E as text measures only 2.93:1 on white.
 
 All text/background pairs above meet ≥4.5:1 contrast, verified programmatically over `bg.surface`, `bg.canvas`, raised surfaces and each status colour’s own 12% fill (see D-025). Values were revised on 2026-08-25 to close OPEN-008; the original palette had 17 sub-AA pairings. `brand.primary` itself is unchanged.
 

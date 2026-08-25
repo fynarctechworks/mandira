@@ -13,6 +13,7 @@
   "dependencies": {
     "@mandhira/db": "workspace:*",
     "@mandhira/ui": "workspace:*",
+    "cmdk": "^1.1.1",
     "next": "^15.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
@@ -26,6 +27,7 @@
     "eslint": "^9.34.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.12",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.7"
   }
 }

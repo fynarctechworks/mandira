@@ -12,8 +12,10 @@
   --brand-primary-pressed: #d9520a;
   --brand-primary-soft: #ffefe5;
   /* Accessible accent for brand-coloured TEXT/icons on light backgrounds (OPEN-008, D-025).
-     brand.primary itself stays #ff660e and is used for fills, borders and accents. */
-  --brand-primary-text: #c64800;
+     brand.primary itself stays #ff660e and is used for fills, borders and accents.
+     Verified against bg.surface, bg.canvas AND brand.primary.soft — the soft fill is the
+     tightest of the three at 4.52:1, and is what an active nav item sits on (D-039). */
+  --brand-primary-text: #c14600;
   --brand-ink: #2b1a10;
 
   /* Neutrals (warm) */
