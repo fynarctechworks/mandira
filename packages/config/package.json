@@ -9,7 +9,8 @@
     "./tsconfig/library.json": "./tsconfig/library.json",
     "./eslint/base": "./eslint/base.js",
     "./eslint/next": "./eslint/next.js",
-    "./tailwind/preset.css": "./tailwind/preset.css"
+    "./tailwind/preset.css": "./tailwind/preset.css",
+    "./tailwind/shadcn-bridge.css": "./tailwind/shadcn-bridge.css"
   },
   "dependencies": {
     "@eslint/js": "^9.34.0",

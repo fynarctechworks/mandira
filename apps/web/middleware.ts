@@ -1,25 +1,73 @@
 import { refreshSession } from "@mandhira/db/client/middleware";
 import createIntlMiddleware from "next-intl/middleware";
-import type { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 
 const handleLocale = createIntlMiddleware(routing);
 
 /**
- * Locale routing plus session refresh.
+ * The saved-journey area, which is the only part of the traveler app that needs an account.
+ *
+ * Everything else stays guest-first (AUTH-03): browsing, searching, and building a draft
+ * journey must work with no account at all — and `/s/<token>` in particular is opened by
+ * people who will never have one.
+ *
+ * Matched after the locale prefix is stripped, so `/en/journeys/…` and `/te/journeys/…`
+ * are the same rule.
+ */
+const SIGNED_IN_ONLY = [/^\/journeys(\/|$)/];
+
+/**
+ * Locale routing, session refresh, and the sign-in gate.
  *
  * The order matters: next-intl decides the response first (it may redirect `/` to `/en`),
  * and the refreshed auth cookies are then attached to whatever response is going out. Run
  * the other way around, a redirect would discard the refreshed session and the traveler
  * would be quietly signed out on their first visit.
  *
- * This gates NOTHING. The traveler app is guest-first (AUTH-03): browsing and building a
- * draft journey must work with no account at all.
+ * WHY THE GATE IS HERE AND NOT ONLY IN THE PAGE. Each journey page already calls
+ * `redirect()` when there is no user, and that is kept — but once a route has a
+ * `loading.tsx`, Next streams it, and a `redirect()` from a server component can no longer
+ * become a real HTTP redirect. The signed-out visitor gets a 200, a shell, a skeleton, and
+ * only then a client-side navigation to sign-in. Deciding here happens before any of that
+ * is sent, so the answer is a plain 307 again.
+ *
+ * This is UX, never a control. RLS is what actually stops one traveler reading another's
+ * journey, and the in-page check stays as defence in depth (CLAUDE.md §4: UI hiding is
+ * never a control).
  */
 export async function middleware(request: NextRequest) {
   const response = handleLocale(request);
-  await refreshSession(request, response as NextResponse);
+  const { user } = await refreshSession(request, response as NextResponse);
+
+  if (!user && needsAccount(request.nextUrl.pathname)) {
+    const target = new URL(`/${localeOf(request.nextUrl.pathname)}/sign-in`, request.url);
+    // `next` carries them back to the page they asked for, rather than to a home screen
+    // they did not want (the same contract B-019's save flow relies on).
+    target.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+
+    const redirected = NextResponse.redirect(target);
+    // The refreshed cookies live on `response`; a new response would drop them and sign
+    // the traveler out on the very request that was meant to send them to sign-in.
+    for (const cookie of (response as NextResponse).cookies.getAll()) {
+      redirected.cookies.set(cookie);
+    }
+    return redirected;
+  }
+
   return response;
+}
+
+/** The path with its locale prefix removed, so the rules are written once. */
+function needsAccount(pathname: string): boolean {
+  const locale = localeOf(pathname);
+  const rest = locale ? pathname.slice(locale.length + 1) : pathname;
+  return SIGNED_IN_ONLY.some((pattern) => pattern.test(rest || "/"));
+}
+
+function localeOf(pathname: string): string {
+  const first = pathname.split("/")[1] ?? "";
+  return (routing.locales as readonly string[]).includes(first) ? first : "";
 }
 
 export const config = {

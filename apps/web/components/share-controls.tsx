@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@mandhira/ui";
+import { Button, Input, Label } from "@mandhira/ui";
 import { useEffect, useState } from "react";
 
 /**
@@ -86,15 +86,19 @@ export function ShareControls({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor="share-url" className="text-body-sm font-medium">
+      <Label htmlFor="share-url" className="text-body-sm font-medium">
         Anyone with this link can read your plan
-      </label>
-      <input
+      </Label>
+      {/*
+       * Selects itself on focus. This is a 43-character token on a phone screen, and
+       * asking someone to drag-select it accurately is asking them to send half a link.
+       */}
+      <Input
         id="share-url"
         readOnly
         value={url ?? ""}
         onFocus={(event) => event.currentTarget.select()}
-        className="focus-ring min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
+        className="min-h-11 text-body-sm"
       />
 
       {expiresLabel ? (

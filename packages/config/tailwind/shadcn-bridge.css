@@ -1,0 +1,70 @@
+/*
+ * The shadcn token contract, mapped onto Mandhira's palette.
+ *
+ * WHY THIS FILE EXISTS. `packages/ui` was already built in shadcn's idiom by hand — Radix
+ * primitives, `cva`, `cn`, Tailwind — but without the CLI wired up, so every new primitive
+ * had to be written from scratch. Connecting the CLI means shadcn-generated components can
+ * be dropped in; those components are written against shadcn's OWN variable names
+ * (`bg-background`, `text-muted-foreground`, `border-border`, `bg-destructive`…).
+ *
+ * The tempting fix is to run `shadcn init` and let it write its default palette into the
+ * stylesheet. That would be a real loss: PRD §12.1's colours carry verified contrast
+ * ratios and documented decisions (D-025 on `brand.primary.text`, D-039 on the soft fill an
+ * active nav item sits on, OPEN-008). A second palette beside them means two sources of
+ * truth for colour, and the one shadcn ships has never been checked against this product's
+ * 4.5:1 requirement.
+ *
+ * So the contract is ALIASED instead. Every name below resolves to a Mandhira token, which
+ * means a generated component renders in Mandhira's colours the moment it lands, dark mode
+ * included — the base tokens already flip under `prefers-color-scheme`, and an alias
+ * inherits that for free.
+ *
+ * Rule of thumb for anyone adding to this file: aliases point INTO `tokens.css`, never the
+ * other way, and never at a hex literal.
+ */
+@theme inline {
+  /* Page and surfaces */
+  --color-background: var(--bg-canvas);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--bg-surface);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--bg-surface-raised);
+  --color-popover-foreground: var(--text-primary);
+
+  /*
+   * `primary` is the brand FILL, and its foreground is the ink meant to sit on it —
+   * not `--brand-primary-text`, which is the accessible colour for brand-coloured TEXT
+   * on a light background. Swapping those two is the easiest way to fail contrast here.
+   */
+  --color-primary: var(--brand-primary);
+  --color-primary-foreground: var(--text-on-primary);
+
+  --color-secondary: var(--brand-primary-soft);
+  --color-secondary-foreground: var(--brand-primary-text);
+
+  --color-muted: var(--bg-canvas);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--brand-primary-soft);
+  --color-accent-foreground: var(--brand-primary-text);
+
+  /*
+   * shadcn calls this `destructive` and reaches for it on delete buttons. In Mandhira it
+   * is the BROKEN status colour, and PRD §12.7 forbids alarm vocabulary — so it marks a
+   * day that cannot work, not a scary button. Named per the contract so generated code
+   * compiles; used per the PRD.
+   */
+  --color-destructive: var(--status-broken);
+  --color-destructive-foreground: var(--bg-surface);
+
+  /* Lines, fields and focus */
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+  --color-ring: var(--focus-ring-color);
+
+  /*
+   * shadcn derives `rounded-md`/`rounded-lg` from a single `--radius`. Mandhira states a
+   * radius per component class (§12.3); `--radius` is set to the input/button value so a
+   * generated control matches the ones already on screen.
+   */
+  --radius: var(--radius-input);
+}

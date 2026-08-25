@@ -5,6 +5,7 @@
  */
 @import "./tokens.css";
 @import "@mandhira/config/tailwind/preset.css";
+@import "@mandhira/config/tailwind/shadcn-bridge.css";
 
 @layer base {
   html {
