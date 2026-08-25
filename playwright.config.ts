@@ -11,6 +11,7 @@ const WEB_PORT = Number(process.env["MANDHIRA_WEB_PORT"] ?? 3986);
 const OPS_PORT = Number(process.env["MANDHIRA_OPS_PORT"] ?? 3987);
 
 const OPS_STORAGE_STATE = "tests/e2e/.auth/ops-admin.json";
+const WEB_STORAGE_STATE = "tests/e2e/.auth/traveler.json";
 
 /*
  * The E2E suite builds and serves from its own directory, so a run never clobbers a dev
@@ -32,10 +33,36 @@ export default defineConfig({
   reporter: process.env["CI"] ? "github" : "list",
   use: { trace: "on-first-retry" },
   projects: [
+    /*
+     * Most traveler screens are guest-first, so this project signs in to NOTHING — that is
+     * the state a first-time visitor arrives in, and testing it any other way would miss
+     * every guest-facing path.
+     */
     {
       name: "web-mobile",
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
+      testIgnore: /web[\\/]journey-builder\.spec\.ts/,
+    },
+
+    // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
+    // rate-limits magic-link sends per address.
+    {
+      name: "web-setup",
+      use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
+      testMatch: /web[\\/]auth\.setup\.ts/,
+    },
+
+    // The builder is the one traveler surface that needs an account.
+    {
+      name: "web-traveler",
+      use: {
+        ...devices["Pixel 5"],
+        baseURL: `http://localhost:${WEB_PORT}`,
+        storageState: WEB_STORAGE_STATE,
+      },
+      testMatch: /web[\\/]journey-builder\.spec\.ts/,
+      dependencies: ["web-setup"],
     },
 
     // Signs in once; every other Ops test reuses the session. GoTrue rate-limits

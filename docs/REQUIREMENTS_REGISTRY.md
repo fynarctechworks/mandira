@@ -49,18 +49,23 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-INT-006 | Extraction quality | ≥85% field accuracy per launch language on test set; 100% hallucination block | P0 | INT-001 |
 
 ## PRD-PLAN — Journey Builder (F4)
+
+> ✅ = implemented and verified in B-019 (docs/plans/PLAN-02.md §9). PRD-PLAN-001 is
+> partially met: the day timeline exists, drag-and-drop is deferred. PRD-PLAN-004 (prep
+> propagation) is B-021; PRD-PLAN-007 is M2. PRD-PLAN-009 is measured at p50 119 ms /
+> p95 199 ms on localhost and must be re-measured on a deployed stack at B-025.
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
 | PRD-PLAN-001 | Journey/day/item model | Item types experience/travel_leg/rest/meal/fixed_commitment/free_time; day timeline view | P0 | KNOW-001 |
-| PRD-PLAN-002 | Priority tiers + engine rules | FIXED never moved/removed; PROTECTED never removed, move only with confirmation; IMPORTANT move/swap with confirmation; OPTIONAL removed first, always asked | P0 | ENG-001 |
-| PRD-PLAN-003 | Item actions | Tier change, move, preferred window, dependency ("after X"), note, remove | P0 | PLAN-001 |
+| PRD-PLAN-002 ✅ | Priority tiers + engine rules | FIXED never moved/removed; PROTECTED never removed, move only with confirmation; IMPORTANT move/swap with confirmation; OPTIONAL removed first, always asked | P0 | ENG-001 |
+| PRD-PLAN-003 ✅ | Item actions | Tier change, move, preferred window, dependency ("after X"), note, remove | P0 | PLAN-001 |
 | PRD-PLAN-004 | Prep propagation | Experience requirements auto-generate Prepare tasks | P0 | PREP-001 |
-| PRD-PLAN-005 | Buffers | Visible/editable; 15 min base; ×1.5 senior/limited_walking; ×2 wheelchair/needs_rest | P0 | ENG-001 |
-| PRD-PLAN-006 | Return guard | Last FIXED anchored; breach → Broken; engine blocks breaching plans | P0 | ENG-001 |
+| PRD-PLAN-005 ✅ | Buffers | Visible/editable; 15 min base; ×1.5 senior/limited_walking; ×2 wheelchair/needs_rest | P0 | ENG-001 |
+| PRD-PLAN-006 ✅ | Return guard | Last FIXED anchored; breach → Broken; engine blocks breaching plans | P0 | ENG-001 |
 | PRD-PLAN-007 | Simplify-this-day | Proposes OPTIONAL removal then IMPORTANT moves as change card; never auto-applies | P1 | ADPT-001 |
-| PRD-PLAN-008 | No auto-fill | Builder always starts from the brief; no "fill my day" | P0 | — |
+| PRD-PLAN-008 ✅ | No auto-fill | Builder always starts from the brief; no "fill my day" | P0 | — |
 | PRD-PLAN-009 | Builder performance | 3-day/12-item journey built+retiered ≤5 min mobile; Health updates ≤500 ms | P0 | ENG-002 |
-| PRD-PLAN-010 | Traveler group model | 1–12 travelers; attributes mobility/age_band/dietary/locale; journey prefs pace/structure/walking/transport/day window | P0 | ACCT-003 |
+| PRD-PLAN-010 ✅ | Traveler group model | 1–12 travelers; attributes mobility/age_band/dietary/locale; journey prefs pace/structure/walking/transport/day window | P0 | ACCT-003 |
 
 ## PRD-HLTH — Feasibility & Health (F5)
 | ID | Name | Description / Acceptance | Priority | Deps |

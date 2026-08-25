@@ -24,8 +24,16 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip Next internals, the service worker, the manifest and static assets — running
-    // locale negotiation on every icon request is pure cost.
-    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Skip Next internals and static assets — locale negotiation on every icon request is
+     * pure cost — AND every non-page route.
+     *
+     * `api/` and `auth/` are not pages and have no locale. Leaving them in sent
+     * `/api/heartbeat` to `/en/api/heartbeat` with a 307, which meant the Vercel Cron
+     * keepalive silently never ran (cron does not follow redirects) and a traveler
+     * following a magic link landed on a 404. Both were live from B-014 until B-019 became
+     * the first thing to call an API route from a browser.
+     */
+    "/((?!api/|auth/|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

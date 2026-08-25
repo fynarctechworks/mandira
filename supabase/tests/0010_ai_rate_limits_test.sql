@@ -6,7 +6,7 @@
 --      can read is one it can plan around; an AI log a client can read is a prompt archive.
 
 begin;
-select plan(33);
+select plan(34);
 
 -- ── Shape ───────────────────────────────────────────────────────────────────
 select has_table('public', 'ai_calls', 'ai_calls exists');
@@ -141,6 +141,14 @@ select ok(
 
 -- A SECURITY DEFINER function that anyone may execute is a hole around the policies above:
 -- a signed-in user could burn someone else''s quota by passing their key.
+-- BOTH directions. Asserting only the denials let 0012 revoke EXECUTE from service_role
+-- as well, which looked exactly like a correctly locked-down function and meant no
+-- rate-limited route could run at all (fixed in 0018).
+select ok(
+  has_function_privilege('service_role', 'consume_rate_limit(text, text, int, int)', 'execute'),
+  'service_role CAN execute consume_rate_limit — the limiter has to be able to run'
+);
+
 select ok(
   not has_function_privilege('authenticated', 'consume_rate_limit(text, text, int, int)', 'execute'),
   'authenticated cannot execute consume_rate_limit'

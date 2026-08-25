@@ -150,6 +150,25 @@ export default async function PlanPage({
           </ul>
         </Fieldset>
 
+        <Fieldset
+          legend="Getting home"
+          hint="If you have a train, flight or booked slot, Mandhira works backwards from it and tells you when the plan stops reaching it."
+        >
+          {/*
+           * The return guard's anchor (PRD-PLAN-006). Optional like everything else, but
+           * it is the single most useful thing a traveler can tell Mandhira: a day that
+           * overruns is inconvenient, a day that misses the train home is not.
+           */}
+          <Field label="Return, if you have one" htmlFor="return">
+            <input
+              id="return"
+              name="return"
+              type="datetime-local"
+              className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
+            />
+          </Field>
+        </Fieldset>
+
         <Fieldset legend="How you travel" hint="Everything here can be skipped.">
           <Field label="Pace" htmlFor="pace">
             <select

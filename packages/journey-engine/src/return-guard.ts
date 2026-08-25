@@ -46,10 +46,22 @@ export function checkReturnGuard(input: {
   const date = dateForDay(journey.start_date, anchor.day_index);
   const anchorMinutes = fromInstant(anchor.fixed_start_at!, date, journey.timezone);
 
-  // The last thing scheduled before the anchor, wherever it sits in the journey.
+  /*
+   * The last thing that STARTS before the anchor, wherever it sits in the journey.
+   *
+   * Selected on its start, not its end. An earlier version filtered to items ending at or
+   * before the anchor, which silently excluded the worst case there is: something that
+   * begins before the return and runs PAST it. That plan has no preceding item by the old
+   * test, so the guard reported `ok` on the one shape it exists to catch — and the day
+   * read as Comfortable while the traveler missed their train.
+   */
+  const anchorStart = Date.parse(anchor.fixed_start_at!);
+
   const preceding = items
     .filter((item) => item.id !== anchor.id && item.planned_end_at)
-    .filter((item) => Date.parse(item.planned_end_at!) <= Date.parse(anchor.fixed_start_at!))
+    // Falls back to the end instant for an item with no recorded start, so a partially
+    // scheduled item is still weighed rather than silently skipped.
+    .filter((item) => Date.parse(item.planned_start_at ?? item.planned_end_at!) < anchorStart)
     .sort((a, b) => Date.parse(a.planned_end_at!) - Date.parse(b.planned_end_at!))
     .at(-1);
 

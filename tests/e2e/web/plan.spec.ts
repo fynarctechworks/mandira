@@ -120,12 +120,16 @@ test.describe("The journey it proposes", () => {
     await expect(page.getByText("IMPORTANT")).toBeVisible();
   });
 
-  test("does not pretend the plan is saved", async ({ page }) => {
+  test("offers to keep the plan, and says an account is needed before you tap", async ({
+    page,
+  }) => {
     await page.goto(`${base}&mobility=full${both}`);
 
-    // Guests get device-local drafts only (AUTHORIZATION_MODEL); Dexie is B-023. Implying
-    // a save that is not happening is how someone loses a journey they spent an hour on.
-    await expect(page.getByText(/isn't saved anywhere yet/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Keep this journey" })).toBeVisible();
+
+    // Said BEFORE the tap, not after. Finding out at the moment of saving reads as a toll
+    // gate rather than as the thing that keeps your journey.
+    await expect(page.getByText(/needs an account/)).toBeVisible();
   });
 
   test("says so when nothing was chosen, rather than showing an empty day", async ({ page }) => {
@@ -147,5 +151,35 @@ test.describe("The journey it proposes", () => {
 
       expect(seriousViolations(results), url).toEqual([]);
     }
+  });
+});
+
+test.describe("The return guard (PRD-PLAN-006)", () => {
+  const base = "/en/plan/preview?destination=fixture-devagiri&start=2026-10-12&days=1&pace=full";
+  const darshan = "&must=d0000000-0000-4000-8000-00000000f007";
+
+  test("breaks the journey when the plan cannot reach the return", async ({ page }) => {
+    // A 90-minute darshan from 06:00 against a 06:30 train. This is the shape the guard
+    // exists for, and it slipped through until B-019 — the day read as Comfortable while
+    // the traveler missed their train.
+    await page.goto(`${base}&mobility=full${darshan}&return=2026-10-12T06:30`);
+
+    await expect(page.getByText(/reach your return about 60 minutes late/)).toBeVisible();
+    await expect(page.getByText(/can't work as planned/)).toBeVisible();
+  });
+
+  test("says nothing when there is room to reach it", async ({ page }) => {
+    await page.goto(`${base}&mobility=full${darshan}&return=2026-10-12T20:00`);
+
+    await expect(page.getByText(/room to breathe/)).toBeVisible();
+    await expect(page.getByText(/reach your return/)).toHaveCount(0);
+  });
+
+  test("a brief with no return is planned without one", async ({ page }) => {
+    // Optional, like everything else on the form except destination and dates.
+    await page.goto(`${base}&mobility=full${darshan}`);
+
+    await expect(page.getByRole("heading", { name: "Your journey" })).toBeVisible();
+    await expect(page.getByText(/reach your return/)).toHaveCount(0);
   });
 });

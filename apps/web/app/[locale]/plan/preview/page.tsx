@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import {
   buildInitialJourney,
+  toInstant,
   type JourneyBrief,
   type TravelerProfile,
 } from "@mandhira/journey-engine";
 
 import { DayPlan } from "../../../../components/day-plan";
+import { SaveJourney } from "../../../../components/save-journey";
 import { JourneyHealth } from "../../../../components/journey-health";
 import { getDestinationPage, getKnowledgeBundle } from "../../../../lib/knowledge";
 
@@ -34,6 +36,7 @@ type PreviewParams = {
   days?: string;
   pace?: string;
   mobility?: string;
+  return?: string;
   must?: string | string[];
   like?: string | string[];
 };
@@ -55,14 +58,18 @@ export default async function PreviewPage({
   if (!page) notFound();
 
   const knowledge = await getKnowledgeBundle(page.destination.id, locale);
+  // `datetime-local` has no offset, so the journey's own timezone supplies one. Without
+  // it the return would be read as UTC and the guard would protect the wrong moment.
+  const returnAt = toInstantWithOffset(query.return, TIMEZONE);
 
   const brief: JourneyBrief = {
     start_date: query.start,
     day_count: clampDays(query.days),
-    timezone: "Asia/Kolkata",
+    timezone: TIMEZONE,
     ...(isPace(query.pace) ? { pace: query.pace } : {}),
     must_do: asArray(query.must).map((id) => ({ experience_id: id })),
     would_like: asArray(query.like).map((id) => ({ experience_id: id })),
+    fixed_commitments: returnAt ? [{ at: returnAt }] : [],
   };
 
   const travelers = travelersFrom(query.mobility);
@@ -134,12 +141,54 @@ export default async function PreviewPage({
         </section>
       ) : null}
 
-      <p className="rounded-lg border border-border bg-bg-surface p-4 text-body-sm text-text-secondary">
-        This plan isn&apos;t saved anywhere yet. Keeping a journey — and changing it as you go —
-        arrives with the journey builder.
-      </p>
+      {items.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <SaveJourney
+            locale={locale}
+            brief={{
+              destinationId: page.destination.id,
+              startDate: brief.start_date,
+              dayCount: brief.day_count ?? 3,
+              ...(brief.pace ? { pace: brief.pace } : {}),
+              mustDo: (brief.must_do ?? []).map((m) => m.experience_id),
+              wouldLike: (brief.would_like ?? []).map((m) => m.experience_id),
+              fixedCommitments: returnAt ? [{ at: returnAt }] : [],
+              travelers: travelers.map((t) => ({ mobility: t.mobility, ageBand: t.age_band })),
+            }}
+          />
+          {/*
+           * Said before they tap, not after. Someone who has spent time on a plan should
+           * know an account is coming — finding out at the moment of saving reads as a
+           * toll gate rather than as the thing that keeps their journey.
+           */}
+          <p className="text-caption text-text-secondary">
+            Keeping a journey needs an account, so it is there on any device and while you are
+            travelling. Nothing else changes.
+          </p>
+        </div>
+      ) : null}
     </main>
   );
+}
+
+/** Until a destination carries its own, every journey is planned in IST (TRD §4.6). */
+const TIMEZONE = "Asia/Kolkata";
+
+/**
+ * A `datetime-local` value ("2026-10-14T18:00") plus the journey's timezone offset.
+ *
+ * The browser sends no offset at all, so an instant built from it naively is read as UTC —
+ * which for IST is five and a half hours wrong, in the direction that makes a missed train
+ * look fine.
+ */
+function toInstantWithOffset(value: string | undefined, timeZone: string): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+
+  const [date, time] = value.split("T");
+  const [hours, minutes] = time!.split(":").map(Number);
+  const localMinutes = hours! * 60 + minutes!;
+
+  return toInstant(date!, localMinutes, timeZone);
 }
 
 function clampDays(value: string | undefined): number {

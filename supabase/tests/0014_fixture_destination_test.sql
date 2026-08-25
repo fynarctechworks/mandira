@@ -15,10 +15,10 @@ select isnt_empty(
   'the fixture destination is seeded'
 );
 
-select is_empty(
-  $$ select slug from destinations
-      where slug not like 'fixture-%' and slug not in (select slug from destinations where false) $$,
-  'every seeded destination is marked as a fixture in its slug'
+select is(
+  (select name_i18n ->> 'en' from destinations where slug = 'fixture-devagiri'),
+  'Devagiri (fixture)',
+  'the fixture destination says so in its own name, not only in its slug'
 );
 
 select is_empty(

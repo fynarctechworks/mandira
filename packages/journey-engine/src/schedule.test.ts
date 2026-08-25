@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkReturnGuard } from "./return-guard";
 import { scheduleDay } from "./schedule";
-import { fromInstant } from "./time";
+import { fromInstant, toInstant } from "./time";
 import type { Journey, JourneyItem, KnowledgeBundle, TravelerProfile } from "./types";
 
 const TZ = "Asia/Kolkata";
@@ -618,5 +618,65 @@ describe("checkReturnGuard (PRD-PLAN-006)", () => {
 
     // 18:30 − 30 − 15 − 20 = 17:25, so leaving at 17:30 misses by 5.
     expect(result.breachMinutes).toBe(5);
+  });
+});
+
+describe("checkReturnGuard — the case that used to slip through", () => {
+  it("catches an item that runs PAST the return, not only one that ends too late to reach it", () => {
+    /*
+     * The clearest possible breach: a 90-minute darshan starting at 06:00 with the train
+     * at 06:30. An earlier version selected the preceding item by "ends at or before the
+     * anchor", which excluded this one entirely — leaving no preceding item, and the guard
+     * reporting ok on the one shape it exists to catch (found in B-019).
+     */
+    const result = checkReturnGuard({
+      journey,
+      knowledge: emptyKnowledge,
+      items: [
+        item({
+          id: "darshan",
+          sort_order: 0,
+          duration_likely_minutes: 90,
+          planned_start_at: toInstant(START, 6 * 60, TZ),
+          planned_end_at: toInstant(START, 7 * 60 + 30, TZ),
+        }),
+        item({
+          id: "train",
+          sort_order: 1,
+          tier: "fixed",
+          item_type: "fixed_commitment",
+          fixed_start_at: toInstant(START, 6 * 60 + 30, TZ),
+        }),
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.breachMinutes).toBe(60);
+    expect(result.anchorItemId).toBe("train");
+  });
+
+  it("still holds when the day finishes with room to reach the return", () => {
+    const result = checkReturnGuard({
+      journey,
+      knowledge: emptyKnowledge,
+      items: [
+        item({
+          id: "darshan",
+          sort_order: 0,
+          duration_likely_minutes: 60,
+          planned_start_at: toInstant(START, 6 * 60, TZ),
+          planned_end_at: toInstant(START, 7 * 60, TZ),
+        }),
+        item({
+          id: "train",
+          sort_order: 1,
+          tier: "fixed",
+          item_type: "fixed_commitment",
+          fixed_start_at: toInstant(START, 9 * 60, TZ),
+        }),
+      ],
+    });
+
+    expect(result.ok).toBe(true);
   });
 });

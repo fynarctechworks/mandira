@@ -22,7 +22,8 @@
     "next-intl": "^4.13.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "serwist": "^9.5.12"
+    "serwist": "^9.5.12",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@mandhira/config": "workspace:*",
