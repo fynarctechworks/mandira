@@ -95,8 +95,9 @@ select throws_ok(
   'anon cannot read the destinations base table'
 );
 select is_empty(
-  'select 1 from v_published_destinations',
-  'anon sees no unpublished content through the view'
+  $$ select 1 from v_published_destinations
+      where id = 'f0000000-0000-4000-8000-000000000002' $$,
+  'anon does not see a DRAFT destination through the view'
 );
 select isnt_empty(
   'select 1 from locales',

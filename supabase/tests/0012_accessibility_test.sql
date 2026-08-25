@@ -107,7 +107,7 @@ values ('e4000000-0000-4000-8000-000000000002', 'yes');
 
 select is(
   (select count(*)::int from v_published_places
-   where accessibility ->> 'step_free' = 'yes'),
+   where id = 'e4000000-0000-4000-8000-000000000002'),
   0,
   'recording accessibility does not publish a place that has not cleared its gate'
 );

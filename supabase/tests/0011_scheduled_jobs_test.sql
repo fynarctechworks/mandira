@@ -6,7 +6,7 @@
 -- as much about what the jobs LEAVE ALONE as about what they change.
 
 begin;
-select plan(55);
+select plan(56);
 
 select has_function('public', 'critical_fields', 'critical_fields() exists');
 select has_function('public', 'recompute_freshness', 'recompute_freshness() exists');
@@ -121,8 +121,12 @@ select is(
   'the derivation trigger already marks a 200-day-old record stale'
 );
 
+-- Counted for THIS test's own place. The job's return value covers the whole database,
+-- and the local fixture deliberately carries stale critical fields of its own.
+select recompute_freshness();
 select is(
-  (recompute_freshness() ->> 'reverify_tasks_created')::int,
+  (select count(*)::int from review_tasks
+   where task_type = 'reverify' and entity_id = 'd4000000-0000-4000-8000-000000000001'),
   1,
   'a stale critical field on a published place raises exactly one reverify task'
 );
@@ -139,11 +143,20 @@ select is(
   0,
   'running again raises no duplicate; a queue that grows nightly stops being read'
 );
+select is(
+  (select count(*)::int from review_tasks
+   where task_type = 'reverify' and entity_id = 'd4000000-0000-4000-8000-000000000001'),
+  1,
+  'and the one it raised is still the only one for that field'
+);
 
 -- Once the task is closed, a still-stale field is raised again — the field is still stale.
 update review_tasks set status = 'done' where task_type = 'reverify';
+select recompute_freshness();
 select is(
-  (recompute_freshness() ->> 'reverify_tasks_created')::int,
+  (select count(*)::int from review_tasks
+   where task_type = 'reverify' and entity_id = 'd4000000-0000-4000-8000-000000000001'
+     and status = 'open'),
   1,
   'a closed task does not suppress the next one while the field is still stale'
 );
