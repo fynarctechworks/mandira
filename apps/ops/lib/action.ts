@@ -84,6 +84,17 @@ export function opsAction<TSchema extends z.ZodType, TResult>(config: {
         data: await config.handler({ input: parsed.data, supabase, userId: user.id }),
       };
     } catch (cause) {
+      /*
+       * A handler may attach `userMessage` to explain a refusal in the operator's terms —
+       * "you made the last change, so it needs a different approver" rather than "that
+       * didn't save". PRD F18 requires a blocked publish to say what is wrong, and
+       * flattening every throw into one apology destroys exactly that information.
+       */
+      const userMessage = (cause as { userMessage?: string } | null)?.userMessage;
+      if (typeof userMessage === "string" && userMessage.length > 0) {
+        return { ok: false, error: { code: "failed", message: userMessage } };
+      }
+
       // Postgres unique violation — almost always a duplicate slug in this app.
       const code = (cause as { code?: string } | null)?.code;
       if (code === "23505") {

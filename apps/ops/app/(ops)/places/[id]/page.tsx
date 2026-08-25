@@ -1,6 +1,8 @@
 import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
+import { PublishPanel } from "@/components/publish-panel";
+import { validationProblems } from "@/app/(ops)/publish/actions";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
 import { trustForEntity } from "@/app/(ops)/trust/actions";
@@ -31,19 +33,21 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, accessResult, locales, destinations, sources, trust] = await Promise.all([
-    supabase
-      .from("places")
-      .select("*, latitude, longitude")
-      .eq("id", id)
-      .is("deleted_at", null)
-      .maybeSingle(),
-    supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
-    activeLocales(),
-    destinationOptions(),
-    activeSources(),
-    trustForEntity("places", id),
-  ]);
+  const [{ data, error }, accessResult, locales, destinations, sources, trust, problems] =
+    await Promise.all([
+      supabase
+        .from("places")
+        .select("*, latitude, longitude")
+        .eq("id", id)
+        .is("deleted_at", null)
+        .maybeSingle(),
+      supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
+      activeLocales(),
+      destinationOptions(),
+      activeSources(),
+      trustForEntity("places", id),
+      validationProblems("places", id),
+    ]);
 
   if (error || !data) notFound();
 
@@ -76,6 +80,15 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
         <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
         <p className="mt-1 text-body text-text-secondary">Editing a draft place.</p>
       </header>
+      <div className="max-w-2xl">
+        <PublishPanel
+          entityTable="places"
+          entityId={data.id}
+          status={data.status}
+          problems={problems}
+        />
+      </div>
+
       <div className="max-w-2xl">
         <TrustSection
           entityTable="places"

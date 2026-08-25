@@ -81,7 +81,7 @@ export const NAV_ITEMS: NavItem[] = [
     comingIn: "In Places & Routes",
   },
   { id: "O07", label: "Guidance blocks", section: "entities", href: "/guidance" },
-  { id: "O16", label: "Media library", section: "entities", href: null, comingIn: "B-012" },
+  { id: "O16", label: "Media library", section: "entities", href: "/media" },
   { id: "O18", label: "Locales & phrase packs", section: "entities", href: null, comingIn: "M4" },
 
   // ── Sources ─────────────────────────────────────────────────────────────────
@@ -102,8 +102,7 @@ export const NAV_ITEMS: NavItem[] = [
     id: "O13",
     label: "Approve & publish",
     section: "queues",
-    href: null,
-    comingIn: "B-012",
+    href: "/publish",
     keywords: ["diff", "validation"],
   },
   { id: "O14", label: "Reports queue", section: "queues", href: null, comingIn: "M2" },

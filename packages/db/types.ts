@@ -3523,6 +3523,7 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: Json
       }
+      has_any_locale: { Args: { p_value: Json }; Returns: boolean }
       has_any_role: {
         Args: { p_roles: Database["public"]["Enums"]["ops_role_enum"][] }
         Returns: boolean
@@ -3561,9 +3562,27 @@ export type Database = {
           }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
+      publish_entity: {
+        Args: { p_entity_id: string; p_entity_table: string }
+        Returns: Json
+      }
+      record_audit: {
+        Args: {
+          p_action: string
+          p_after?: Json
+          p_before?: Json
+          p_entity_id: string
+          p_entity_table: string
+        }
+        Returns: undefined
+      }
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string
+      }
+      validate_for_publish: {
+        Args: { p_entity_id: string; p_entity_table: string }
+        Returns: Json
       }
     }
     Enums: {

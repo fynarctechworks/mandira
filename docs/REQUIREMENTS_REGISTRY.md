@@ -183,12 +183,12 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-OPS-WF-001 | Review queue | Side-by-side proposed/current + excerpt; accept/edit/reject/request-verify | P1 | OPS-SRC-003 |
 | PRD-OPS-WF-002 | Verify queue | Evidence attach; verified_at/valid_until | P0 | KNOW-002 |
 | PRD-OPS-WF-003 | Conflict resolution | Winner/both-valid-with-context/escalate; clears flag with reason | P1 | OPS-SRC-005 |
-| PRD-OPS-WF-004 | Approve & publish | Entity diff + validation + affected-journey count + notification preview; validation rules per F18 block publish naming the field | P0 | KNOW-003 |
+| PRD-OPS-WF-004 | Approve & publish | Entity diff + validation + affected-journey count + notification preview; validation rules per F18 block publish naming the field | P0 | KNOW-003  **Implemented (B-012):** `validate_for_publish()` returns per-field problems; the Approve queue and entity panel render the same list the gate enforces. Affected-journey counts wait for journeys to exist (B-019+). |
 | PRD-OPS-WF-005 | Reports queue | Grouped by entity/field with counts; triage to verify or close with user outcome | P1 | REPT-002 |
 | PRD-OPS-WF-006 | Freshness monitor | Filters stale/aging/expiring-30/low/conflict; bulk reverify assignment | P1 | KNOW-006 |
 | PRD-OPS-WF-007 | Impact before publish | Affected active/upcoming journey count + preview; publish raises ADPT triggers | P1 | ADPT-001 |
 | PRD-OPS-WF-008 | Audit & versions | Who/when/what/why + previous value; any version restorable by Admin | P0 | — |
-| PRD-OPS-WF-009 | RBAC + separation of duties | 9 roles; reviewer ≠ approver on same change | P0 | AUTH  **Implemented (B-007):** enforced by a `review_tasks` trigger against the last `entity_versions.changed_by` (D-037), with pgTAP coverage. |
+| PRD-OPS-WF-009 | RBAC + separation of duties | 9 roles; reviewer ≠ approver on same change | P0 | AUTH  **Implemented (B-007):** enforced by a `review_tasks` trigger against the last `entity_versions.changed_by` (D-037), with pgTAP coverage.  **Enforced twice (B-007 trigger, B-012 publish_entity):** the person who last changed an entity cannot publish it; covered by pgTAP and an E2E. |
 | PRD-OPS-WF-010 | Ops throughput | New destination (≥30–40 places) draft→published ≤5–10 working days by ≤3 people | P1 | OPS-WF-004 |
 | PRD-OPS-CNT-001 | Structured entity editors | All F1 entities; no free-form HTML on critical fields; inline trust panel; preview-as-app | P0 | KNOW-001 |
 | PRD-OPS-CNT-002 | Relationships & circuits | Place↔experience↔route↔facility links; nearby curation; circuit builder; editorial weight 1–5 | P1 | OPS-CNT-001 |

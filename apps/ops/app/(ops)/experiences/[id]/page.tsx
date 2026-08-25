@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
+import { PublishPanel } from "@/components/publish-panel";
+import { validationProblems } from "@/app/(ops)/publish/actions";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
 import { trustForEntity } from "@/app/(ops)/trust/actions";
@@ -19,7 +21,7 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, locales, destinations, anchors, rulesResult, sources, trust] =
+  const [{ data, error }, locales, destinations, anchors, rulesResult, sources, trust, problems] =
     await Promise.all([
       supabase.from("experiences").select("*").eq("id", id).is("deleted_at", null).maybeSingle(),
       activeLocales(),
@@ -34,6 +36,7 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
         .order("priority", { ascending: false }),
       activeSources(),
       trustForEntity("experiences", id),
+      validationProblems("experiences", id),
     ]);
 
   if (error || !data) notFound();
@@ -72,6 +75,15 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
       {/* Trust first, then availability: these are the two things most likely to be
           missing, and between them they decide whether a traveler ever sees this at all
           and whether the engine can schedule it. */}
+      <div className="max-w-2xl">
+        <PublishPanel
+          entityTable="experiences"
+          entityId={data.id}
+          status={data.status}
+          problems={problems}
+        />
+      </div>
+
       <div className="max-w-2xl">
         <TrustSection
           entityTable="experiences"
