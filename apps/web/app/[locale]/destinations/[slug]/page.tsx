@@ -88,7 +88,12 @@ export default async function DestinationPage({
         count={experiences.length}
       >
         {experiences.map((experience) => (
-          <ExperienceCard key={experience.id} experience={experience} locale={locale} />
+          <ExperienceCard
+            key={experience.id}
+            experience={experience}
+            locale={locale}
+            destinationSlug={slug}
+          />
         ))}
       </Section>
 
@@ -98,7 +103,7 @@ export default async function DestinationPage({
         count={places.length}
       >
         {places.map((place) => (
-          <PlaceCard key={place.id} place={place} />
+          <PlaceCard key={place.id} place={place} locale={locale} destinationSlug={slug} />
         ))}
       </Section>
 

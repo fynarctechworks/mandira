@@ -1,4 +1,5 @@
-import { Clock } from "lucide-react";
+import { ChevronRight, Clock } from "lucide-react";
+import Link from "next/link";
 import { TrustBadge } from "@mandhira/ui";
 
 import type { PlaceCard as Place } from "../lib/knowledge";
@@ -19,7 +20,15 @@ const PLACE_TYPE_LABELS: Record<string, string> = {
   food: "Food",
 };
 
-export function PlaceCard({ place }: { place: Place }) {
+export function PlaceCard({
+  place,
+  locale,
+  destinationSlug,
+}: {
+  place: Place;
+  locale: string;
+  destinationSlug: string;
+}) {
   const duration = durationLabel(place.visitDurationLikelyMinutes);
   const trust = weakestTrustState(place.trust);
   const typeLabel = PLACE_TYPE_LABELS[place.placeType] ?? place.placeType;
@@ -28,7 +37,15 @@ export function PlaceCard({ place }: { place: Place }) {
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <h3 className="text-h3">{place.name.text}</h3>
+          <h3 className="text-h3">
+            <Link
+              href={`/${locale}/destinations/${destinationSlug}/places/${place.slug}`}
+              className="flex min-h-11 items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+            >
+              {place.name.text}
+              <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+            </Link>
+          </h3>
           <p className="text-caption text-text-secondary">{typeLabel}</p>
         </div>
         {trust ? <TrustBadge state={trust} /> : null}

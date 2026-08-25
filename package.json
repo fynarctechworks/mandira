@@ -11,7 +11,7 @@
     "lint": "turbo run lint --concurrency=2",
     "typecheck": "turbo run typecheck --concurrency=2",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/e2e.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:types": "bash scripts/gen-types.sh",

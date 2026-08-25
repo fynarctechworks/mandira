@@ -12,6 +12,12 @@ const OPS_PORT = Number(process.env["MANDHIRA_OPS_PORT"] ?? 3987);
 
 const OPS_STORAGE_STATE = "tests/e2e/.auth/ops-admin.json";
 
+/*
+ * The E2E suite builds and serves from its own directory, so a run never clobbers a dev
+ * server the developer has open — see the note in the apps' next.config.ts.
+ */
+const E2E_DIST_DIR = ".next-e2e";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -62,12 +68,14 @@ export default defineConfig({
   webServer: [
     {
       command: `pnpm --filter @mandhira/web exec next start --port ${WEB_PORT}`,
+      env: { NEXT_DIST_DIR: E2E_DIST_DIR },
       url: `http://localhost:${WEB_PORT}`,
       reuseExistingServer: !process.env["CI"],
       timeout: 120_000,
     },
     {
       command: `pnpm --filter @mandhira/ops exec next start --port ${OPS_PORT}`,
+      env: { NEXT_DIST_DIR: E2E_DIST_DIR },
       url: `http://localhost:${OPS_PORT}`,
       reuseExistingServer: !process.env["CI"],
       timeout: 120_000,

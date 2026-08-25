@@ -1,4 +1,5 @@
-import { CalendarClock, Clock, Ticket } from "lucide-react";
+import { CalendarClock, ChevronRight, Clock, Ticket } from "lucide-react";
+import Link from "next/link";
 import { TrustBadge } from "@mandhira/ui";
 
 import type { ExperienceCard as Experience } from "../lib/knowledge";
@@ -18,7 +19,15 @@ import { AccessibilityIcons } from "./accessibility-icons";
  * The badge shows the WEAKEST state across the card's fields. One "Verified" beside an
  * unshown "Check locally" would be technically true and practically a lie.
  */
-export function ExperienceCard({ experience, locale }: { experience: Experience; locale: string }) {
+export function ExperienceCard({
+  experience,
+  locale,
+  destinationSlug,
+}: {
+  experience: Experience;
+  locale: string;
+  destinationSlug: string;
+}) {
   const availability = availabilityLine(experience.availability, locale);
   const duration = durationLabel(experience.durationLikelyMinutes);
   const booking = bookingLine(
@@ -30,7 +39,20 @@ export function ExperienceCard({ experience, locale }: { experience: Experience;
   return (
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-h3">{experience.name.text}</h3>
+        <h3 className="text-h3">
+          {/*
+           * The whole card is not the link. A card carries a trust badge that opens a
+           * sheet, and nesting an interactive badge inside a link is both an accessibility
+           * failure and a way to open the wrong thing with a thumb.
+           */}
+          <Link
+            href={`/${locale}/destinations/${destinationSlug}/experiences/${experience.slug}`}
+            className="flex min-h-11 items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+          >
+            {experience.name.text}
+            <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+          </Link>
+        </h3>
         {trust ? <TrustBadge state={trust} /> : null}
       </div>
 

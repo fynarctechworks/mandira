@@ -115,3 +115,59 @@ function formatTime(value: string, locale: string): string {
     timeZone: "UTC",
   }).format(date);
 }
+
+const WEEKDAY_LABELS: Record<string, string> = {
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
+};
+
+const WEEKDAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+export type OpeningDay = { day: string; hours: string | null };
+
+/**
+ * A week of opening hours, in weekday order, with closed days named.
+ *
+ * Days with no entry are reported as closed rather than omitted. A list that silently
+ * skips Tuesday reads as an oversight; "Tuesday — closed" is the answer someone travelled
+ * to find out.
+ */
+export function openingWeek(
+  schedule: { weekly?: Partial<Record<string, [string, string][]>> } | null,
+  locale: string,
+): OpeningDay[] {
+  if (!schedule?.weekly) return [];
+
+  return WEEKDAY_ORDER.map((day) => {
+    const ranges = schedule.weekly?.[day] ?? [];
+    return {
+      day: WEEKDAY_LABELS[day] ?? day,
+      hours:
+        ranges.length > 0
+          ? ranges
+              .map(([start, end]) => `${formatTime(start, locale)}–${formatTime(end, locale)}`)
+              .join(", ")
+          : null,
+    };
+  });
+}
+
+/**
+ * "Usually 1 h 30 m — allow up to 3 h" (PRD F1's min/likely/max).
+ *
+ * The max is what a traveler actually plans around when a queue is unpredictable, so it is
+ * said out loud rather than left in the data for the engine alone.
+ */
+export function durationRange(likely: number | null, max: number | null): string | null {
+  const usual = durationLabel(likely);
+  const worst = durationLabel(max);
+
+  if (!usual) return worst ? `Allow up to ${worst}` : null;
+  if (!worst || max === likely) return `Usually ${usual}`;
+  return `Usually ${usual} — allow up to ${worst}`;
+}

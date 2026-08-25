@@ -17,3 +17,6 @@ tests/e2e/.auth/
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# The E2E suite builds here so a run never clobbers a running dev server.
+.next-e2e/

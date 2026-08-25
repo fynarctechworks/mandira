@@ -8,6 +8,9 @@ export default tseslint.config(
     ignores: [
       "**/node_modules/**",
       "**/.next/**",
+      // The E2E suite builds here so a run never clobbers a running dev server; it is
+      // compiled output either way (see the apps' next.config.ts).
+      "**/.next-e2e/**",
       "**/dist/**",
       "**/.turbo/**",
       // Build artifacts, not source: the service worker bundle Serwist emits into public/.

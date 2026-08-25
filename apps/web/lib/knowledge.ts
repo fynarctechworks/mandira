@@ -1,7 +1,15 @@
 import { getI18n } from "@mandhira/i18n";
-import type { TrustState } from "@mandhira/ui";
 
 import { webSupabase } from "./supabase";
+import type { TrustEntry, TrustMap } from "./trust";
+
+/*
+ * Re-exported so a server component has one import for the whole read layer. The
+ * definitions themselves live in `./trust` because client components need them and this
+ * module reaches `next/headers` — see the note at the top of that file.
+ */
+export { trustStateOf, weakestTrustState } from "./trust";
+export type { TrustEntry, TrustMap } from "./trust";
 
 /**
  * The traveler's read of published knowledge (PRD F2).
@@ -17,19 +25,6 @@ import { webSupabase } from "./supabase";
 
 /** One `_i18n` column, resolved for the traveler's locale. */
 export type Text = { text: string; isFallback: boolean };
-
-/** The trust payload the published views attach to every entity. */
-export type TrustEntry = {
-  confidence: "high" | "medium" | "low";
-  freshness: "fresh" | "aging" | "stale";
-  verified_at: string | null;
-  valid_until: string | null;
-  source_name: string | null;
-  source_tier_label: string | null;
-  conflict_flag: boolean;
-};
-
-export type TrustMap = Record<string, TrustEntry>;
 
 export type Accessibility = {
   step_free: "yes" | "no" | "partial" | null;
@@ -98,40 +93,6 @@ export type DestinationPage = {
   sources: { name: string; tierLabel: string }[];
   oldestVerifiedAt: string | null;
 };
-
-/**
- * PRD F9's mapping from computed confidence to a badge, restated in one place.
- *
- * A conflict or staleness forces "Check locally" regardless of confidence: a field two
- * sources disagree about is not something to reassure anyone about, whatever its tier.
- */
-export function trustStateOf(entry: TrustEntry | undefined): TrustState | null {
-  if (!entry) return null;
-  if (entry.conflict_flag || entry.freshness === "stale") return "check_locally";
-  if (entry.confidence === "high") return "verified";
-  if (entry.confidence === "medium") return "verified_earlier";
-  return "check_locally";
-}
-
-/**
- * The weakest badge across an entity's fields — what a CARD should show.
- *
- * A card carrying one "Verified" badge while an unshown field says "Check locally" would
- * be technically true and practically a lie. The card summarises; the detail page and the
- * trust sheet break it down.
- */
-export function weakestTrustState(trust: TrustMap): TrustState | null {
-  const order: TrustState[] = ["verified", "verified_earlier", "check_locally"];
-  let worst: TrustState | null = null;
-
-  for (const entry of Object.values(trust)) {
-    const state = trustStateOf(entry);
-    if (!state) continue;
-    if (!worst || order.indexOf(state) > order.indexOf(worst)) worst = state;
-  }
-
-  return worst;
-}
 
 /** The destination page (PRD F2), in one round of queries. */
 export async function getDestinationPage(
@@ -335,4 +296,177 @@ function collectSources(entities: { trust: TrustMap }[]) {
   }
 
   return { sources: [...sources.values()], oldestVerifiedAt: oldest };
+}
+
+// ── Detail pages ─────────────────────────────────────────────────────────────
+
+export type OpeningSchedule = {
+  weekly?: Partial<Record<string, [string, string][]>>;
+  exceptions?: { date: string; hours?: [string, string][]; closed?: boolean }[];
+};
+
+export type PlaceDetail = PlaceCard & {
+  destinationSlug: string;
+  address: string | null;
+  openingSchedule: OpeningSchedule | null;
+  closureRules: Text;
+  entryRequirements: Text;
+  dressCode: Text;
+  hoursNote: Text;
+  visitDurationMinMinutes: number | null;
+  visitDurationMaxMinutes: number | null;
+  guidance: GuidanceBlock[];
+};
+
+export type ExperienceDetail = ExperienceCard & {
+  destinationSlug: string;
+  description: Text;
+  eligibility: Text;
+  costNote: Text;
+  queueExpectation: Text;
+  preparation: Text;
+  advanceBookingHow: Text;
+  isOutdoor: boolean;
+  durationMinMinutes: number | null;
+  durationMaxMinutes: number | null;
+  placeName: Text | null;
+  placeSlug: string | null;
+  guidance: GuidanceBlock[];
+  /*
+   * Availability is a CRITICAL field with its own trust record, on the availability rule
+   * rather than on the experience (PRD F1). Carried separately so the badge beside a
+   * timing is about that timing, and not borrowed from whoever verified the booking note.
+   */
+  availabilityTrust: TrustEntry | undefined;
+};
+
+export async function getPlaceDetail(
+  destinationSlug: string,
+  slug: string,
+  locale: string,
+): Promise<PlaceDetail | null> {
+  const supabase = await webSupabase();
+
+  const { data } = await supabase
+    .from("v_published_places")
+    .select(
+      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, trust, accessibility, destination_id",
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!data?.id) return null;
+  if (!(await belongsToDestination(data.destination_id, destinationSlug))) return null;
+
+  return {
+    ...toPlaceCard(data, locale),
+    destinationSlug,
+    address: (data.address as string | null) ?? null,
+    openingSchedule: (data.opening_schedule as OpeningSchedule | null) ?? null,
+    closureRules: text(data.closure_rules_i18n, locale),
+    entryRequirements: text(data.entry_requirements_i18n, locale),
+    dressCode: text(data.dress_code_i18n, locale),
+    hoursNote: text(data.hours_note_i18n, locale),
+    visitDurationMinMinutes: (data.visit_duration_min_minutes as number | null) ?? null,
+    visitDurationMaxMinutes: (data.visit_duration_max_minutes as number | null) ?? null,
+    guidance: await getGuidance("places", data.id as string, locale),
+  };
+}
+
+export async function getExperienceDetail(
+  destinationSlug: string,
+  slug: string,
+  locale: string,
+): Promise<ExperienceDetail | null> {
+  const supabase = await webSupabase();
+
+  const { data } = await supabase
+    .from("v_published_experiences")
+    .select(
+      "id, slug, name_i18n, experience_type, significance_i18n, description_i18n, duration_min_minutes, duration_likely_minutes, duration_max_minutes, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before, eligibility_i18n, cost_note_i18n, queue_expectation_i18n, preparation_i18n, is_outdoor, editorial_weight, trust, accessibility, destination_id, place_id",
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!data?.id) return null;
+  if (!(await belongsToDestination(data.destination_id, destinationSlug))) return null;
+
+  const [availability, place] = await Promise.all([
+    supabase
+      .from("v_published_availability_rules")
+      .select("experience_id, kind, daily_times, trust")
+      .eq("experience_id", data.id),
+    data.place_id
+      ? supabase
+          .from("v_published_places")
+          .select("slug, name_i18n")
+          .eq("id", data.place_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const windows = groupAvailability(availability.data ?? []).get(data.id as string) ?? [];
+
+  return {
+    ...toExperienceCard(data, locale, windows),
+    destinationSlug,
+    description: text(data.description_i18n, locale),
+    eligibility: text(data.eligibility_i18n, locale),
+    costNote: text(data.cost_note_i18n, locale),
+    queueExpectation: text(data.queue_expectation_i18n, locale),
+    preparation: text(data.preparation_i18n, locale),
+    advanceBookingHow: text(data.advance_booking_how_i18n, locale),
+    isOutdoor: Boolean(data.is_outdoor),
+    durationMinMinutes: (data.duration_min_minutes as number | null) ?? null,
+    durationMaxMinutes: (data.duration_max_minutes as number | null) ?? null,
+    placeName: place.data ? text(place.data.name_i18n, locale) : null,
+    placeSlug: (place.data?.slug as string | null) ?? null,
+    guidance: await getGuidance("experiences", data.id as string, locale),
+    // Whole-entity trust on an availability rule has a NULL field name, which the view
+    // emits under the key "entity".
+    availabilityTrust: ((availability.data?.[0]?.trust ?? {}) as TrustMap)["entity"],
+  };
+}
+
+/**
+ * A detail URL names its destination, and the entity must actually be in it.
+ *
+ * Without this check `/destinations/a/places/x` would happily render a place belonging to
+ * destination `b`. Nothing unpublished leaks either way — the view already guarantees that
+ * — but a URL that lies about where something is will end up shared, and then quoted.
+ */
+async function belongsToDestination(
+  destinationId: unknown,
+  destinationSlug: string,
+): Promise<boolean> {
+  const supabase = await webSupabase();
+
+  const { data } = await supabase
+    .from("v_published_destinations")
+    .select("id")
+    .eq("slug", destinationSlug)
+    .maybeSingle();
+
+  return Boolean(data?.id) && data?.id === destinationId;
+}
+
+async function getGuidance(
+  table: "places" | "experiences",
+  id: string,
+  locale: string,
+): Promise<GuidanceBlock[]> {
+  const supabase = await webSupabase();
+
+  const { data } = await supabase
+    .from("v_published_guidance_blocks")
+    .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
+    .eq("applies_to_table", table)
+    .eq("applies_to_id", id)
+    .order("sort_order");
+
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    guidanceType: row.guidance_type as string,
+    body: text(row.body_i18n, locale),
+  }));
 }
