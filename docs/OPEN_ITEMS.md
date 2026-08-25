@@ -61,7 +61,15 @@ and needed no content at all.
 
 The first genuinely blocked item is **B-013** (seed destination #1), which needs OPEN-001.
 After it, the whole M1 traveler chain B-015 → B-018 → B-019 → B-020/B-021 → B-022 → B-025
-waits behind it. The engine half of **B-026** (`evaluateChange` / `applyOption`
-and the option ladder) has now been built early for the same reason — it is pure, and it
-needed no content. **Everything else in the backlog now waits on OPEN-001**: the remaining
-M1 chain, the Change Card UI, notifications, reports, and all of M3–M5.
+waits behind it. The engine halves of **B-026** (`evaluateChange` / `applyOption`
+and the option ladder) and **B-022** (`getNowNextLater`) have now been built early for the
+same reason — they are pure, and they needed no content.
+
+Every remaining item that renders anything to a traveler waits on OPEN-001, because there
+is nothing to render. What is still buildable without it:
+
+- **B-027 infrastructure** — VAPID keys are self-generated, and the `notification_subscriptions`
+  schema already exists (0006). The push sender, `schedule_notifications` and the
+  `journey_status_roller` are server-side and testable with fixtures.
+- **pg_cron job wiring** (TRD §5.4) — `recompute_freshness`, the status roller, and the
+  `prune_ai_cache` / `prune_rate_limits` functions added in 0012, none of which needs content.
