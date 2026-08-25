@@ -13,7 +13,10 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:types": "bash scripts/gen-types.sh",
+    "db:types:check": "bash scripts/gen-types.sh --check",
+    "db:test": "supabase test db"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

@@ -48,3 +48,10 @@ jobs:
         run: supabase db lint --schema public --level warning
       - name: Run pgTAP tests
         run: supabase test db
+      # Table types are generated, never hand-written (TRD §1.4). This fails the build if
+      # someone changed a migration without running `pnpm db:types`.
+      - name: Check generated types are current
+        run: |
+          supabase gen types typescript --local > /tmp/types.ts
+          diff -u packages/db/types.ts /tmp/types.ts \
+            || { echo "::error::packages/db/types.ts is stale — run 'pnpm db:types' and commit."; exit 1; }
