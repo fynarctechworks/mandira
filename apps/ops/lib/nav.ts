@@ -73,7 +73,12 @@ export const NAV_ITEMS: NavItem[] = [
     id: "O06",
     label: "Facilities & accessibility",
     section: "entities",
-    href: "/routes",
+    // Accessibility records attach to exactly one place or route and have no independent
+    // existence, and a facility IS a place. So O06 is delivered as panels on those two
+    // screens rather than a screen of its own (D-046) — the label says where to find it
+    // rather than pretending it is unbuilt.
+    href: null,
+    comingIn: "In Places & Routes",
   },
   { id: "O07", label: "Guidance blocks", section: "entities", href: "/guidance" },
   { id: "O16", label: "Media library", section: "entities", href: null, comingIn: "B-012" },
@@ -84,8 +89,8 @@ export const NAV_ITEMS: NavItem[] = [
     id: "O08",
     label: "Sources registry",
     section: "sources",
-    href: "/guidance",
-    keywords: ["captures", "diffs"],
+    href: "/sources",
+    keywords: ["captures", "diffs", "trust", "tier"],
   },
   { id: "O09", label: "Ingestion & AI extraction", section: "sources", href: null, comingIn: "M3" },
 

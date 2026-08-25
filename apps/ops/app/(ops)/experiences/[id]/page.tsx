@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
+import { TrustSection } from "@/components/trust-section";
+import type { TrustRecord } from "@/components/trust-panel";
+import { trustForEntity } from "@/app/(ops)/trust/actions";
 import { anchorOptions } from "@/lib/anchors";
+import { activeSources } from "@/lib/sources";
 import { destinationOptions } from "@/lib/destinations";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
@@ -15,19 +19,22 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, locales, destinations, anchors, rulesResult] = await Promise.all([
-    supabase.from("experiences").select("*").eq("id", id).is("deleted_at", null).maybeSingle(),
-    activeLocales(),
-    destinationOptions(),
-    anchorOptions(),
-    supabase
-      .from("availability_rules")
-      .select(
-        "id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority",
-      )
-      .eq("experience_id", id)
-      .order("priority", { ascending: false }),
-  ]);
+  const [{ data, error }, locales, destinations, anchors, rulesResult, sources, trust] =
+    await Promise.all([
+      supabase.from("experiences").select("*").eq("id", id).is("deleted_at", null).maybeSingle(),
+      activeLocales(),
+      destinationOptions(),
+      anchorOptions(),
+      supabase
+        .from("availability_rules")
+        .select(
+          "id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority",
+        )
+        .eq("experience_id", id)
+        .order("priority", { ascending: false }),
+      activeSources(),
+      trustForEntity("experiences", id),
+    ]);
 
   if (error || !data) notFound();
 
@@ -62,8 +69,18 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
         <p className="mt-1 text-body text-text-secondary">Editing a draft experience.</p>
       </header>
 
-      {/* Availability first: it is the thing most likely to be missing, and the reason an
-          otherwise-complete experience cannot be scheduled. */}
+      {/* Trust first, then availability: these are the two things most likely to be
+          missing, and between them they decide whether a traveler ever sees this at all
+          and whether the engine can schedule it. */}
+      <div className="max-w-2xl">
+        <TrustSection
+          entityTable="experiences"
+          entityId={data.id}
+          sources={sources}
+          records={trust as Record<string, TrustRecord | undefined>}
+        />
+      </div>
+
       <div className="max-w-2xl">
         <AvailabilityRules
           experienceId={data.id}

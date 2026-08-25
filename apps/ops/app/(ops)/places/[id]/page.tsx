@@ -1,6 +1,10 @@
 import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
+import { TrustSection } from "@/components/trust-section";
+import type { TrustRecord } from "@/components/trust-panel";
+import { trustForEntity } from "@/app/(ops)/trust/actions";
+import { activeSources } from "@/lib/sources";
 import { PlaceForm, type PlaceDraft } from "@/components/place-form";
 import { destinationOptions } from "@/lib/destinations";
 import { activeLocales } from "@/lib/locales";
@@ -27,7 +31,7 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, accessResult, locales, destinations] = await Promise.all([
+  const [{ data, error }, accessResult, locales, destinations, sources, trust] = await Promise.all([
     supabase
       .from("places")
       .select("*, latitude, longitude")
@@ -37,6 +41,8 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
     supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
     activeLocales(),
     destinationOptions(),
+    activeSources(),
+    trustForEntity("places", id),
   ]);
 
   if (error || !data) notFound();
@@ -70,6 +76,15 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
         <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
         <p className="mt-1 text-body text-text-secondary">Editing a draft place.</p>
       </header>
+      <div className="max-w-2xl">
+        <TrustSection
+          entityTable="places"
+          entityId={data.id}
+          sources={sources}
+          records={trust as Record<string, TrustRecord | undefined>}
+        />
+      </div>
+
       <div className="max-w-2xl">
         <AccessibilityPanel
           locales={locales}

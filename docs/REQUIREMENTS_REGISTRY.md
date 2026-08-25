@@ -20,7 +20,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
 | PRD-KNOW-001 | Entity model | Destination/Place/Experience/Availability/Route/Transport/Facility/Accessibility/Guidance/Media/Phrase per F1 tables; 50 places+120 experiences per destination without schema change. **Implemented (B-004):** all §4.4 tables created. | P0 | — |
-| PRD-KNOW-002 | Trust record on every entity & critical field | Fields per F1: source tier T1–T5, verification status, verified_at/by, valid_until, freshness, confidence, conflict_flag | P0 | KNOW-001 |
+| PRD-KNOW-002 | Trust record on every entity & critical field | Fields per F1: source tier T1–T5, verification status, verified_at/by, valid_until, freshness, confidence, conflict_flag | P0 | KNOW-001  **Implemented (B-011):** inline trust panel on every critical field; freshness/confidence derived by the database and shown read-only. |
 | PRD-KNOW-003 | Publish gate | `unverified`/`ai_extracted` never visible to travelers; minimum `human_reviewed`. **Implemented (B-004):** enforced inside the `v_published_*` views by `critical_fields_gated()`; a missing trust record also fails the gate. Covered by pgTAP. | P0 | KNOW-002 |
 | PRD-KNOW-004 | Critical-field independence | Timings/availability/closures/requirements carry their own trust records | P0 | KNOW-002 |
 | PRD-KNOW-005 | Locale fallback | Missing locale falls back to en with visible "Not yet available in [language]" | P0 | KNOW-001 |
@@ -175,7 +175,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-OPS — Admin & Data Operations (F17–F20)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-OPS-SRC-001 | Source registry | Types/tiers T1–T5, coverage, cadence, method, owner, status | P0 | — |
+| PRD-OPS-SRC-001 | Source registry | Types/tiers T1–T5, coverage, cadence, method, owner, status | P0 | —  **Implemented (B-011):** O08 registry with type/tier/cadence/status; manual method only in M1 (other methods arrive with B-029). |
 | PRD-OPS-SRC-002 | Ingestion + captures + diffs | Raw capture stored; diff vs previous per run | P1 | OPS-SRC-001 |
 | PRD-OPS-SRC-003 | AI extraction (ops) | Per-field confidence + verbatim excerpt; always `ai_extracted`; cannot publish | P1 | TRD-AI-004 |
 | PRD-OPS-SRC-004 | Change detection | Monitored diff on published field → Change candidate ≤1 cycle with excerpt | P1 | OPS-SRC-002 |

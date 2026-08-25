@@ -8,6 +8,7 @@
 
 export type { Database, Json } from "../types";
 export * from "./types-helpers";
+export * from "./critical-fields";
 export * from "./schemas/primitives";
 export * from "./schemas/place";
 export * from "./schemas/experience";

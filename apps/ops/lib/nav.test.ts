@@ -40,6 +40,17 @@ describe("Ops nav model", () => {
     }
   });
 
+  /*
+   * Two screens pointing at the same route means one of them is mislabelled — during
+   * B-011 a scripted edit silently pointed the sources registry at /guidance, and the
+   * accessibility entry at /routes. Neither broke a build; both were simply wrong.
+   */
+  it("never points two screens at the same route", () => {
+    const hrefs = availableNavItems().map((item) => item.href);
+    const duplicates = hrefs.filter((href, i) => hrefs.indexOf(href) !== i);
+    expect(duplicates, `duplicate nav routes: ${duplicates.join(", ")}`).toEqual([]);
+  });
+
   it("returns the same items whether read whole or by section", () => {
     const bySection = NAV_SECTIONS.flatMap((s) => navItemsBySection(s.id));
     expect(bySection).toHaveLength(NAV_ITEMS.length);
