@@ -12,7 +12,8 @@
     "./client/middleware": "./src/client/middleware.ts",
     "./client/roles": "./src/client/roles.ts",
     "./rate-limit": "./src/rate-limit.ts",
-    "./ai-store": "./src/ai-store.ts"
+    "./ai-store": "./src/ai-store.ts",
+    "./api": "./src/api.ts"
   },
   "scripts": {
     "lint": "eslint .",

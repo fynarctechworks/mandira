@@ -41,6 +41,8 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 | OPEN-005 | Confirm launch locales en/te/hi (assumption D-014) | LANG scope | Before M4 |
 | OPEN-006 | Content sourcing stance: approach T1/T2 authorities for permission vs public-data-only | Ingestion scale | M2 |
 | OPEN-007 | Pilot group source (≥10 planners) | M2 exit | During M1 |
+| OPEN-011 | **Guests currently share one rate-limit bucket.** `withApi` keys a guest's limit on a device cookie that nothing sets yet — the guest draft that issues it is B-019. Harmless while no guest-facing rate-limited route exists; the moment one does, the first traveler to spend their ten intent extractions spends everyone's. Not keyed on IP by choice (TRD §6.2 keys on a session; DPDP treats an IP as personal data). | `/api/intent/extract` (B-018) must not ship before the cookie does | With B-019 |
+| DOC-01 | **`BACKEND_ARCHITECTURE.md` lists `keepalive` among the Supabase Edge Functions, while TRD §5.4 assigns it to Vercel Cron.** Implemented per the TRD (D-072), which also happens to be the only one that can work — an Edge Function that pings Supabase runs on Supabase and cannot wake a paused project. Flagged rather than silently edited, since the docs are founder-owned. | Nothing — the code follows the TRD | Whenever the docs are next revised |
 | OPEN-010 | The engine's Web Worker bundling is unexercised: `new URL("./engine.worker.ts", import.meta.url)` is only reached once a page calls the client. Routing, worker reuse and the main-thread fallback are unit-tested over a real Comlink endpoint; the bundler output is not. | Nothing today | Verify during B-019, when the journey builder first calls it |
 
 ## Resolved
@@ -73,5 +75,6 @@ is nothing to render. What is still buildable without it:
   `journey_status_roller` are server-side and testable with fixtures.
 - ~~**pg_cron job wiring** (TRD §5.4)~~ — done: `0013` ships all three pg_cron jobs plus the
   jobs contract (`job_runs`, single-flight runner, `v_job_health`).
-- **`withApi`** — the route wrapper `BACKEND_ARCHITECTURE` requires on every handler. Now
-  buildable, because `rateLimit()` landed with B-018 part 1.
+- ~~**`withApi`**~~ — done, along with the `keepalive` cron route.
+- **`packages/db` Zod schemas for the remaining TRD entities**, and the Ops-side bound
+  `withApi` instance, whenever Ops first needs a route handler rather than a Server Action.
