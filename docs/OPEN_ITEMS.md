@@ -71,5 +71,7 @@ is nothing to render. What is still buildable without it:
 - **B-027 infrastructure** — VAPID keys are self-generated, and the `notification_subscriptions`
   schema already exists (0006). The push sender, `schedule_notifications` and the
   `journey_status_roller` are server-side and testable with fixtures.
-- **pg_cron job wiring** (TRD §5.4) — `recompute_freshness`, the status roller, and the
-  `prune_ai_cache` / `prune_rate_limits` functions added in 0012, none of which needs content.
+- ~~**pg_cron job wiring** (TRD §5.4)~~ — done: `0013` ships all three pg_cron jobs plus the
+  jobs contract (`job_runs`, single-flight runner, `v_job_health`).
+- **`withApi`** — the route wrapper `BACKEND_ARCHITECTURE` requires on every handler. Now
+  buildable, because `rateLimit()` landed with B-018 part 1.

@@ -1076,6 +1076,33 @@ export type Database = {
           },
         ]
       }
+      job_runs: {
+        Row: {
+          detail: Json | null
+          finished_at: string | null
+          id: string
+          job_name: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          detail?: Json | null
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          detail?: Json | null
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       journey_change_events: {
         Row: {
           applied_changes: Json | null
@@ -2932,6 +2959,17 @@ export type Database = {
       }
     }
     Views: {
+      v_job_health: {
+        Row: {
+          interval_seconds: number | null
+          job_name: string | null
+          last_run_at: string | null
+          last_status: string | null
+          missed_two_windows: boolean | null
+          needs_attention: boolean | null
+        }
+        Relationships: []
+      }
       v_published_advisories: {
         Row: {
           body_i18n: Json | null
@@ -3612,6 +3650,7 @@ export type Database = {
           reset_at: string
         }[]
       }
+      critical_fields: { Args: { p_entity_table: string }; Returns: string[] }
       critical_fields_gated: {
         Args: {
           p_entity_id: string
@@ -3648,6 +3687,10 @@ export type Database = {
         Returns: boolean
       }
       i18n_text: { Args: { p: Json }; Returns: string }
+      is_entity_published: {
+        Args: { p_entity_id: string; p_entity_table: string }
+        Returns: boolean
+      }
       is_ops: { Args: never; Returns: boolean }
       latitude:
         | {
@@ -3683,6 +3726,8 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: Json
       }
+      purge_deleted_accounts: { Args: { p_grace?: string }; Returns: Json }
+      recompute_freshness: { Args: never; Returns: Json }
       record_audit: {
         Args: {
           p_action: string
@@ -3693,6 +3738,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      roll_journey_statuses: { Args: never; Returns: Json }
+      run_scheduled_job: { Args: { p_name: string }; Returns: Json }
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string
