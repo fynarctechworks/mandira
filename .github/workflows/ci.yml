@@ -25,6 +25,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # The engine carries a 90% coverage gate (TESTING_STRATEGY): a wrong schedule looks
+      # exactly like a right one until a traveler misses something.
+      - run: pnpm test:engine
       - run: pnpm build
 
   database:

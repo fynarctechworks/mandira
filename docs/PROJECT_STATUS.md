@@ -17,7 +17,7 @@ Update rules: one row per feature (granularity = FEATURE_INVENTORY IDs); update 
 | Ops core | Ops platform (M1 scope) | PRD-OPS-CNT-001, PRD-KNOW-001/002/003/004, PRD-OPS-SRC-001, PRD-OPS-WF-004/009 | COMPLETE | AUTH-05 | 2026-08-25 | B-008..B-012 done: shell, all knowledge editors, sources registry, trust panel, and the full validate/submit/approve/publish path plus the media library. Publishing is enforced in SQL (D-052) and refuses self-approval. Nav O01..O08/O13/O16 live. 125 vitest + 176 pgTAP + 29 Playwright. Remaining Ops screens are M2..M4 per the backlog. |
 | Discover | DISC/SRCH-01..02/TRST | see inventory | NOT_STARTED | KNOW-03 | 2026-08-24 | |
 | Intent | INT-01..03 | see inventory | NOT_STARTED | KNOW-03 | 2026-08-24 | |
-| Plan | PLAN/ENG-01..04,06/HLTH/PREP-01,04/MAPS | see inventory | NOT_STARTED | ENG-01 | 2026-08-24 | |
+| Plan | PLAN/ENG-01..04,06/HLTH/PREP-01,04/MAPS | see inventory | IN_PROGRESS | ENG-01 | 2026-08-25 | B-016 done: ENG-01 scheduling core — resolveAvailability, computeBuffer, scheduleDay, checkReturnGuard, timezone/DST-correct time helpers. 71 tests incl. the PRD Appendix A worked example; 90% coverage gate in CI. Plan: docs/plans/ENG-01.md. Next: B-017 computeHealth + buildInitialJourney. |
 | Live & offline core | LIVE-01..04, OFFL-01..03 | see inventory | NOT_STARTED | PLAN-01 | 2026-08-24 | |
 | Adapt & engage (M2) | ADPT/NOTF/REPT-01,04/SHARE/ENG-05/PREP-02,03/PLAN-07 | see inventory | NOT_STARTED | M1 | 2026-08-24 | |
 | Scale & trust (M3) | OPS-SRC-02..05/QUEUE-01,03,05..07/DYN/SRCH-03/OFFL-04,05/ADPT-04/REPT-02,05 | see inventory | NOT_STARTED | M2 | 2026-08-24 | |

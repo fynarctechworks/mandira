@@ -1,2 +1,23 @@
-// @mandhira/journey-engine - workspace stub created in B-001. Populated in B-016/B-017.
-export {};
+/**
+ * @mandhira/journey-engine — pure, deterministic journey logic.
+ *
+ * ARCHITECTURE §3: zero imports from apps, providers or Supabase. No network, no database,
+ * no ambient clock — every input arrives as an argument, including "now". That is what
+ * makes the engine behave identically on a server and on a phone in airplane mode
+ * (D-005), and what makes it testable without fixtures for any of them.
+ */
+
+export * from "./types";
+export { resolveAvailability, type AvailabilityResult } from "./availability";
+export { computeBuffer, BASE_BUFFER_MINUTES } from "./buffer";
+export { scheduleDay, travelMinutes, type ScheduleDayResult } from "./schedule";
+export { checkReturnGuard, type ReturnGuardResult } from "./return-guard";
+export {
+  toMinutes,
+  toTimeOfDay,
+  dateForDay,
+  weekdayOf,
+  toInstant,
+  fromInstant,
+  spillsPastMidnight,
+} from "./time";

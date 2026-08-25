@@ -16,7 +16,8 @@
     "format:check": "prettier --check .",
     "db:types": "bash scripts/gen-types.sh",
     "db:types:check": "bash scripts/gen-types.sh --check",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "test:engine": "vitest run packages/journey-engine --coverage"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
@@ -24,6 +25,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.6",
+    "@vitest/coverage-v8": "^3.2.7",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
