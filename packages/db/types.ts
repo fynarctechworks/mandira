@@ -3068,6 +3068,7 @@ export type Database = {
           published_at: string | null
           radius_km: number | null
           region: string | null
+          search_tsv: unknown
           seasonal_notes_i18n: Json | null
           slug: string | null
           state: string | null
@@ -3085,6 +3086,7 @@ export type Database = {
           published_at?: string | null
           radius_km?: number | null
           region?: string | null
+          search_tsv?: unknown
           seasonal_notes_i18n?: Json | null
           slug?: string | null
           state?: string | null
@@ -3102,6 +3104,7 @@ export type Database = {
           published_at?: string | null
           radius_km?: number | null
           region?: string | null
+          search_tsv?: unknown
           seasonal_notes_i18n?: Json | null
           slug?: string | null
           state?: string | null
@@ -3142,6 +3145,7 @@ export type Database = {
           published_at: string | null
           queue_expectation_i18n: Json | null
           route_id: string | null
+          search_tsv: unknown
           significance_i18n: Json | null
           slug: string | null
           trust: Json | null
@@ -3170,6 +3174,7 @@ export type Database = {
           published_at?: string | null
           queue_expectation_i18n?: Json | null
           route_id?: string | null
+          search_tsv?: unknown
           significance_i18n?: Json | null
           slug?: string | null
           trust?: never
@@ -3198,6 +3203,7 @@ export type Database = {
           published_at?: string | null
           queue_expectation_i18n?: Json | null
           route_id?: string | null
+          search_tsv?: unknown
           significance_i18n?: Json | null
           slug?: string | null
           trust?: never
@@ -3374,6 +3380,7 @@ export type Database = {
           opening_schedule: Json | null
           place_type: Database["public"]["Enums"]["place_type_enum"] | null
           published_at: string | null
+          search_tsv: unknown
           slug: string | null
           summary_i18n: Json | null
           trust: Json | null
@@ -3400,6 +3407,7 @@ export type Database = {
           opening_schedule?: Json | null
           place_type?: Database["public"]["Enums"]["place_type_enum"] | null
           published_at?: string | null
+          search_tsv?: unknown
           slug?: string | null
           summary_i18n?: Json | null
           trust?: never
@@ -3426,6 +3434,7 @@ export type Database = {
           opening_schedule?: Json | null
           place_type?: Database["public"]["Enums"]["place_type_enum"] | null
           published_at?: string | null
+          search_tsv?: unknown
           slug?: string | null
           summary_i18n?: Json | null
           trust?: never

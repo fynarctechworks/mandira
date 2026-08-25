@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -30,6 +30,33 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <h1 className="text-display">{t("title")}</h1>
         <p className="text-body text-text-secondary">{t("intro")}</p>
       </header>
+
+      {/*
+       * PRD A02 puts search on the home screen. A GET form rather than a link, so typing
+       * and pressing enter goes straight to results — one interaction, and it works with
+       * no JavaScript running.
+       */}
+      <form method="get" action={`/${locale}/search`} role="search" className="flex gap-2">
+        <label htmlFor="home-search" className="sr-only">
+          Search places and experiences
+        </label>
+        <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-bg-surface px-3">
+          <Search className="size-5 shrink-0 text-text-secondary" aria-hidden />
+          <input
+            id="home-search"
+            name="q"
+            type="search"
+            placeholder="A place, a ritual, a name…"
+            className="min-h-11 flex-1 bg-transparent text-body outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          className="focus-ring min-h-11 rounded-lg border border-border px-4 text-body-sm font-medium"
+        >
+          Search
+        </button>
+      </form>
 
       <section aria-labelledby="destinations-heading" className="flex flex-col gap-3">
         <h2 id="destinations-heading" className="text-h2">

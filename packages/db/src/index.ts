@@ -7,6 +7,9 @@
 // types by `schemas.test.ts`.
 
 export type { Database, Json } from "../types";
+// The generated enum value arrays, so a UI that offers a choice cannot drift from what the
+// database will accept.
+export { Constants } from "../types";
 export * from "./types-helpers";
 export * from "./critical-fields";
 export * from "./schemas/primitives";

@@ -1,3 +1,4 @@
+import { Constants, type Enums } from "@mandhira/db";
 import { getI18n } from "@mandhira/i18n";
 
 import { webSupabase } from "./supabase";
@@ -46,6 +47,7 @@ export type DestinationSummary = {
 export type PlaceCard = {
   id: string;
   slug: string;
+  destinationId: string;
   name: Text;
   placeType: string;
   facilitySubtype: string | null;
@@ -59,6 +61,7 @@ export type PlaceCard = {
 export type ExperienceCard = {
   id: string;
   slug: string;
+  destinationId: string;
   name: Text;
   experienceType: string;
   significance: Text;
@@ -115,7 +118,7 @@ export async function getDestinationPage(
       // One string literal, not a concatenation: the client infers the row shape from the
       // literal type, and a joined string degrades it to an opaque error type.
       .select(
-        "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility",
+        "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
       )
       .eq("destination_id", destination.id)
       // PRD F2: ranked by the editorial weight Ops set, never by popularity.
@@ -124,7 +127,7 @@ export async function getDestinationPage(
     supabase
       .from("v_published_places")
       .select(
-        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility",
+        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
       )
       .eq("destination_id", destination.id)
       .order("editorial_weight", { ascending: false })
@@ -209,6 +212,7 @@ function toExperienceCard(
   return {
     id: row["id"] as string,
     slug: row["slug"] as string,
+    destinationId: (row["destination_id"] as string | undefined) ?? "",
     name: text(row["name_i18n"], locale),
     experienceType: row["experience_type"] as string,
     significance: text(row["significance_i18n"], locale),
@@ -227,6 +231,7 @@ function toPlaceCard(row: Record<string, unknown>, locale: string): PlaceCard {
   return {
     id: row["id"] as string,
     slug: row["slug"] as string,
+    destinationId: (row["destination_id"] as string | undefined) ?? "",
     name: text(row["name_i18n"], locale),
     placeType: row["place_type"] as string,
     facilitySubtype: (row["facility_subtype"] as string | null) ?? null,
@@ -469,4 +474,150 @@ async function getGuidance(
     guidanceType: row.guidance_type as string,
     body: text(row.body_i18n, locale),
   }));
+}
+
+// ── Search (SRCH-01, PRD F2) ─────────────────────────────────────────────────
+
+/**
+ * PRD F2's filters. Four of the six are here.
+ *
+ * "Availability on my dates" and "Near a place I've added" both need an active journey,
+ * which arrives with B-019 — PRD F2 caps the visible filters at six rather than requiring
+ * six, so shipping the four that can be answered honestly is within the spec. A filter
+ * that silently matches everything is worse than an absent one: it teaches a traveler the
+ * control does not work.
+ */
+export type PlaceType = Enums<"place_type_enum">;
+export type ExperienceType = Enums<"experience_type_enum">;
+
+/** The values the type filter offers, taken from the generated enums so it cannot drift. */
+export const PLACE_TYPES = Constants.public.Enums.place_type_enum;
+export const EXPERIENCE_TYPES = Constants.public.Enums.experience_type_enum;
+
+export function isPlaceType(value: string): value is PlaceType {
+  return (PLACE_TYPES as readonly string[]).includes(value);
+}
+
+export function isExperienceType(value: string): value is ExperienceType {
+  return (EXPERIENCE_TYPES as readonly string[]).includes(value);
+}
+
+export type SearchFilters = {
+  /** One value from either enum — a place type or an experience type, never both. */
+  type?: string | undefined;
+  /** Only entities recorded as step-free or partly step-free. */
+  stepFreeOnly?: boolean | undefined;
+  /** Upper bound on the likely duration, in minutes. */
+  maxDurationMinutes?: number | undefined;
+  /** true = only things needing booking; false = only things that do not. */
+  advanceBooking?: boolean | undefined;
+};
+
+export type SearchResults = {
+  experiences: ExperienceCard[];
+  places: PlaceCard[];
+  /** True when the query matched nothing AND filters were applied — a different message. */
+  filtersApplied: boolean;
+};
+
+/**
+ * Text search over published knowledge, grouped by kind (PRD A03).
+ *
+ * `config: "simple"` is not optional. The generated `search_tsv` columns were built with
+ * the simple configuration so one column can hold English, Telugu and Devanagari; querying
+ * with any other config matches differently from the index and produces results that look
+ * arbitrary (0016).
+ */
+export async function searchKnowledge(
+  query: string,
+  filters: SearchFilters,
+  locale: string,
+): Promise<SearchResults> {
+  const supabase = await webSupabase();
+  const trimmed = query.trim();
+
+  let experienceQuery = supabase
+    .from("v_published_experiences")
+    .select(
+      "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
+    )
+    .order("editorial_weight", { ascending: false })
+    .limit(SECTION_LIMIT);
+
+  let placeQuery = supabase
+    .from("v_published_places")
+    .select(
+      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
+    )
+    .order("editorial_weight", { ascending: false })
+    .limit(SECTION_LIMIT);
+
+  if (trimmed) {
+    experienceQuery = experienceQuery.textSearch("search_tsv", trimmed, {
+      type: "websearch",
+      config: "simple",
+    });
+    placeQuery = placeQuery.textSearch("search_tsv", trimmed, {
+      type: "websearch",
+      config: "simple",
+    });
+  }
+
+  /*
+   * One filter over two enums that do not overlap. Choosing "Temple" returns no
+   * experiences and choosing "Darshan" returns no places, which is the truthful answer —
+   * matching everything in the other group would make the filter look broken, and
+   * silently dropping the group would hide that a whole kind of result exists.
+   */
+  if (filters.type) {
+    experienceQuery = isExperienceType(filters.type)
+      ? experienceQuery.eq("experience_type", filters.type)
+      : experienceQuery.limit(0);
+
+    placeQuery = isPlaceType(filters.type)
+      ? placeQuery.eq("place_type", filters.type)
+      : placeQuery.limit(0);
+  }
+
+  if (filters.maxDurationMinutes) {
+    experienceQuery = experienceQuery.lte("duration_likely_minutes", filters.maxDurationMinutes);
+    placeQuery = placeQuery.lte("visit_duration_likely_minutes", filters.maxDurationMinutes);
+  }
+
+  if (filters.advanceBooking !== undefined) {
+    experienceQuery = experienceQuery.eq("advance_booking_required", filters.advanceBooking);
+    // A place is not something you book, so a booking filter excludes places entirely
+    // rather than pretending every place satisfies it.
+    placeQuery = placeQuery.limit(0);
+  }
+
+  const [experiences, places] = await Promise.all([experienceQuery, placeQuery]);
+
+  const experienceCards = (experiences.data ?? []).map((row) => toExperienceCard(row, locale, []));
+  const placeCards = (places.data ?? []).map((row) => toPlaceCard(row, locale));
+
+  return {
+    /*
+     * The step-free filter runs here rather than in SQL. Accessibility arrives as a jsonb
+     * blob built by `accessibility_for()`, and filtering inside it in PostgREST would mean
+     * a `->>` predicate that cannot use an index and reads far worse than this does. The
+     * result set is already capped at twenty per kind.
+     */
+    experiences: filters.stepFreeOnly ? experienceCards.filter(isStepFree) : experienceCards,
+    places: filters.stepFreeOnly ? placeCards.filter(isStepFree) : placeCards,
+    filtersApplied: Object.values(filters).some((value) => value !== undefined),
+  };
+}
+
+/**
+ * Step-free enough to be worth showing under that filter.
+ *
+ * `partial` counts as a match. Excluding it would hide "a ramp on the east side, steps
+ * elsewhere" from the person most likely to want to know about the ramp — the filter
+ * narrows what is shown, and the card still says "partly" so nobody is misled.
+ * Unrecorded never matches: a filter is a claim, and we have nothing to claim.
+ */
+function isStepFree(entity: { accessibility: Accessibility | null }): boolean {
+  const value = entity.accessibility?.step_free;
+  return value === "yes" || value === "partial";
 }
