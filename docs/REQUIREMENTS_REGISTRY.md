@@ -208,10 +208,10 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-CMPL — Complete & Reflect (F16)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-CMPL-001 | Journey Record | Done-tap timeline; planned vs completed; protected completion plain statement (no score) | P1 | LIVE-002 |
-| PRD-CMPL-002 | Reflection | 3 optional questions; private; third offers report creation | P1 | REPT-001 |
-| PRD-CMPL-003 | Plan-similar | Copies travelers/preferences/tiers into new brief | P1 | INT-001 |
-| PRD-CMPL-004 | No social | Share summary is the only share surface, opt-in | P0 | — |
+| PRD-CMPL-001 ✅ | Journey Record | Done-tap timeline; planned vs completed; protected completion plain statement (no score) | P1 | LIVE-002 |
+| PRD-CMPL-002 ✅ | Reflection | 3 optional questions; private; third offers report creation | P1 | REPT-001 |
+| PRD-CMPL-003 ✅ | Plan-similar | Copies travelers/preferences/tiers into new brief | P1 | INT-001 |
+| PRD-CMPL-004 ✅ | No social | Share summary is the only share surface, opt-in | P0 | — |
 
 ## PRD-OPS — Admin & Data Operations (F17–F20)
 | ID | Name | Description / Acceptance | Priority | Deps |

@@ -18,18 +18,50 @@ import { getDestinationCards, getDestinationPage } from "../../../lib/knowledge"
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * What the form will accept as defaults.
+ *
+ * Deliberately no `start`: this form exists to be answered, and pre-filling a date the
+ * traveler did not choose is the inference PRD Principle 1 reserves for them.
+ */
+type PrefillParams = {
+  destination?: string;
+  days?: string;
+  pace?: string;
+  mobility?: string;
+  must?: string | string[];
+  like?: string | string[];
+};
+
+/** A repeated query param arrives as a string or an array, depending on how many. */
+function asArray(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 export default async function PlanPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ destination?: string }>;
+  searchParams: Promise<PrefillParams>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { destination: destinationSlug } = await searchParams;
+  const query = await searchParams;
+  const destinationSlug = query.destination;
   const destinations = await getDestinationCards(locale, 20);
+
+  /*
+   * Everything except the dates can arrive pre-filled. That is what "plan a similar
+   * journey" hands over (PRD-CMPL-003): the same destination, the same length, the same
+   * pace, the same mobility, and the same tiers — WHEN is left blank on purpose, because
+   * it is the one thing the traveler certainly has a view on and the one thing a previous
+   * journey cannot tell us.
+   */
+  const mustDo = new Set(asArray(query.must));
+  const wouldLike = new Set(asArray(query.like));
 
   if (destinations.length === 0) {
     return (
@@ -92,7 +124,7 @@ export default async function PlanPage({
             <select
               id="days"
               name="days"
-              defaultValue="3"
+              defaultValue={query.days ?? "3"}
               className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
             >
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
@@ -119,6 +151,7 @@ export default async function PlanPage({
                       type="checkbox"
                       name="must"
                       value={experience.id}
+                      defaultChecked={mustDo.has(experience.id)}
                       className="size-5 shrink-0"
                     />
                     <span className="text-body">{experience.name.text}</span>
@@ -141,6 +174,7 @@ export default async function PlanPage({
                     type="checkbox"
                     name="like"
                     value={experience.id}
+                    defaultChecked={wouldLike.has(experience.id)}
                     className="size-5 shrink-0"
                   />
                   <span className="text-body">{experience.name.text}</span>
@@ -174,7 +208,7 @@ export default async function PlanPage({
             <select
               id="pace"
               name="pace"
-              defaultValue="balanced"
+              defaultValue={query.pace ?? "balanced"}
               className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
             >
               <option value="relaxed">Relaxed — leave room to breathe</option>
@@ -197,7 +231,7 @@ export default async function PlanPage({
             <select
               id="mobility"
               name="mobility"
-              defaultValue="full"
+              defaultValue={query.mobility ?? "full"}
               className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
             >
               <option value="full">No — everyone walks freely</option>

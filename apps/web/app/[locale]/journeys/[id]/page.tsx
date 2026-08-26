@@ -1,4 +1,4 @@
-import { ArrowLeft, ListChecks, Play, Share2 } from "lucide-react";
+import { ArrowLeft, BookOpen, ListChecks, Play, Share2 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
@@ -109,6 +109,19 @@ export default async function JourneyPage({
         >
           <Share2 className="size-4" aria-hidden />
           Summary
+        </Link>
+      
+        {/*
+          PRD F16. Reachable throughout rather than only once the last day has passed — a
+          traveler mid-journey wants to see what they have done, and a screen that appears
+          only at the end appears too late to be trusted.
+        */}
+        <Link
+          href={`/${locale}/journeys/${journey.id}/record`}
+          className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
+        >
+          <BookOpen className="size-4" aria-hidden />
+          Record
         </Link>
       </div>
 

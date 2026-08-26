@@ -38,6 +38,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 | ID | What's needed | Blocks | Needed by |
 |---|---|---|---|
 | OPEN-002 | Transport live-feed provider for the launch destination (may be "none available → curated only") | DYN-03 | M3 |
+| TEST-01 | **The traveler E2E suite is 4 writes from red on its own.** A full run leaves the first traveler account at 116 of the 120 `journeys_write` per hour (TRD §6.2). B-036 moved the Record spec onto a second account (D-138); the NEXT write-heavy spec added to `web-traveler` will 429 the suite, and the failure reads as a product bug rather than a budget one. Fix is a fixture change — a third account, or move `prepare`/`live` onto the second — and the limit itself must not move (CLAUDE.md §5). No founder decision needed; recorded so the next 429 is recognised in seconds rather than hours. | Suite reliability | Before the next traveler spec |
 | OPEN-003 | Production domain purchase + name | Prod DNS | B-025 |
 | OPEN-004 | Accept Gemini for te/hi after eval fixtures, or switch provider | Public launch | End of M2 |
 | OPEN-005 | Confirm launch locales en/te/hi (assumption D-014) | LANG scope | Before M4 |

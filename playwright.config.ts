@@ -14,6 +14,13 @@ const OPS_STORAGE_STATE = "tests/e2e/.auth/ops-admin.json";
 const WEB_STORAGE_STATE = "tests/e2e/.auth/traveler.json";
 
 /*
+ * A second traveler for the write-heaviest spec. `journeys_write` is 120 per hour per USER
+ * (TRD §6.2), and one account cannot stand in for the whole suite without spending a real
+ * traveler's hourly budget — see the note in web/auth.setup.ts. The limit is untouched.
+ */
+const WEB_STORAGE_STATE_B = "tests/e2e/.auth/traveler-b.json";
+
+/*
  * The E2E suite builds and serves from its own directory, so a run never clobbers a dev
  * server the developer has open — see the note in the apps' next.config.ts.
  */
@@ -42,7 +49,7 @@ export default defineConfig({
       name: "web-mobile",
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
-      testIgnore: /web[\\/](journey-builder|prepare|live|offline|changes|notifications)\.spec\.ts/,
+      testIgnore: /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -64,6 +71,19 @@ export default defineConfig({
         storageState: WEB_STORAGE_STATE,
       },
       testMatch: /web[\\/](journey-builder|prepare|live|offline|changes|notifications)\.spec\.ts/,
+      dependencies: ["web-setup"],
+    },
+
+    // The Record builds a finished journey for each test that mutates one, so it runs as
+    // the second traveler rather than spending the first one's hourly write budget.
+    {
+      name: "web-record",
+      use: {
+        ...devices["Pixel 5"],
+        baseURL: `http://localhost:${WEB_PORT}`,
+        storageState: WEB_STORAGE_STATE_B,
+      },
+      testMatch: /web[\\/]record\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 
