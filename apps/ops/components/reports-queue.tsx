@@ -1,0 +1,160 @@
+"use client";
+
+import { Button } from "@mandhira/ui";
+import { useState, useTransition } from "react";
+
+import { resolveReport, triageReport } from "@/app/(ops)/reports/actions";
+
+/**
+ * The Reports queue (PRD F14, PRD-OPS-WF-005).
+ *
+ * Three outcomes and no fourth. PRD-REPT-003 names them exactly — Updated, Confirmed as
+ * correct, Couldn't verify — and "couldn't verify" is a real answer that has to be as easy
+ * to record as the other two. A queue that only offers success is a queue where the hard
+ * ones sit forever.
+ */
+export type ReportRow = {
+  id: string;
+  report_type: string;
+  entity_table: string;
+  entity_id: string;
+  field_name: string | null;
+  description: string | null;
+  status: string;
+  locale: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  resolution_note: string | null;
+  notified_user: boolean;
+  user_id: string | null;
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  timing_changed: "Times are different",
+  closed: "Closed",
+  accessibility_issue: "Access harder than described",
+  wrong_information: "Something is wrong",
+  outdated_guidance: "Advice out of date",
+  other: "Something else",
+};
+
+const OUTCOMES = [
+  { value: "resolved_updated", label: "Updated" },
+  { value: "resolved_confirmed_correct", label: "Confirmed as correct" },
+  { value: "resolved_unverifiable", label: "Couldn't verify" },
+] as const;
+
+export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
+  const [pending, startTransition] = useTransition();
+  const [note, setNote] = useState<Record<string, string>>({});
+  const [problem, setProblem] = useState<string | null>(null);
+
+  function resolve(id: string, status: (typeof OUTCOMES)[number]["value"]) {
+    setProblem(null);
+    startTransition(async () => {
+      const result = await resolveReport({ id, status, note: note[id] ?? undefined });
+      if (!result.ok) setProblem(result.error.message);
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {problem ? (
+        <p role="alert" className="text-body-sm text-status-tight">
+          {problem}
+        </p>
+      ) : null}
+
+      <ul className="flex flex-col gap-3">
+        {rows.map((row) => {
+          const resolved = row.status.startsWith("resolved") || row.status === "closed";
+
+          return (
+            <li
+              key={row.id}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="text-h3">{TYPE_LABEL[row.report_type] ?? row.report_type}</h2>
+                  <p className="text-caption text-text-secondary">
+                    {row.entity_table} · {row.entity_id.slice(0, 8)}
+                    {row.field_name ? ` · ${row.field_name}` : ""} ·{" "}
+                    {new Date(row.created_at).toLocaleDateString()}
+                    {row.locale ? ` · ${row.locale}` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption">
+                  {row.status}
+                </span>
+              </div>
+
+              {row.description ? (
+                /*
+                 * Free text a traveler typed, rendered as text and never as markup. It is
+                 * the only user-authored content that reaches an operator's screen.
+                 */
+                <p className="text-body-sm">{row.description}</p>
+              ) : (
+                <p className="text-body-sm text-text-tertiary">No description given.</p>
+              )}
+
+              {resolved ? (
+                <p className="text-body-sm text-text-secondary">
+                  {row.resolution_note ? `“${row.resolution_note}” · ` : ""}
+                  {row.user_id
+                    ? row.notified_user
+                      ? "The reporter has been told."
+                      : "The reporter has not been told yet."
+                    : "Reported by a guest — nobody to notify."}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={`note-${row.id}`} className="text-body-sm font-medium">
+                    What did you find? (optional, and the reporter does not see it)
+                  </label>
+                  <input
+                    id={`note-${row.id}`}
+                    value={note[row.id] ?? ""}
+                    maxLength={500}
+                    onChange={(event) =>
+                      setNote((current) => ({ ...current, [row.id]: event.target.value }))
+                    }
+                    className="focus-ring min-h-11 rounded-lg border border-border px-3 text-body-sm"
+                  />
+
+                  <div className="flex flex-wrap gap-2">
+                    {OUTCOMES.map((outcome) => (
+                      <Button
+                        key={outcome.value}
+                        variant="secondary"
+                        disabled={pending}
+                        onClick={() => resolve(row.id, outcome.value)}
+                      >
+                        {outcome.label}
+                      </Button>
+                    ))}
+
+                    {row.status === "new" ? (
+                      <Button
+                        variant="tertiary"
+                        disabled={pending}
+                        onClick={() =>
+                          startTransition(async () => {
+                            await triageReport({ id: row.id });
+                          })
+                        }
+                      >
+                        Mark as looked at
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}

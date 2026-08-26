@@ -103,7 +103,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 |---|---|---|---|---|
 | PRD-PREP-001 ✅ | Auto checklist | Groups: bookings/documents/carry/know/travelers/downloads; deduplicated; trust badge + Why? per item | P0 | PLAN-004 |
 | PRD-PREP-002 | Booking deadlines | Dated tasks with how-to text; notifications 7d & 1d | P0 | NOTF-001 |
-| PRD-PREP-003 | Booked-slot promotion | User enters booked time → item becomes FIXED with confirmation | P1 | PLAN-002 |
+| PRD-PREP-003 ✅ | Booked-slot promotion | User enters booked time → item becomes FIXED with confirmation | P1 | PLAN-002 |
 | PRD-PREP-004 ✅ | Journey Summary | Shareable read-only + printable; one A4/day; excludes traveler profiles/notes | P0 | SHARE-001 |
 
 ## PRD-LIVE — Live Journey (F8)
@@ -174,12 +174,17 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-ACCT-005 | Multi-device sync | Second device shows state ≤10 s; latest-edit wins | P1 | ACCT-001 |
 
 ## PRD-REPT — User Reports (F14)
+
+> ✅ = implemented and verified in B-028. PRD-REPT-004's downgrade already shipped in
+> `0013`'s daily job and is now reachable, since something finally writes reports.
+> PRD-REPT-005 (photo attachment) is M4. **Guest reporting is NOT supported** — the
+> schema permits only signed-in reports; see OPEN-013.
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-REPT-001 | Report creation | From trust sheet/place/NOW; 6 types; ≤500 chars; auto-context; consented journey link | P1 | TRST-002 |
-| PRD-REPT-002 | Signal-not-truth | T5; never auto-published; enters Ops queue | P0 | OPS-WF-005 |
-| PRD-REPT-003 | Resolution loop | User notified Updated/Confirmed/Couldn't verify | P1 | NOTF-001 |
-| PRD-REPT-004 | Auto-downgrade | 3 independent reports/14 d → Check locally until resolved | P1 | KNOW-006 |
+| PRD-REPT-001 ✅ | Report creation | From trust sheet/place/NOW; 6 types; ≤500 chars; auto-context; consented journey link | P1 | TRST-002 |
+| PRD-REPT-002 ✅ | Signal-not-truth | T5; never auto-published; enters Ops queue | P0 | OPS-WF-005 |
+| PRD-REPT-003 ✅ | Resolution loop | User notified Updated/Confirmed/Couldn't verify | P1 | NOTF-001 |
+| PRD-REPT-004 ✅ | Auto-downgrade | 3 independent reports/14 d → Check locally until resolved | P1 | KNOW-006 |
 | PRD-REPT-005 | Photo attachment | Optional photo (deferred to M4); offline queue per OFFL-004 | P2 | OFFL-004 |
 
 ## PRD-NOTF — Notifications (F15)

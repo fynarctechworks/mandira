@@ -105,7 +105,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/publish",
     keywords: ["diff", "validation"],
   },
-  { id: "O14", label: "Reports queue", section: "queues", href: null, comingIn: "M2" },
+  { id: "O14", label: "Reports queue", section: "queues", href: "/reports" },
   {
     id: "O15",
     label: "Freshness monitor",

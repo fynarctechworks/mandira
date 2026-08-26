@@ -7,6 +7,7 @@ import { AccessibilityIcons } from "../../../../../../components/accessibility-i
 import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
 import { OpenInMaps } from "../../../../../../components/open-in-maps";
+import { ReportAChange } from "../../../../../../components/report-a-change";
 import { getPlaceDetail } from "../../../../../../lib/knowledge";
 import {
   accessibilityIcons,
@@ -181,6 +182,18 @@ export default async function PlaceDetailPage({
           </ul>
         </section>
       ) : null}
+
+      {/*
+        PRD F14, and the other half of the trust model. Every critical fact on this page
+        carries a badge saying how sure we are; this is what a traveler does when the badge
+        is confident and the gate in front of them says otherwise.
+      */}
+      <ReportAChange
+        entityTable="places"
+        entityId={place.id}
+        entityName={place.name.text}
+        locale={locale}
+      />
     </main>
   );
 }
