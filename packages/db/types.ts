@@ -1543,6 +1543,7 @@ export type Database = {
           health_report: Json | null
           health_state: Database["public"]["Enums"]["health_state_enum"] | null
           id: string
+          knowledge_checked_at: string | null
           knowledge_snapshot_at: string | null
           owner_user_id: string | null
           pace: Database["public"]["Enums"]["pace_enum"]
@@ -1568,6 +1569,7 @@ export type Database = {
           health_report?: Json | null
           health_state?: Database["public"]["Enums"]["health_state_enum"] | null
           id?: string
+          knowledge_checked_at?: string | null
           knowledge_snapshot_at?: string | null
           owner_user_id?: string | null
           pace?: Database["public"]["Enums"]["pace_enum"]
@@ -1593,6 +1595,7 @@ export type Database = {
           health_report?: Json | null
           health_state?: Database["public"]["Enums"]["health_state_enum"] | null
           id?: string
+          knowledge_checked_at?: string | null
           knowledge_snapshot_at?: string | null
           owner_user_id?: string | null
           pace?: Database["public"]["Enums"]["pace_enum"]
@@ -1606,6 +1609,51 @@ export type Database = {
           walking_tolerance?: string | null
         }
         Relationships: []
+      }
+      knowledge_updates: {
+        Row: {
+          changed_fields: Json
+          destination_id: string | null
+          entity_id: string
+          entity_table: string
+          id: string
+          published_at: string
+          published_by: string | null
+        }
+        Insert: {
+          changed_fields?: Json
+          destination_id?: string | null
+          entity_id: string
+          entity_table: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Update: {
+          changed_fields?: Json
+          destination_id?: string | null
+          entity_id?: string
+          entity_table?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_updates_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_updates_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "v_published_destinations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       live_feed_configs: {
         Row: {
@@ -3774,6 +3822,10 @@ export type Database = {
         Args: { p_place_id: string; p_route_id: string }
         Returns: Json
       }
+      affected_journey_count: {
+        Args: { p_entity_id: string; p_entity_table: string }
+        Returns: Json
+      }
       col_is_null:
         | {
             Args: {
@@ -3993,6 +4045,15 @@ export type Database = {
           p_entity_table: string
         }
         Returns: undefined
+      }
+      record_knowledge_update: {
+        Args: {
+          p_changed_fields: Json
+          p_destination_id: string
+          p_entity_id: string
+          p_entity_table: string
+        }
+        Returns: string
       }
       roll_journey_statuses: { Args: never; Returns: Json }
       route_stops_for: { Args: { p_route_id: string }; Returns: Json }

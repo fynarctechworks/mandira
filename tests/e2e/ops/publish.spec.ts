@@ -120,3 +120,65 @@ test.describe.serial("Publishing", () => {
     }
   });
 });
+
+test.describe.serial("Impact before publish (PRD-OPS-WF-007)", () => {
+  const IMPACT = `${RUN}-impact`;
+
+  /**
+   * Its own place, created here rather than borrowed from the block above.
+   *
+   * `fullyParallel` puts the two describes in different workers, so a fixture created by
+   * one is not reliably there for the other — the first run of this file failed on exactly
+   * that, waiting thirty seconds for a link another worker had not created yet.
+   */
+  test("a place to publish", async ({ page }) => {
+    await page.goto("/destinations/new");
+    await page.getByRole("tabpanel").first().getByRole("textbox").fill(`Impact Dest ${IMPACT}`);
+    await page.getByLabel("Slug").fill(`${IMPACT}-dest`);
+    await page.getByRole("button", { name: "Create destination" }).click();
+    await expect(page.getByRole("heading", { name: `Impact Dest ${IMPACT}` })).toBeVisible();
+
+    await page.goto("/places/new");
+    await page.getByRole("tabpanel").first().getByRole("textbox").fill(`Impact Temple ${IMPACT}`);
+    await page.getByLabel("Slug").fill(`${IMPACT}-temple`);
+    await page.getByRole("button", { name: "Create place" }).click();
+    await expect(page.getByRole("heading", { name: `Impact Temple ${IMPACT}` })).toBeVisible();
+  });
+  /**
+   * The count and the wording, shown BEFORE the button.
+   *
+   * An approver about to interrupt two hundred people mid-journey should know that while
+   * they can still decide not to. Afterwards is not a decision point.
+   *
+   * What the panel must NOT contain matters as much: `affected_journey_count` returns
+   * aggregates only, because Ops has no read on journeys or traveler profiles and must not
+   * gain one (CLAUDE.md §5). A journey title or a traveler's name appearing here would be
+   * that boundary crossed.
+   */
+  test("tells an approver who a publish reaches, and that nothing moves on its own", async ({
+    page,
+  }) => {
+    await page.goto("/places");
+    await page.getByRole("link", { name: `Impact Temple ${IMPACT}` }).click();
+    await expect(page.getByRole("heading", { name: `Impact Temple ${IMPACT}` })).toBeVisible();
+
+    const panel = page.getByRole("region", { name: "Publishing" });
+    await expect(panel.getByRole("heading", { name: "Who this reaches" })).toBeVisible();
+
+    // No live journey contains a place created moments ago, and the empty case has to read
+    // as a fact rather than as a missing number.
+    await expect(panel.getByText(/No live journey includes this yet/)).toBeVisible();
+  });
+
+  test("the impact panel carries no identity, only counts", async ({ page }) => {
+    await page.goto("/places");
+    await page.getByRole("link", { name: `Impact Temple ${IMPACT}` }).click();
+    await expect(page.getByRole("heading", { name: `Impact Temple ${IMPACT}` })).toBeVisible();
+
+    const text = await page.getByRole("region", { name: "Publishing" }).innerText();
+
+    // A uuid here would mean a journey id reached an Ops screen.
+    expect(text).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    expect(text).not.toMatch(/@/);
+  });
+});

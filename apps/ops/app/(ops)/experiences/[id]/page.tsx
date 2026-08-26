@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
 import { PublishPanel } from "@/components/publish-panel";
+import { journeyImpact } from "@/lib/impact";
 import { validationProblems } from "@/app/(ops)/publish/actions";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
@@ -81,6 +82,7 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
           entityId={data.id}
           status={data.status}
           problems={problems}
+          impact={await journeyImpact("experiences", data.id)}
         />
       </div>
 

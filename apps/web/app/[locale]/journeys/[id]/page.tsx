@@ -6,6 +6,7 @@ import { HealthPill, TierChip } from "@mandhira/ui";
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 
 import { ItemActions } from "../../../../components/item-actions";
+import { KnowledgeWatch } from "../../../../components/knowledge-watch";
 import { causeText, JourneyHealth, trustText } from "../../../../components/journey-health";
 import { getJourney, toEngineJourney } from "../../../../lib/journeys";
 import { durationLabel } from "../../../../lib/present";
@@ -73,6 +74,13 @@ export default async function JourneyPage({
       </header>
 
       <JourneyHealth report={health} />
+
+      {/*
+        PRD-OPS-WF-007's traveler half. If something in this plan was corrected in Ops since
+        the last look, this raises a Change Card — offered, never applied. It renders nothing
+        when there is nothing to say, which is almost always.
+      */}
+      <KnowledgeWatch journeyId={journey.id} />
 
       {/*
        * PRD-LIVE-001's read-time half: Live is reachable whenever the journey has days,

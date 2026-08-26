@@ -197,3 +197,75 @@ test.describe("Who may replan", () => {
     expect(response.status()).toBe(400);
   });
 });
+
+test.describe("Knowledge changing under a journey (PRD-OPS-WF-007)", () => {
+  /**
+   * The traveler half of the Ops→traveler loop.
+   *
+   * Ops records that published knowledge changed; this check runs in the TRAVELER'S session
+   * and turns it into a Change Card. The assertions here are about the thing that would be
+   * catastrophic to get wrong: **the check itself must never edit a plan.** An operator
+   * correcting a temple's evening timing does not move somebody's evening.
+   *
+   * That publishing writes the announcement at all is asserted in pgTAP `0027`, as a real
+   * approver through `publish_entity` — a browser cannot reach it, because separation of
+   * duties means one session may not both edit an entity and approve it.
+   */
+  test("is a no-op when nothing has changed, and says so plainly", async ({ page }) => {
+    const journeyId = await saveJourney(page);
+
+    const response = await page.request.post(`/api/journeys/${journeyId}/knowledge-check`);
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.event).toBeNull();
+  });
+
+  test("never moves an item, whatever it finds", async ({ page }) => {
+    const journeyId = await saveJourney(page);
+
+    const before = await itemTimes(page, journeyId);
+
+    // Twice: the first call establishes the mark, the second runs the real comparison.
+    await page.request.post(`/api/journeys/${journeyId}/knowledge-check`);
+    await page.request.post(`/api/journeys/${journeyId}/knowledge-check`);
+
+    /*
+     * PRD Principle 6 has no exception for changes that are obviously right. Compared as
+     * a whole serialised plan rather than field by field, so a moved item cannot slip
+     * through a comparison that happened not to look at the field it moved.
+     */
+    expect(await itemTimes(page, journeyId)).toEqual(before);
+  });
+
+  test("the journey page shows no card when there is nothing to say", async ({ page }) => {
+    const journeyId = await saveJourney(page);
+    await page.goto(`/en/journeys/${journeyId}`);
+
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    // A dialog that appears on every load is one a traveler learns to dismiss unread.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+});
+
+/** The whole plan, serialised — see the note in "never moves an item". */
+async function itemTimes(page: Page, journeyId: string): Promise<string> {
+  const response = await page.request.get(`/api/journeys/${journeyId}/snapshot`);
+  expect(response.status()).toBe(200);
+
+  const items = (await response.json()).data.items as {
+    id: string;
+    planned_start_at: string | null;
+    planned_end_at: string | null;
+    day_index: number;
+    sort_order: number;
+  }[];
+
+  return JSON.stringify(
+    items
+      .map((item) => [item.id, item.day_index, item.sort_order, item.planned_start_at, item.planned_end_at])
+      .sort(),
+  );
+}

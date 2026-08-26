@@ -2,6 +2,7 @@ import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
 import { PublishPanel } from "@/components/publish-panel";
+import { journeyImpact } from "@/lib/impact";
 import { validationProblems } from "@/app/(ops)/publish/actions";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
@@ -86,6 +87,7 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
           entityId={data.id}
           status={data.status}
           problems={problems}
+          impact={await journeyImpact("places", data.id)}
         />
       </div>
 

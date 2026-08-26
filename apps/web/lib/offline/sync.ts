@@ -163,6 +163,12 @@ export async function readSnapshot(journeyId: string): Promise<LocalSnapshot | n
         pace: journey.pace as StoredJourney["pace"],
         status: journey.status as StoredJourney["status"],
         destinationId: journey.destinationId,
+        /*
+         * Never carried offline. Knowledge updates are checked against the server when
+         * there is a connection; a cached "last checked" would let an offline session
+         * advance the mark and swallow an update it never saw (PRD-OPS-WF-007).
+         */
+        knowledgeCheckedAt: null,
       },
       items: items.map((row) => row.item as unknown as StoredItem),
       bundle,

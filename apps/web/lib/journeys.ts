@@ -36,7 +36,7 @@ export type JourneyDetail = {
 };
 
 const JOURNEY_COLUMNS =
-  "id, title, start_date, end_date, timezone, day_start_time, day_end_time, pace, status";
+  "id, title, start_date, end_date, timezone, day_start_time, day_end_time, pace, status, knowledge_checked_at";
 
 const ITEM_COLUMNS =
   "id, day_index, sort_order, item_type, tier, experience_id, place_id, route_id, transport_connection_id, fixed_start_at, fixed_end_at, preferred_window_start, preferred_window_end, planned_start_at, planned_end_at, duration_likely_minutes, duration_max_minutes, travel_mode, buffer_minutes, note, status, actual_start_at, actual_end_at";
@@ -120,6 +120,7 @@ function toJourney(row: Record<string, unknown>): StoredJourney {
     pace: row["pace"] as StoredJourney["pace"],
     status: row["status"] as StoredJourney["status"],
     destinationId: null,
+    knowledgeCheckedAt: (row["knowledge_checked_at"] as string | null) ?? null,
   };
 }
 

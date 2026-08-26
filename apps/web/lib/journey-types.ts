@@ -24,6 +24,8 @@ export type StoredJourney = {
   pace: Database["public"]["Enums"]["pace_enum"];
   status: Database["public"]["Enums"]["journey_status_enum"];
   destinationId: string | null;
+  /** When this journey was last compared against published knowledge (PRD-OPS-WF-007). */
+  knowledgeCheckedAt: string | null;
 };
 
 /**

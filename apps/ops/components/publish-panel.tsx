@@ -7,6 +7,14 @@ import { publishEntity, returnToDraft, submitForReview } from "@/app/(ops)/publi
 
 export type ValidationProblem = { field: string; message: string };
 
+/** Aggregate only — see `affected_journey_count`. No identifier reaches this component. */
+export type JourneyImpact = {
+  active: number;
+  upcoming: number;
+  total: number;
+  first_start_date: string | null;
+};
+
 const FIELD_LABEL: Record<string, string> = {
   opening_schedule: "Opening hours",
   closure_rules_i18n: "Closure rules",
@@ -34,11 +42,13 @@ export function PublishPanel({
   entityId,
   status,
   problems,
+  impact,
 }: {
   entityTable: string;
   entityId: string;
   status: string;
   problems: ValidationProblem[];
+  impact?: JourneyImpact | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<"submit" | "publish" | "return" | null>(null);
@@ -99,6 +109,40 @@ export function PublishPanel({
           </ul>
         </div>
       )}
+
+      {/*
+        PRD-OPS-WF-007: the count and the wording, BEFORE the button rather than after it.
+        An approver about to interrupt two hundred people mid-journey should know that
+        while they can still decide not to, and afterwards is not a decision point.
+
+        Numbers only. `affected_journey_count` is a security definer function returning
+        aggregates — no journey, no traveler, no item crosses into Ops (CLAUDE.md §5).
+      */}
+      {impact && status !== "published" ? (
+        <div className="flex flex-col gap-1 rounded-lg border border-border-subtle bg-bg-subtle p-3">
+          <h3 className="text-body-sm font-medium">Who this reaches</h3>
+          {impact.total === 0 ? (
+            <p className="text-body-sm text-text-secondary">
+              No live journey includes this yet, so publishing interrupts nobody.
+            </p>
+          ) : (
+            <>
+              <p className="text-body-sm">
+                {impact.total} live {impact.total === 1 ? "journey has" : "journeys have"} this in
+                the plan
+                {impact.active > 0
+                  ? ` — ${impact.active} of them ${impact.active === 1 ? "is" : "are"} under way now`
+                  : ""}
+                .
+              </p>
+              <p className="text-caption text-text-secondary">
+                Each of those travelers will be shown a card saying what changed and offering
+                options. Nothing moves in anybody&apos;s plan until they choose.
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
 
       {message ? (
         <p role="alert" className="text-body-sm text-status-tight">

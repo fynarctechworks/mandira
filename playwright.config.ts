@@ -70,20 +70,31 @@ export default defineConfig({
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE,
       },
-      testMatch: /web[\\/](journey-builder|prepare|live|offline|changes|notifications)\.spec\.ts/,
+      testMatch: /web[\\/](journey-builder|prepare|live|offline|notifications)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 
-    // The Record builds a finished journey for each test that mutates one, so it runs as
-    // the second traveler rather than spending the first one's hourly write budget.
+    /*
+     * The second traveler, and why this split keeps moving.
+     *
+     * `journeys_write` is 120 per hour PER USER (TRD §6.2). One account standing in for the
+     * whole suite spends a real traveler's entire hourly budget in ninety seconds — the run
+     * went red at 130 when the Record spec landed, and again at 136 when the knowledge-check
+     * tests did. The limit is correct and untouched (`0010` still asserts it); what was
+     * wrong is a fixture pretending one person builds forty journeys an hour.
+     *
+     * The Record and Change specs are the two write-heaviest, so they live here. When a
+     * third spec pushes the first account over again, the answer is a third traveler —
+     * never a larger limit (CLAUDE.md §5). Tracked as TEST-01.
+     */
     {
-      name: "web-record",
+      name: "web-traveler-b",
       use: {
         ...devices["Pixel 5"],
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE_B,
       },
-      testMatch: /web[\\/]record\.spec\.ts/,
+      testMatch: /web[\\/](record|changes)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 
