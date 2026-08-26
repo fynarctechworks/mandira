@@ -14,6 +14,7 @@
     "@mandhira/db": "workspace:*",
     "@mandhira/i18n": "workspace:*",
     "@mandhira/journey-engine": "workspace:*",
+    "@mandhira/providers": "workspace:*",
     "@mandhira/ui": "workspace:*",
     "@serwist/next": "^9.5.12",
     "comlink": "^4.4.2",

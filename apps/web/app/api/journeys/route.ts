@@ -3,6 +3,7 @@ import { buildInitialJourney, type JourneyBrief } from "@mandhira/journey-engine
 import { z } from "zod";
 
 import { withApi } from "../../../lib/api";
+import { syncJourneyNotifications } from "../../../lib/notifications";
 import { getKnowledgeBundle } from "../../../lib/knowledge";
 
 /**
@@ -167,6 +168,20 @@ export const POST = withApi({
         buffer_minutes: item.buffer_minutes ?? 15,
       })),
     );
+
+    /*
+     * Queue the journey's reminders (PRD F15, B-027).
+     *
+     * Here rather than on first opening the Prepare tab, because the reminders that matter
+     * most are the ones a traveler would otherwise miss — a booking deadline seven days
+     * out reaches someone who saved a journey and closed the app. Idempotent on the
+     * engine's dedupe keys, so a later edit re-runs it without queueing anything twice.
+     *
+     * Deliberately not awaited into the response contract: a reminder that failed to queue
+     * must not turn a successfully saved journey into a failed request. It is recorded and
+     * the next edit will pick it up.
+     */
+    await syncJourneyNotifications(supabase, journeyId, user!.id, "en").catch(() => undefined);
 
     return { journeyId, health: built.health };
   },

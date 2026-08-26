@@ -183,11 +183,16 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-REPT-005 | Photo attachment | Optional photo (deferred to M4); offline queue per OFFL-004 | P2 | OFFL-004 |
 
 ## PRD-NOTF — Notifications (F15)
+
+> ✅ = implemented and verified in B-027. PRD-NOTF-002's LOCAL half (leave-by scheduled
+> in the browser so it fires offline) is **not** done — the server-side leave-by is
+> queued and sent, but a device with no signal needs the service worker to schedule it
+> locally. Carried to B-033 alongside the offline outbox.
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-NOTF-001 | Type set + defaults | 7 types per F15 table; all switchable; suggestions default off | P1 | ACCT-002 |
+| PRD-NOTF-001 ✅ | Type set + defaults | 7 types per F15 table; all switchable; suggestions default off | P1 | ACCT-002 |
 | PRD-NOTF-002 | Leave-by local | 15 min before travel legs; works offline (local scheduling) | P1 | LIVE-003 |
-| PRD-NOTF-003 | Restraint | ≤1 non-journey notification/week; zero marketing; PRD §12.7 tone | P0 | — |
+| PRD-NOTF-003 ✅ | Restraint | ≤1 non-journey notification/week; zero marketing; PRD §12.7 tone | P0 | — |
 
 ## PRD-CMPL — Complete & Reflect (F16)
 | ID | Name | Description / Acceptance | Priority | Deps |

@@ -135,6 +135,9 @@ importers:
       '@mandhira/journey-engine':
         specifier: workspace:*
         version: link:../../packages/journey-engine
+      '@mandhira/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@mandhira/ui':
         specifier: workspace:*
         version: link:../../packages/ui
