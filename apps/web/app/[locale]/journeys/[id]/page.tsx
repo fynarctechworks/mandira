@@ -1,4 +1,4 @@
-import { ArrowLeft, ListChecks, Share2 } from "lucide-react";
+import { ArrowLeft, ListChecks, Play, Share2 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
@@ -75,11 +75,27 @@ export default async function JourneyPage({
       <JourneyHealth report={health} />
 
       {/*
-        PRD F7 makes Prepare available on demand rather than only inside 30 days — the
-        traveler planning three months out is exactly the one who needs the booking
-        deadlines, and a tab that appears later appears too late.
-      */}
+       * PRD-LIVE-001's read-time half: Live is reachable whenever the journey has days,
+       * without anything being written. "Start today" inside it is the explicit tap that
+       * moves the journey to `active`.
+       *
+       * Given the primary action because on the morning it matters, this is the only
+       * thing on this screen the traveler wants.
+       */}
+      <Link
+        href={`/${locale}/journeys/${journey.id}/live`}
+        className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-button bg-brand-primary px-4 font-medium text-text-on-primary"
+      >
+        <Play className="size-4" aria-hidden />
+        Today
+      </Link>
+
       <div className="flex gap-2">
+        {/*
+          PRD F7 makes Prepare available on demand rather than only inside 30 days — the
+          traveler planning three months out is exactly the one who needs the booking
+          deadlines, and a tab that appears later appears too late.
+        */}
         <Link
           href={`/${locale}/journeys/${journey.id}/prepare`}
           className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"

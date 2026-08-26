@@ -1,0 +1,63 @@
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+
+import { LiveJourney } from "../../../../../components/live-journey";
+import { StartToday } from "../../../../../components/start-today";
+import { getLiveView } from "../../../../../lib/live";
+import { webSupabase } from "../../../../../lib/supabase";
+
+/**
+ * Live Journey (PRD F8, LIVE-01..04).
+ *
+ * The clock is read HERE and nowhere below. `getNowNextLater` takes `nowAt` as a parameter
+ * because the engine has no clock (D-005) — which is what lets the same projection run on
+ * a server, in a worker, and on a phone in airplane mode and agree. This page is the one
+ * place that decides what "now" means, and it decides it once per render.
+ *
+ * The signed-in check lives in middleware (D-102), so a signed-out visitor never reaches
+ * this render at all.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function LivePage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  setRequestLocale(locale);
+
+  const supabase = await webSupabase();
+  const view = await getLiveView(supabase, id, locale, new Date().toISOString());
+
+  // RLS means another traveler's journey is not visible, so this is a 404 rather than a
+  // 403 — confirming it exists would itself be a leak.
+  if (!view) notFound();
+
+  return (
+    <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      {/*
+       * Live is a screen you can leave, not a mode that captures the app. A traveler who
+       * wants to see the whole plan should not have to work out how to escape.
+       */}
+      <Link
+        href={`/${locale}/journeys/${id}`}
+        className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {view.journeyTitle}
+      </Link>
+
+      {/*
+       * PRD-LIVE-001's explicit half. Automatic activation is a read-time decision — this
+       * screen works whether or not the journey has been marked `active` — so this asks
+       * only when the traveler has not said so themselves.
+       */}
+      {view.isActive ? null : <StartToday journeyId={id} />}
+
+      <LiveJourney view={view} locale={locale} />
+    </main>
+  );
+}

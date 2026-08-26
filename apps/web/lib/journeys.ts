@@ -37,9 +37,25 @@ export type StoredJourney = {
   destinationId: string | null;
 };
 
+/**
+ * A stored item is the engine's item PLUS what the Live Journey records about it.
+ *
+ * Deliberately widened here rather than in the engine. `status` and the `actual_*`
+ * timestamps say what HAPPENED; the engine's `JourneyItem` says what is planned, and it
+ * schedules from the plan. Adding fields the engine ignores to its own contract would
+ * invite something to start scheduling from them.
+ *
+ * Structurally assignable to `JourneyItem`, so these pass straight into the engine.
+ */
+export type StoredItem = JourneyItem & {
+  status: "planned" | "in_progress" | "done" | "skipped" | "moved";
+  actual_start_at: string | null;
+  actual_end_at: string | null;
+};
+
 export type JourneyDetail = {
   journey: StoredJourney;
-  items: JourneyItem[];
+  items: StoredItem[];
   health: HealthReport;
   /** Experience and place names, so the timeline can label what it shows. */
   labels: Map<string, string>;
@@ -49,7 +65,7 @@ const JOURNEY_COLUMNS =
   "id, title, start_date, end_date, timezone, day_start_time, day_end_time, pace, status";
 
 const ITEM_COLUMNS =
-  "id, day_index, sort_order, item_type, tier, experience_id, place_id, route_id, transport_connection_id, fixed_start_at, fixed_end_at, preferred_window_start, preferred_window_end, planned_start_at, planned_end_at, duration_likely_minutes, duration_max_minutes, travel_mode, buffer_minutes, note";
+  "id, day_index, sort_order, item_type, tier, experience_id, place_id, route_id, transport_connection_id, fixed_start_at, fixed_end_at, preferred_window_start, preferred_window_end, planned_start_at, planned_end_at, duration_likely_minutes, duration_max_minutes, travel_mode, buffer_minutes, note, status, actual_start_at, actual_end_at";
 
 export async function listJourneys(supabase: Client): Promise<StoredJourney[]> {
   const { data } = await supabase
@@ -151,7 +167,7 @@ function toJourney(row: Record<string, unknown>): StoredJourney {
   };
 }
 
-function toItem(row: Record<string, unknown>): JourneyItem {
+function toItem(row: Record<string, unknown>): StoredItem {
   return {
     id: row["id"] as string,
     day_index: row["day_index"] as number,
@@ -172,6 +188,9 @@ function toItem(row: Record<string, unknown>): JourneyItem {
     duration_max_minutes: (row["duration_max_minutes"] as number | null) ?? null,
     travel_mode: (row["travel_mode"] as JourneyItem["travel_mode"]) ?? null,
     buffer_minutes: (row["buffer_minutes"] as number | null) ?? null,
+    status: (row["status"] as StoredItem["status"]) ?? "planned",
+    actual_start_at: (row["actual_start_at"] as string | null) ?? null,
+    actual_end_at: (row["actual_end_at"] as string | null) ?? null,
   };
 }
 

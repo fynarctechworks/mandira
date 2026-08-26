@@ -42,7 +42,7 @@ export default defineConfig({
       name: "web-mobile",
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
-      testIgnore: /web[\\/](journey-builder|prepare)\.spec\.ts/,
+      testIgnore: /web[\\/](journey-builder|prepare|live)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -63,7 +63,7 @@ export default defineConfig({
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE,
       },
-      testMatch: /web[\\/](journey-builder|prepare)\.spec\.ts/,
+      testMatch: /web[\\/](journey-builder|prepare|live)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 

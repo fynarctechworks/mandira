@@ -103,14 +103,19 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-PREP-004 ✅ | Journey Summary | Shareable read-only + printable; one A4/day; excludes traveler profiles/notes | P0 | SHARE-001 |
 
 ## PRD-LIVE — Live Journey (F8)
+
+> ✅ = implemented and verified in B-022 (docs/plans/LIVE-01.md §9). PRD-LIVE-005 is a
+> usability target (≥90% success, n≥10) and is **not claimed as met** — the structural
+> precondition is asserted, the study needs ten people. PRD-LIVE-002's three actions record
+> reality and do not reschedule; offering the fix is B-026 (D-107).
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-LIVE-001 | Activation | Auto on day start or "Start today" | P0 | PLAN-001 |
-| PRD-LIVE-002 | NOW card | Item, place, what-to-do, time guidance, practical chips, phrase shortcut; exactly 3 actions Done/Late/Stay | P0 | ENG-004 |
-| PRD-LIVE-003 | NEXT + LATER | Leave-by time, travel leg, Navigate hand-off; LATER compact with tier chips | P0 | ENG-004 |
-| PRD-LIVE-004 | Health pill + travel/free-time states + end-of-day card | Per F8 | P0 | HLTH-002 |
+| PRD-LIVE-001 ✅ | Activation | Auto on day start or "Start today" | P0 | PLAN-001 |
+| PRD-LIVE-002 ✅ | NOW card | Item, place, what-to-do, time guidance, practical chips, phrase shortcut; exactly 3 actions Done/Late/Stay | P0 | ENG-004 |
+| PRD-LIVE-003 ✅ | NEXT + LATER | Leave-by time, travel leg, Navigate hand-off; LATER compact with tier chips | P0 | ENG-004 |
+| PRD-LIVE-004 ✅ | Health pill + travel/free-time states + end-of-day card | Per F8 | P0 | HLTH-002 |
 | PRD-LIVE-005 | 5-second comprehension | What/when/where in ≤5 s; ≥90% task success n≥10 | P0 | LIVE-002 |
-| PRD-LIVE-006 | Constraints | No calendar grid; ≤3 actions/card; timing badges on long-press | P0 | — |
+| PRD-LIVE-006 ✅ | Constraints | No calendar grid; ≤3 actions/card; timing badges on long-press | P0 | — |
 
 ## PRD-TRST — Trust Layer UI (F9)
 | ID | Name | Description / Acceptance | Priority | Deps |
