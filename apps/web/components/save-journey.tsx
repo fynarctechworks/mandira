@@ -2,7 +2,9 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { saveGuestDraft } from "../lib/offline/guest-draft";
 
 type Brief = {
   destinationId: string;
@@ -27,6 +29,17 @@ export function SaveJourney({ brief, locale }: { brief: Brief; locale: string })
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [problem, setProblem] = useState<string | null>(null);
+
+  /*
+   * Keep the brief on the device as soon as a preview is looked at.
+   *
+   * The URL already carries it through a sign-in round trip (D-089/D-093); what the URL
+   * does not survive is closing the tab. This is what lets someone plan on the bus, shut
+   * the phone, and still be offered their journey when they come back and sign in.
+   */
+  useEffect(() => {
+    void saveGuestDraft(brief as unknown as Record<string, unknown>);
+  }, [brief]);
 
   async function save() {
     setStatus("saving");

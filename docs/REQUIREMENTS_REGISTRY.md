@@ -137,15 +137,20 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-DYN-005 | Launch feeds | Weather + ≥1 transport feed for launch destinations | P1 | DYN-002 |
 
 ## PRD-OFFL — Offline (F11)
+
+> ✅ = implemented and verified in B-023 (docs/plans/OFFL-01.md §9). PRD-OFFL-004 (queued
+> writes) is M3's `pending_actions`; PRD-OFFL-005 (offline replanning) needs B-026;
+> PRD-OFFL-006 (map tiles) is P2 and needs MAPS-02. Phrase packs have a store and no
+> content until F12.
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-OFFL-001 | Auto snapshot | Journey + referenced knowledge + guidance + phrase packs + facility essentials on create/edit/open | P0 | PLAN-001 |
-| PRD-OFFL-002 | Offline read set | Live Journey fully, Prepare, saved pages, trust sheets; indicator "Offline — saved info (as of)" | P0 | OFFL-001 |
-| PRD-OFFL-003 | Reconnect reconciliation | Silent sync; single "updated while offline" card when active journey affected; no sync-error dialogs; user-edit LWW, knowledge server-wins | P0 | OFFL-001 |
+| PRD-OFFL-001 ✅ | Auto snapshot | Journey + referenced knowledge + guidance + phrase packs + facility essentials on create/edit/open | P0 | PLAN-001 |
+| PRD-OFFL-002 ✅ | Offline read set | Live Journey fully, Prepare, saved pages, trust sheets; indicator "Offline — saved info (as of)" | P0 | OFFL-001 |
+| PRD-OFFL-003 ✅ | Reconnect reconciliation | Silent sync; single "updated while offline" card when active journey affected; no sync-error dialogs; user-edit LWW, knowledge server-wins | P0 | OFFL-001 |
 | PRD-OFFL-004 | Queued writes | Reports and item-status queue offline, send on reconnect | P1 | OFFL-001 |
 | PRD-OFFL-005 | Offline replanning | User-initiated triggers replans from cache | P1 | ADPT-002 |
 | PRD-OFFL-006 | Map tiles (deferred) | 5 km default/15 km expandable; Downloads shows size+update | P2 | MAPS-001 |
-| PRD-OFFL-007 | Airplane-mode acceptance | Full 3-day journey readable+ (M3: replannable); reconcile ≤30 s, zero loss | P0 | OFFL-002 |
+| PRD-OFFL-007 ✅ | Airplane-mode acceptance | Full 3-day journey readable+ (M3: replannable); reconcile ≤30 s, zero loss | P0 | OFFL-002 |
 
 ## PRD-LANG — Multilingual & Phrases (F12)
 | ID | Name | Description / Acceptance | Priority | Deps |
@@ -238,7 +243,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-ARCH-002 | Pure Journey Engine | No I/O; KnowledgeBundle input = Dexie snapshot byte-for-byte; deterministic; browser+server identical | P0 | — |
 | TRD-ARCH-003 | Provider abstraction | Ai/Routing/Geocoding/Weather/Email/Push interfaces; no vendor SDK outside packages/providers (lint-enforced) | P0 | — |
 | TRD-ARCH-004 | Published-views-only | Traveler reads exclusively `v_published_*` with aggregated trust jsonb. **Implemented (B-004):** 9 views; anon holds no grant on base tables and RLS is on, so the gate is structural. Critical-field trust >= human_reviewed enforced per entity. | P0 | TRD-DB-003 |
-| TRD-ARCH-005 | Offline-first read path | Dexie-first + SWR revalidate; React Query persistence | P0 | — |
+| TRD-ARCH-005 ✅ | Offline-first read path | Dexie-first + SWR revalidate; React Query persistence | P0 | — |
 | TRD-ARCH-006 | Stack pins | Next 15/React 19/TS strict/Tailwind 4/shadcn/TanStack Query 5/Dexie 4/Zustand 5/Serwist/next-intl/date-fns per TRD §3 | P0 | — |
 | TRD-DB-001 | Schema-as-migrations | All §4 tables/enums/views/triggers from `supabase/migrations`; `db reset` clean; generated types only. **Implemented (B-003+B-004):** §4.1–§4.7 across `0001`–`0006` plus `0007_published_views.sql`; 51 tables, 9 published views, `db reset` clean and CI-enforced. Generated types implemented (B-005): `packages/db/types.ts` via `pnpm db:types`, staleness enforced in CI. | P0 | — |
 | TRD-DB-002 | Naming & conventions | snake_case; uuid pks; `_i18n` jsonb; created/updated_at triggers; soft-delete where specified. **Implemented for §4.2/§4.3 (B-003):** all 26 enums pinned by a pgTAP contract test; a pgTAP test also fails any table that has `updated_at` without its trigger. | P0 | — |

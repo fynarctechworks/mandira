@@ -4,6 +4,8 @@ import { OfflineBanner } from "@mandhira/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { lastSyncAt } from "../lib/offline/sync";
+
 /**
  * Offline indicator (PRD-OFFL-002).
  *
@@ -14,12 +16,19 @@ import { useEffect, useState } from "react";
  *
  * The banner states WHEN the saved information is from, because "offline" alone does not
  * tell a traveler whether what they are reading is an hour or a week old.
+ *
+ * And "when" means when the SNAPSHOT was written, not when the network last answered —
+ * those are different numbers and only one of them is the traveler's question (PRD-OFFL-002,
+ * B-023). Someone who dropped signal four minutes ago may be reading a snapshot from last
+ * Tuesday; telling them "as of 4 minutes ago" would be reassuring and wrong. It falls back
+ * to the last-reachable time only when nothing has been stored yet.
  */
 export function ConnectionBanner() {
   const t = useTranslations("offline");
   const format = useFormatter();
   const [online, setOnline] = useState(true);
   const [lastReachable, setLastReachable] = useState<Date | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,13 +71,29 @@ export function ConnectionBanner() {
     };
   }, []);
 
+  // Read once the banner is actually needed, rather than on every render.
+  useEffect(() => {
+    if (online) return;
+    let cancelled = false;
+
+    void lastSyncAt().then((iso) => {
+      if (!cancelled && iso) setSavedAt(new Date(iso));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
+
   if (online) return null;
+
+  const when = savedAt ?? lastReachable;
 
   return (
     <OfflineBanner
       message={
-        lastReachable
-          ? t("banner", { when: format.dateTime(lastReachable, { timeStyle: "short" }) })
+        when
+          ? t("banner", { when: format.dateTime(when, { timeStyle: "short" }) })
           : t("bannerNoDate")
       }
     />

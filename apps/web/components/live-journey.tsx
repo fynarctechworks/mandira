@@ -4,7 +4,11 @@ import { HealthPill, NowCard, TierChip } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import type { LiveItemView, LiveView } from "../lib/live";
+import type { LiveItemView, LiveView } from "../lib/live-view";
+import { readLiveViewLocally } from "../lib/offline/live-local";
+import { syncJourneyOffline } from "../lib/offline/sync";
+import { useOfflineFirst } from "../lib/offline/use-offline-first";
+import { OfflineNotice } from "./offline-notice";
 import { OpenInMaps } from "./open-in-maps";
 
 /**
@@ -27,32 +31,65 @@ const TIER_CHIP = {
   optional: "OPTIONAL",
 } as const;
 
-export function LiveJourney({ view, locale }: { view: LiveView; locale: string }) {
+export function LiveJourney({
+  view: serverView,
+  locale,
+}: {
+  view: LiveView | null;
+  locale: string;
+}) {
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
+  /*
+   * The view the screen actually renders.
+   *
+   * The server's is the first paint and nothing more. This component RECOMPUTES from
+   * IndexedDB against the live clock — online and offline alike — because a NOW card is
+   * only right for about a minute, and a cached page showing yesterday's projection reads
+   * exactly like a live one. That is the single most dangerous failure this screen has.
+   */
+  const [manualView, setManualView] = useState<LiveView | null>(null);
+  const journeyId = serverView?.journeyId ?? "";
+
+  const {
+    data: localView,
+    changed,
+    dismissChanged,
+  } = useOfflineFirst<LiveView>({
+    key: journeyId,
+    revalidate: () => syncJourneyOffline(journeyId, locale),
+    read: () => readLiveViewLocally(journeyId, locale, new Date().toISOString()),
+  });
+
+  const view = manualView ?? localView ?? serverView;
+
   useEffect(() => {
     // A second is enough to keep "in 4 minutes" honest without re-rendering constantly.
     const tick = setInterval(() => setNow(Date.now()), 1000);
-    /*
-     * And a fresh projection each minute. The countdown can be derived here, but which
-     * card is NOW cannot — that is the engine's answer, and it changes when an item ends.
-     */
-    const refresh = setInterval(() => router.refresh(), 60_000);
+    return () => clearInterval(tick);
+  }, []);
 
-    return () => {
-      clearInterval(tick);
-      clearInterval(refresh);
-    };
-  }, [router]);
+  /*
+   * Nothing from the server and nothing stored: a first visit with no network. Said
+   * plainly rather than rendered as an empty screen that looks broken.
+   */
+  if (!view) {
+    return (
+      <p className="text-body text-text-secondary">
+        This journey hasn&apos;t been saved for offline use yet. Open it once with a connection and
+        it&apos;ll be here next time.
+      </p>
+    );
+  }
 
   async function act(itemId: string, action: string, extraMinutes?: number) {
     setPending(true);
     setProblem(null);
 
-    const response = await fetch(`/api/journeys/${view.journeyId}/items/${itemId}/status`, {
+    const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}/status`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action, ...(extraMinutes ? { extraMinutes } : {}) }),
@@ -63,6 +100,12 @@ export function LiveJourney({ view, locale }: { view: LiveView; locale: string }
 
     setPending(false);
     router.refresh();
+
+    // Keep the snapshot in step, so the offline copy reflects what just happened rather
+    // than waiting for the next revalidation tick to notice.
+    await syncJourneyOffline(journeyId, locale);
+    const local = await readLiveViewLocally(journeyId, locale, new Date().toISOString());
+    if (local) setManualView(local);
   }
 
   const { projection, now: nowView } = view;
@@ -88,6 +131,12 @@ export function LiveJourney({ view, locale }: { view: LiveView; locale: string }
           </details>
         ) : null}
       </div>
+
+      {/*
+        PRD-OFFL-003 allows exactly one card about what changed while the traveler was
+        away, and forbids a sync-error dialog entirely. This is that card.
+      */}
+      <OfflineNotice syncedAt={view.syncedAt} changed={changed} onDismiss={dismissChanged} />
 
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">

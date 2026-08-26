@@ -1,0 +1,185 @@
+import {
+  computeHealth,
+  getNowNextLater,
+  type Cause,
+  type JourneyItem,
+  type KnowledgeBundle,
+  type LiveCard,
+  type LiveProjection,
+  type PriorityTier,
+} from "@mandhira/journey-engine";
+
+import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
+
+/**
+ * Turning a journey into the Live screen's view (PRD F8).
+ *
+ * PURE — no Supabase, no Dexie, no clock of its own. That is the point: the server calls
+ * this with rows from Postgres and the browser calls it with rows from IndexedDB, and
+ * TRD-ARCH-002 requires those two to agree. Two assemblers would drift, and the direction
+ * they drift in is a traveler in airplane mode being shown a different plan from the one
+ * they were shown an hour earlier with signal.
+ */
+export type LivePlace = {
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type LiveItemView = {
+  itemId: string | null;
+  label: string;
+  place: LivePlace | null;
+  startAt: string | null;
+  endAt: string | null;
+  tier: PriorityTier | null;
+  isDone: boolean;
+};
+
+export type LiveView = {
+  journeyId: string;
+  journeyTitle: string;
+  projection: LiveProjection;
+  now: LiveItemView;
+  next: LiveItemView | null;
+  later: (LiveItemView & { tier: PriorityTier })[];
+  tomorrowFirst: LiveItemView | null;
+  dayCauses: string[];
+  isActive: boolean;
+  /** When the data behind this view was read, or null when it came straight from the server. */
+  syncedAt: string | null;
+};
+
+export function assembleLiveView(input: {
+  journey: StoredJourney;
+  items: StoredItem[];
+  bundle: KnowledgeBundle;
+  /** Experience and place ids → display names. */
+  labels: Map<string, string>;
+  places: Map<string, LivePlace>;
+  /** Never `Date.now()` inside this function — the caller owns the clock (D-005). */
+  nowAt: string;
+  syncedAt?: string | null;
+}): LiveView {
+  const { journey, items, bundle, labels, places, nowAt } = input;
+  const engineJourney = toEngineJourney(journey);
+
+  const projection = getNowNextLater({
+    journey: engineJourney,
+    items,
+    knowledge: bundle,
+    nowAt,
+  });
+
+  const health = computeHealth({ journey: engineJourney, items, knowledge: bundle });
+  const byId = new Map(items.map((item) => [item.id, item]));
+
+  const view = (card: LiveCard | null): LiveItemView | null => {
+    if (!card) return null;
+    const item = card.itemId ? byId.get(card.itemId) : undefined;
+
+    return {
+      itemId: card.itemId,
+      label: labelFor(card, item?.experience_id ?? null, labels),
+      place: card.placeId ? (places.get(card.placeId) ?? null) : null,
+      startAt: card.startAt,
+      endAt: card.endAt,
+      tier: item?.tier ?? null,
+      isDone: item?.status === "done",
+    };
+  };
+
+  const rowFor = (item: StoredItem | undefined): LiveItemView | null =>
+    item
+      ? {
+          itemId: item.id,
+          label: labelFor(null, item.experience_id ?? null, labels),
+          place: item.place_id ? (places.get(item.place_id) ?? null) : null,
+          startAt: item.planned_start_at ?? null,
+          endAt: item.planned_end_at ?? null,
+          tier: item.tier,
+          isDone: item.status === "done",
+        }
+      : null;
+
+  /*
+   * Tomorrow's first item, for the end-of-day card. Read from the plan rather than by
+   * projecting the next day: at 10pm the traveler wants to know what time to be up, and
+   * running the whole live projection against a day that has not started answers a
+   * question nobody asked.
+   */
+  const tomorrow = items
+    .filter((item) => item.day_index === projection.dayIndex + 1)
+    .sort((a, b) => a.sort_order - b.sort_order)[0];
+
+  return {
+    journeyId: journey.id,
+    journeyTitle: journey.title ?? "Your journey",
+    projection,
+    now: view(projection.now)!,
+    next: view(projection.next),
+    later: projection.later
+      .map((row) => {
+        const built = rowFor(byId.get(row.itemId));
+        return built ? { ...built, tier: row.tier } : null;
+      })
+      .filter((row): row is LiveItemView & { tier: PriorityTier } => row !== null),
+    tomorrowFirst: rowFor(tomorrow),
+    dayCauses: [
+      ...new Set(
+        (health.days.find((d) => d.dayIndex === projection.dayIndex)?.causes ?? [])
+          .map(causeSentence)
+          .filter(Boolean),
+      ),
+    ],
+    isActive: journey.status === "active",
+    syncedAt: input.syncedAt ?? null,
+  };
+}
+
+/**
+ * What the card is called.
+ *
+ * A travel leg and a free block are named for what they ARE, not for the item they lead
+ * to — "On your way to Hill Temple" is a different instruction from "Hill Temple", and a
+ * traveler glancing at their phone mid-walk needs the first one.
+ */
+function labelFor(
+  card: LiveCard | null,
+  experienceId: string | null,
+  labels: Map<string, string>,
+): string {
+  const named = experienceId ? labels.get(experienceId) : undefined;
+
+  if (card?.kind === "travel") return named ? `On your way to ${named}` : "On your way";
+  if (card?.kind === "free") return "Nothing you need to do right now";
+  if (card?.kind === "before_day") return "Your day hasn't started yet";
+  if (card?.kind === "day_complete") return "Today is complete";
+
+  return named ?? "Something you added";
+}
+
+/**
+ * Health causes as sentences.
+ *
+ * Beside the reader rather than in the engine, exactly like the builder's — the engine
+ * states which check failed, never how to say it.
+ */
+function causeSentence(cause: Cause): string {
+  const minutes = String(cause.params?.["minutes"] ?? "");
+
+  const sentences: Record<string, string> = {
+    "health.cause.overlap": "Two things overlap.",
+    "health.cause.tight_transition": `Only ${minutes} minutes to get between two of these.`,
+    "health.cause.outside_window": "One of these falls outside when it's open.",
+    "health.cause.return_at_risk": `You'd reach your return about ${minutes} minutes late.`,
+    "health.cause.physical_load": "This day asks a lot on foot.",
+    "health.cause.no_break": "There's a long stretch here without a proper break.",
+    "health.cause.not_step_free": "Part of this day is only partly step-free.",
+  };
+
+  return sentences[cause.key] ?? "";
+}
+
+/** Re-exported so consumers do not need to reach into the engine for one type. */
+export type { JourneyItem };

@@ -68,3 +68,42 @@ test.describe("A revoked share link", () => {
     expect(body).not.toMatch(FORBIDDEN);
   });
 });
+
+test.describe("A guest's rate-limit identity (OPEN-011)", () => {
+  test("every browser gets its own, so one guest cannot spend everyone's quota", async ({
+    browser,
+  }) => {
+    const first = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const second = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+
+    await (await first.newPage()).goto("/en");
+    await (await second.newPage()).goto("/en");
+
+    const deviceOf = async (context: Awaited<ReturnType<typeof browser.newContext>>) =>
+      (await context.cookies()).find((cookie) => cookie.name === "mandhira_device")?.value;
+
+    const a = await deviceOf(first);
+    const b = await deviceOf(second);
+
+    /*
+     * Until this existed, `withApi` fell back to the literal string "anonymous" for every
+     * guest — one shared bucket, so the first traveler to spend their ten intent
+     * extractions spent everyone's.
+     */
+    expect(a).toBeTruthy();
+    expect(b).toBeTruthy();
+    expect(a).not.toBe(b);
+
+    await first.close();
+    await second.close();
+  });
+
+  test("is not readable by page scripts", async ({ page }) => {
+    await page.goto("/en");
+
+    // httpOnly. It identifies a browser for rate limiting and nothing else; there is no
+    // reason for a script to see it, and one less thing to leak if one is ever injected.
+    const visible = await page.evaluate(() => document.cookie);
+    expect(visible).not.toContain("mandhira_device");
+  });
+});

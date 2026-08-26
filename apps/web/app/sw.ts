@@ -1,6 +1,13 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { CacheFirst, ExpirationPlugin, NetworkOnly, Serwist, StaleWhileRevalidate } from "serwist";
+import {
+  CacheFirst,
+  ExpirationPlugin,
+  NetworkFirst,
+  NetworkOnly,
+  Serwist,
+  StaleWhileRevalidate,
+} from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -52,6 +59,30 @@ const serwist = new Serwist({
       handler: new StaleWhileRevalidate({
         cacheName: "mandhira-knowledge",
         plugins: [new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+      }),
+    },
+    {
+      /*
+       * The pages themselves (PRD-OFFL-002/007).
+       *
+       * Without this, reloading offline fails at the DOCUMENT — IndexedDB holds the whole
+       * journey and the browser never gets far enough to read it. Everything downstream of
+       * that is irrelevant: the traveler sees the browser's own error page.
+       *
+       * NetworkFirst, not CacheFirst: online, a traveler must get the current plan, and a
+       * cached shell served in preference to a live one is how someone ends up acting on
+       * yesterday's journey. Offline it falls through to the cached copy, and the Live
+       * screen then recomputes from IndexedDB against the real clock — so a stale DOCUMENT
+       * never means a stale ANSWER.
+       *
+       * Declared explicitly rather than left to `defaultCache` so the intent, and the
+       * three-second patience, are visible where someone will look for them.
+       */
+      matcher: ({ request }) => request.mode === "navigate",
+      handler: new NetworkFirst({
+        cacheName: "mandhira-pages",
+        networkTimeoutSeconds: 3,
+        plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 })],
       }),
     },
     {

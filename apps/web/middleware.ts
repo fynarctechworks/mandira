@@ -2,6 +2,7 @@ import { refreshSession } from "@mandhira/db/client/middleware";
 import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
+import { DEVICE_COOKIE } from "./lib/api";
 
 const handleLocale = createIntlMiddleware(routing);
 
@@ -40,6 +41,8 @@ export async function middleware(request: NextRequest) {
   const response = handleLocale(request);
   const { user } = await refreshSession(request, response as NextResponse);
 
+  ensureDeviceCookie(request, response as NextResponse);
+
   if (!user && needsAccount(request.nextUrl.pathname)) {
     const target = new URL(`/${localeOf(request.nextUrl.pathname)}/sign-in`, request.url);
     // `next` carries them back to the page they asked for, rather than to a home screen
@@ -56,6 +59,34 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
+}
+
+/**
+ * Give a guest a stable identity for rate limiting (OPEN-011, TRD §6.2).
+ *
+ * `withApi` keys a guest's rate limit on this cookie and falls back to the literal string
+ * "anonymous" when it is missing — which means every guest in the country shares one
+ * bucket, and the first traveler to spend their ten intent extractions spends everyone's.
+ * Nothing set it until now.
+ *
+ * Deliberately NOT keyed on IP: TRD §6.2 keys limits on a session, and DPDP treats an IP as
+ * personal data. This is a random opaque value that identifies a browser and nothing else —
+ * no user, no device fingerprint, nothing that survives clearing site data. `httpOnly` so
+ * page scripts cannot read it, `lax` so it survives arriving from a shared link.
+ *
+ * Set in middleware because it is the only place in a Next app that can write a cookie on
+ * every request, including the first one a guest ever makes.
+ */
+function ensureDeviceCookie(request: NextRequest, response: NextResponse): void {
+  if (request.cookies.has(DEVICE_COOKIE)) return;
+
+  response.cookies.set(DEVICE_COOKIE, crypto.randomUUID(), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
 }
 
 /** The path with its locale prefix removed, so the rules are written once. */

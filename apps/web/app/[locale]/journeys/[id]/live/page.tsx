@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 
 import { LiveJourney } from "../../../../../components/live-journey";
@@ -32,9 +31,17 @@ export default async function LivePage({
   const supabase = await webSupabase();
   const view = await getLiveView(supabase, id, locale, new Date().toISOString());
 
-  // RLS means another traveler's journey is not visible, so this is a 404 rather than a
-  // 403 — confirming it exists would itself be a leak.
-  if (!view) notFound();
+  /*
+   * A null view here is NOT a 404 any more.
+   *
+   * This page has to render with no network, and offline the server read returns nothing
+   * for a journey that plainly exists — the traveler is holding a snapshot of it. So the
+   * client is given null and reads IndexedDB instead; a genuinely missing journey shows
+   * the "not saved for offline yet" state, which is the honest answer either way.
+   *
+   * RLS still decides what the server read can see, and a stranger's journey was never in
+   * this device's IndexedDB to begin with.
+   */
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -47,7 +54,7 @@ export default async function LivePage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        {view.journeyTitle}
+        {view?.journeyTitle ?? "Your journey"}
       </Link>
 
       {/*
@@ -55,7 +62,7 @@ export default async function LivePage({
        * screen works whether or not the journey has been marked `active` — so this asks
        * only when the traveler has not said so themselves.
        */}
-      {view.isActive ? null : <StartToday journeyId={id} />}
+      {view && !view.isActive ? <StartToday journeyId={id} /> : null}
 
       <LiveJourney view={view} locale={locale} />
     </main>

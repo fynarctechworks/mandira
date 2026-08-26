@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 
+import { DraftRecovery } from "../../../components/draft-recovery";
 import { listJourneys } from "../../../lib/journeys";
 import { webSupabase } from "../../../lib/supabase";
 
@@ -33,6 +34,12 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
       <header className="flex flex-col gap-2">
         <h1 className="text-display">Your journeys</h1>
       </header>
+
+      {/*
+        Renders nothing unless this device is holding a draft from before the traveler had
+        an account — the other half of guest-first (carried from B-019).
+      */}
+      <DraftRecovery locale={locale} />
 
       {journeys.length === 0 ? (
         <div className="flex flex-col gap-3">

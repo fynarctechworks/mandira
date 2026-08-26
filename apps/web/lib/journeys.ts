@@ -1,6 +1,6 @@
-import type { Database } from "@mandhira/db/types";
 import { computeHealth, type HealthReport, type JourneyItem } from "@mandhira/journey-engine";
 
+import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
 
@@ -24,34 +24,8 @@ import type { webSupabase } from "./supabase";
  */
 type Client = Awaited<ReturnType<typeof webSupabase>>;
 
-export type StoredJourney = {
-  id: string;
-  title: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  timezone: string;
-  dayStartTime: string;
-  dayEndTime: string;
-  pace: Database["public"]["Enums"]["pace_enum"];
-  status: Database["public"]["Enums"]["journey_status_enum"];
-  destinationId: string | null;
-};
-
-/**
- * A stored item is the engine's item PLUS what the Live Journey records about it.
- *
- * Deliberately widened here rather than in the engine. `status` and the `actual_*`
- * timestamps say what HAPPENED; the engine's `JourneyItem` says what is planned, and it
- * schedules from the plan. Adding fields the engine ignores to its own contract would
- * invite something to start scheduling from them.
- *
- * Structurally assignable to `JourneyItem`, so these pass straight into the engine.
- */
-export type StoredItem = JourneyItem & {
-  status: "planned" | "in_progress" | "done" | "skipped" | "moved";
-  actual_start_at: string | null;
-  actual_end_at: string | null;
-};
+export type { StoredItem, StoredJourney } from "./journey-types";
+export { toEngineJourney } from "./journey-types";
 
 export type JourneyDetail = {
   journey: StoredJourney;
@@ -122,24 +96,6 @@ export async function getJourney(
   });
 
   return { journey, items, health, labels: await labelsFor(supabase, items, locale) };
-}
-
-/**
- * The engine's view of a stored journey.
- *
- * A journey with no dates cannot be scheduled, so it falls back to today rather than
- * throwing — the traveler is mid-edit, not in an invalid state, and a screen that refuses
- * to render because a date is missing is a screen that punishes them for it.
- */
-export function toEngineJourney(journey: StoredJourney) {
-  return {
-    id: journey.id,
-    start_date: journey.startDate ?? new Date().toISOString().slice(0, 10),
-    end_date: journey.endDate,
-    timezone: journey.timezone,
-    day_start_time: journey.dayStartTime,
-    day_end_time: journey.dayEndTime,
-  };
 }
 
 const EMPTY_KNOWLEDGE = {
