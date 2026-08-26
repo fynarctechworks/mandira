@@ -2,6 +2,8 @@
 
 import type { CriticalField } from "@mandhira/db";
 import { Button } from "@mandhira/ui";
+
+import { RaiseConflict } from "./raise-conflict";
 import { useId, useState } from "react";
 import { saveTrustRecord } from "@/app/(ops)/trust/actions";
 
@@ -233,6 +235,30 @@ export function TrustPanel({
               Save trust record
             </Button>
           </div>
+
+          {/*
+            Raising a conflict lives HERE because this is where somebody notices: they are
+            recording what one source says and remember another said otherwise. A queue
+            they have to remember to visit separately is one where the disagreement is
+            never recorded at all (PRD-OPS-SRC-005; raised by hand — OPEN-014).
+          */}
+          {/*
+            Named fields only. A whole-entity trust record (an availability rule, TRD §4.4)
+            has no field to disagree ABOUT — two sources differing there means the rule
+            itself is wrong, which is an edit rather than a conflict.
+          */}
+          {field.field ? (
+            <div className="border-t border-border-subtle pt-3">
+              <RaiseConflict
+                entityTable={entityTable}
+                entityId={entityId}
+                fieldName={field.field}
+                fieldLabel={field.label}
+                sources={sources}
+                alreadyFlagged={record?.conflict_flag ?? false}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

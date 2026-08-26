@@ -3826,6 +3826,10 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: Json
       }
+      assign_reverification: {
+        Args: { p_assignee?: string; p_note?: string; p_trust_ids: string[] }
+        Returns: number
+      }
       col_is_null:
         | {
             Args: {
@@ -3951,6 +3955,27 @@ export type Database = {
       findfuncs: { Args: { "": string }; Returns: string[] }
       finish: { Args: { exception_on_failure?: boolean }; Returns: string[] }
       format_type_string: { Args: { "": string }; Returns: string }
+      freshness_rows: {
+        Args: { p_destination_id?: string; p_filter?: string; p_limit?: number }
+        Returns: {
+          confidence: Database["public"]["Enums"]["confidence_enum"]
+          conflict_flag: boolean
+          destination_id: string
+          entity_id: string
+          entity_label: string
+          entity_table: string
+          field_name: string
+          freshness: Database["public"]["Enums"]["freshness_enum"]
+          has_open_task: boolean
+          report_downgrade: boolean
+          source_name: string
+          source_tier: Database["public"]["Enums"]["source_tier_enum"]
+          trust_id: string
+          valid_until: string
+          verification_status: Database["public"]["Enums"]["verification_status_enum"]
+          verified_at: string
+        }[]
+      }
       has_any_locale: { Args: { p_value: Json }; Returns: boolean }
       has_any_role: {
         Args: { p_roles: Database["public"]["Enums"]["ops_role_enum"][] }
@@ -4019,6 +4044,15 @@ export type Database = {
         }
         Returns: string
       }
+      open_conflict: {
+        Args: {
+          p_entity_id: string
+          p_entity_table: string
+          p_field_name: string
+          p_values: Json
+        }
+        Returns: string
+      }
       os_name: { Args: never; Returns: string }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
@@ -4054,6 +4088,34 @@ export type Database = {
           p_entity_table: string
         }
         Returns: string
+      }
+      resolve_conflict: {
+        Args: {
+          p_id: string
+          p_reason: string
+          p_resolution: string
+          p_winner_source_id?: string
+        }
+        Returns: {
+          created_at: string
+          entity_id: string
+          entity_table: string
+          field_name: string | null
+          id: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+          values: Json
+          winner_source_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "conflicts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       roll_journey_statuses: { Args: never; Returns: Json }
       route_stops_for: { Args: { p_route_id: string }; Returns: Json }

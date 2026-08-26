@@ -109,7 +109,13 @@ export const NAV_ITEMS: NavItem[] = [
     keywords: ["change candidates", "excerpt", "accept", "reject"],
   },
   { id: "O11", label: "Verify queue", section: "queues", href: null, comingIn: "B-012" },
-  { id: "O12", label: "Conflicts", section: "queues", href: null, comingIn: "M3" },
+  {
+    id: "O12",
+    label: "Conflicts",
+    section: "queues",
+    href: "/conflicts",
+    keywords: ["disagree", "winner", "both valid", "escalate"],
+  },
   {
     id: "O13",
     label: "Approve & publish",
@@ -122,9 +128,8 @@ export const NAV_ITEMS: NavItem[] = [
     id: "O15",
     label: "Freshness monitor",
     section: "queues",
-    href: null,
-    comingIn: "M3",
-    keywords: ["stale", "aging"],
+    href: "/freshness",
+    keywords: ["stale", "aging", "expiring", "low confidence", "reverify"],
   },
 
   // ── Administration ──────────────────────────────────────────────────────────

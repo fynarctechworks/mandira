@@ -122,7 +122,8 @@ export default defineConfig({
         storageState: OPS_STORAGE_STATE,
       },
       dependencies: ["ops-setup"],
-      testMatch: /ops[\\/](shell-nav|editors|knowledge|trust|publish|ingestion)\.spec\.ts/,
+      testMatch:
+        /ops[\\/](shell-nav|editors|knowledge|trust|publish|ingestion|queues)\.spec\.ts/,
     },
   ],
   webServer: [
