@@ -18,7 +18,7 @@ Status: `OPEN` · `RESOLVED` · `SUPERSEDED`
 
 | ID | What's needed | Blocks | Why it can't be worked around |
 |---|---|---|---|
-| GIT-01 | **Push credentials for `fynarctechworks/mandira`.** The stored credential is for `stimuliIQ`, which has no write access. Either grant that account write access, or clear `git:https://github.com` from Windows Credential Manager and re-auth. | Every commit so far (8 unpushed); all CI | CI has never executed. Two workflow jobs and ~10 steps are unverified, including `supabase/setup-cli` on a clean runner and the generated-types staleness diff. |
+| GIT-01 | **Push credentials for `fynarctechworks/mandira`.** The stored credential is for `stimuliIQ`, which has no write access. Either grant that account write access, or clear `git:https://github.com` from Windows Credential Manager and re-auth. **Now the single blocker on finishing M1** — B-025 built the deploy pipeline, backups and runbook, and none of it can execute. | Every commit so far (13 unpushed); all CI; the entire B-025 deploy | CI has never executed. Two workflow jobs and ~10 steps are unverified, including `supabase/setup-cli` on a clean runner and the generated-types staleness diff. |
 | OPEN-001 | **Launch destination #1** (ideally #2–#3 too). Determines seed content, which sources to register, and the transport feed. | B-013 (real seed content) | Content cannot be researched or seeded without knowing the place. **Reduced in scope:** a clearly-invented local fixture (`supabase/seed/0002`, D-081) now exercises the whole path from draft through trust to published view, so B-013 becomes mostly data entry when this is answered — and the B-015 discovery UI can be built and tested against the fixture in the meantime. |
 
 ## Blocking soon

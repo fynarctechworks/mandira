@@ -1,0 +1,151 @@
+name: Deploy
+
+# TRD-DEPL-001: the migration job GATES promotion.
+#
+# The order is the whole point. Migrations are forward-only (D-015), so the schema can
+# always run the previous release's code — but the reverse is not true. Promote first and
+# a traveler's request reaches code that expects a column the database has not got yet,
+# and the failure looks like a bug rather than a sequencing mistake.
+#
+# So: verify → migrate → promote. A failed migration stops the deploy with the old version
+# still serving, which is the outcome you want at every point in that sequence.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # Never two deploys at once: the second would race the first's migration.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Preflight · lint · typecheck · test · build · budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Refuses a deploy with a localhost Supabase URL, a missing Resend key, or a
+      # service-role key exposed to the browser — each of which fails QUIETLY in production.
+      - name: Preflight
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: node scripts/preflight.mjs --env production
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:engine
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: pnpm build
+
+      # TRD-PERF-001. Enforced here rather than reviewed, because route weight only ever
+      # creeps upward and nobody notices a route crossing a line they cannot see.
+      - name: Route JS budget
+        run: pnpm check:bundle
+
+  migrate:
+    name: Apply migrations
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link the production project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      # `--linked` applies only what has not been applied. Forward-only means this is
+      # additive by construction; a migration that would drop something is a review
+      # question, not a deploy-time one.
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --linked
+
+  promote:
+    name: Promote both apps
+    needs: migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy the traveler app
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+        run: npx vercel deploy --prod --yes --token "$VERCEL_TOKEN" --cwd apps/web
+
+      - name: Deploy Ops
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_OPS }}
+        run: npx vercel deploy --prod --yes --token "$VERCEL_TOKEN" --cwd apps/ops
+
+  smoke:
+    name: Smoke the deployed app
+    needs: promote
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+
+      # Against the REAL deployment, not a local build. Everything measured so far —
+      # PRD-PLAN-009's 500 ms, TRD-PERF-001's LCP — was measured on a developer's machine
+      # and recorded as a floor. This is where those numbers start meaning something.
+      - name: Smoke
+        env:
+          SMOKE_BASE_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: pnpm test:smoke
+
+      # A deploy that promoted and then failed its smoke is the case for `vercel rollback`.
+      - name: Point at the runbook if it failed
+        if: failure()
+        run: |
+          echo "::error::The deployment is live but failed its smoke test."
+          echo "Roll back: docs/RUNBOOK.md § Rolling back a bad deploy"

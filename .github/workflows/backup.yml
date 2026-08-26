@@ -1,0 +1,64 @@
+name: Nightly backup
+
+# TRD-DEPL-003: a nightly encrypted dump until the Supabase plan includes PITR.
+#
+# The important word is VERIFIED. This does not just take a dump — it restores the
+# encrypted archive into a scratch database and compares the table and RLS-policy counts
+# against the source. A backup nobody has restored is a file, and the moment you discover
+# it was only ever a file is the moment you needed it.
+
+on:
+  schedule:
+    # 19:30 UTC = 01:00 IST, the quietest hour for an Indian pilgrimage audience.
+    - cron: "30 19 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Dump · encrypt · restore · verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Matching the server's major version matters: pg_dump refuses to dump from a newer
+      # server than itself, and finding that out on the night you need a restore is late.
+      - name: Install PostgreSQL client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+
+      - name: Back up and prove it restores
+        env:
+          # A direct connection string, not the pooler: pg_dump needs a session, and the
+          # transaction pooler will not give it one.
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: bash scripts/backup-verify.sh
+
+      - name: Keep the verified archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mandhira-backup-${{ github.run_id }}
+          path: backups/*.sql.enc
+          # 30 days of nightlies. Long enough to notice a slow corruption, short enough
+          # that traveler data is not accumulating indefinitely in CI storage (PRD §10).
+          retention-days: 30
+          if-no-files-found: error
+
+      # Silence is not success. Without this, a backup that stopped running six weeks ago
+      # looks exactly like a backup that ran fine — which is the usual way this fails.
+      - name: Say so if it did not work
+        if: failure()
+        run: |
+          echo "::error::The nightly backup did not complete. See the run log."
+          echo "Runbook: docs/RUNBOOK.md § Backups"

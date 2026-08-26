@@ -20,3 +20,7 @@ public/swe-worker-*.js
 
 # The E2E suite builds here so a run never clobbers a running dev server.
 .next-e2e/
+
+# Encrypted database dumps produced by scripts/backup-verify.sh. Never committed —
+# an encrypted archive in a repository is one leaked passphrase from being plaintext.
+backups/

@@ -20,7 +20,10 @@
     "test:engine": "vitest run packages/journey-engine --coverage",
     "push:keys": "node scripts/generate-vapid-keys.mjs",
     "ui:add": "pnpm --filter @mandhira/ui exec shadcn add",
-    "check:bundle": "node scripts/check-bundle.mjs apps/web"
+    "check:bundle": "node scripts/check-bundle.mjs apps/web",
+    "preflight": "node scripts/preflight.mjs",
+    "db:backup:verify": "bash scripts/backup-verify.sh",
+    "test:smoke": "playwright test --config playwright.smoke.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

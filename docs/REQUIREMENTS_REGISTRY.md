@@ -271,7 +271,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-PERF-003 | Mandated techniques | RSC-first, dynamic imports, font subsetting, virtualisation, memoized timeline, worker offload | P0 | — |
 | TRD-DEPL-001 | Environments & CI/CD | §8 steps 1–7; migration job gates deploy; preview strategy | P0 | — |
 | TRD-DEPL-002 | PWA release discipline | Version bump → update toast; never force-reload during Live mode | P0 | — |
-| TRD-DEPL-003 | Backup & rollback | Nightly encrypted pg_dump until Pro; Vercel instant rollback; runbook | P0 | — |
+| TRD-DEPL-003 ◐ | Backup & rollback | Nightly encrypted pg_dump until Pro; Vercel instant rollback; runbook | P0 | — |
 | TRD-OBSV-001 | Sentry + analytics events | Both apps; allowlisted event names; queue-age alerts | P1 | — |
 | TRD-COST-001 | Cost controls | Quota alerts at 70%; caches per §10; $0 M1 infra | P1 | — |
 
