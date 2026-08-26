@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { createWithApi } from "@mandhira/db/api";
 import { getOpsRoles } from "@mandhira/db/client/roles";
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
+import { reportError } from "@mandhira/db/reporting";
 
 import { webSupabase } from "./supabase";
 
@@ -16,11 +17,12 @@ export const withApi = createWithApi({
   createServiceClient: createServiceRoleSupabase,
   getRoles: getOpsRoles,
   anonKey: anonKeyFromDeviceCookie,
-  onUnexpected: (error, context) => {
-    // Sentry is wired in B-024. Until then this is the one place an unexpected failure is
-    // recorded, and it deliberately logs the cause rather than the response the caller got.
-    console.error(`[withApi] ${context.route}`, error);
-  },
+  /*
+   * Every unexpected route failure goes through one reporter (PLAT-06). The transport is a
+   * seam, not Sentry itself — see `packages/db/src/reporting.ts` for why, and for what is
+   * deliberately never included in a report.
+   */
+  onUnexpected: (error, context) => reportError({ route: context.route, error, app: "web" }),
 });
 
 /** The cookie B-019's guest draft sets; named here so both halves agree on it. */

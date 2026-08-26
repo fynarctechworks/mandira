@@ -3,7 +3,21 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      /*
+       * `NEXT_DIST_DIR` MUST be part of the cache key.
+       *
+       * The E2E suite builds into `.next-e2e` to avoid corrupting a running dev server's
+       * `.next` (D-087). Without this line, turbo treats the two builds as identical work
+       * and replays a cached `.next` build when `.next-e2e` was asked for — the build
+       * "succeeds", the directory is never written, and Playwright fails with "Could not
+       * find a production build", which points nowhere near the cause.
+       *
+       * NODE_ENV and the Supabase URL are here for the same reason: the URL is baked into
+       * the client bundle and into the CSP, so a build for one project must not be
+       * replayed for another.
+       */
+      "env": ["NEXT_DIST_DIR", "NODE_ENV", "NEXT_PUBLIC_SUPABASE_URL"],
+      "outputs": [".next/**", "!.next/cache/**", ".next-e2e/**", "!.next-e2e/cache/**", "dist/**"]
     },
     "dev": { "cache": false, "persistent": true },
     "lint": { "dependsOn": ["^build"] },

@@ -1,5 +1,6 @@
 import withSerwistInit from "@serwist/next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { securityHeaders } from "@mandhira/config/security-headers";
 import type { NextConfig } from "next";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
@@ -15,6 +16,24 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  /**
+   * Security headers on every response (TRD §6.1).
+   *
+   * Shared between both apps so they cannot drift into different postures — Ops handles
+   * the knowledge travelers trust, and a weaker policy there is a weaker policy
+   * everywhere.
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders({
+          supabaseUrl: process.env["NEXT_PUBLIC_SUPABASE_URL"],
+          isDev: process.env.NODE_ENV !== "production",
+        }),
+      },
+    ];
+  },
   reactStrictMode: true,
   /*
    * The build directory is overridable, and the E2E suite overrides it.

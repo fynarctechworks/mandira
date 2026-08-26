@@ -19,7 +19,8 @@
     "db:test": "supabase test db",
     "test:engine": "vitest run packages/journey-engine --coverage",
     "push:keys": "node scripts/generate-vapid-keys.mjs",
-    "ui:add": "pnpm --filter @mandhira/ui exec shadcn add"
+    "ui:add": "pnpm --filter @mandhira/ui exec shadcn add",
+    "check:bundle": "node scripts/check-bundle.mjs apps/web"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

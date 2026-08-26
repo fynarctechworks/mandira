@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@mandhira/ui";
-import { createBrowserSupabase } from "@mandhira/db/client/browser";
 import { useState } from "react";
 
 type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message: string };
@@ -31,6 +30,15 @@ export function SignInForm({ next }: { next: string }) {
     event.preventDefault();
     setStatus({ kind: "sending" });
 
+    /*
+     * Imported here rather than at module scope (B-024's perf budget).
+     *
+     * `@supabase/ssr` pulls in supabase-js, and statically importing it put ~70 kB of
+     * client JS on this route — for a form with one text field, on the screen a traveler
+     * reaches when they are already committed and least patient. It is needed only once
+     * they actually tap send, so it loads then.
+     */
+    const { createBrowserSupabase } = await import("@mandhira/db/client/browser");
     const supabase = createBrowserSupabase();
     const { error } = await supabase.auth.signInWithOtp({
       email,

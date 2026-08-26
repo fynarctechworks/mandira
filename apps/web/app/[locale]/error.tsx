@@ -1,5 +1,6 @@
 "use client";
 
+import { reportError } from "@mandhira/db/reporting";
 import { Alert, AlertDescription, AlertTitle, Button } from "@mandhira/ui";
 import { RefreshCw } from "lucide-react";
 import { useEffect } from "react";
@@ -28,7 +29,13 @@ export default function TravelerError({
      * The cause is recorded, never rendered. A stack trace on screen is noise to a
      * traveler and a gift to anyone probing the app. Sentry replaces this in B-024.
      */
-    console.error("[traveler]", error.digest ?? "", error);
+    /*
+     * Through the same reporter every route failure uses (PLAT-06), so a screen that
+     * failed to render and a route that failed to answer land in one place. The cause is
+     * recorded, never rendered — a stack trace on screen is noise to a traveler and a gift
+     * to anyone probing.
+     */
+    reportError({ route: `render traveler ${error.digest ?? "unknown"}`, error, app: "web" });
   }, [error]);
 
   return (

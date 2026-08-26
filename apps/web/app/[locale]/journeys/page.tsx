@@ -46,7 +46,7 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
           <p className="text-body text-text-secondary">You haven&apos;t saved a journey yet.</p>
           <Link
             href={`/${locale}/plan`}
-            className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 text-body font-medium text-brand-primary-on"
+            className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
           >
             Plan a journey
           </Link>

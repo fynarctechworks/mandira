@@ -73,7 +73,7 @@ export default async function SearchPage({
 
         <button
           type="submit"
-          className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-brand-primary-on"
+          className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
         >
           Search
         </button>

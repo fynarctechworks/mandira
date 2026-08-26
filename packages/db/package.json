@@ -13,7 +13,9 @@
     "./client/roles": "./src/client/roles.ts",
     "./rate-limit": "./src/rate-limit.ts",
     "./ai-store": "./src/ai-store.ts",
-    "./api": "./src/api.ts"
+    "./api": "./src/api.ts",
+    "./analytics": "./src/analytics.ts",
+    "./reporting": "./src/reporting.ts"
   },
   "scripts": {
     "lint": "eslint .",

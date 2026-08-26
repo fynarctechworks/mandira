@@ -1,5 +1,6 @@
 "use client";
 
+import { reportError } from "@mandhira/db/reporting";
 import { Alert, AlertDescription, AlertTitle, Button } from "@mandhira/ui";
 import { useEffect } from "react";
 
@@ -22,7 +23,13 @@ export default function OpsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[ops]", error.digest ?? "", error);
+    /*
+     * Through the same reporter every route failure uses (PLAT-06), so a screen that
+     * failed to render and a route that failed to answer land in one place. The cause is
+     * recorded, never rendered — a stack trace on screen is noise to a traveler and a gift
+     * to anyone probing.
+     */
+    reportError({ route: `render ops ${error.digest ?? "unknown"}`, error, app: "ops" });
   }, [error]);
 
   return (

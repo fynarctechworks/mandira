@@ -61,7 +61,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* PRD A02: the primary action on the home screen. */}
       <Link
         href={`/${locale}/plan`}
-        className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 py-3 text-body font-medium text-brand-primary-on"
+        className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 py-3 text-body font-medium text-text-on-primary"
       >
         Plan a journey
       </Link>

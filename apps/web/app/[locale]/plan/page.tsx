@@ -210,7 +210,7 @@ export default async function PlanPage({
 
         <button
           type="submit"
-          className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-brand-primary-on"
+          className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
         >
           Build my journey
         </button>

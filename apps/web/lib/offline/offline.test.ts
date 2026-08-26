@@ -83,14 +83,14 @@ function fetchReturning(body: JourneySnapshot) {
 
 beforeEach(async () => {
   resetDb();
-  await db().delete();
+  await (await db()).delete();
   resetDb();
 });
 
 describe("the offline database", () => {
   it("opens at the declared snapshot version", async () => {
-    await db().open();
-    expect(db().verno).toBe(SNAPSHOT_VERSION);
+    await (await db()).open();
+    expect((await db()).verno).toBe(SNAPSHOT_VERSION);
   });
 
   it("keeps a place and an experience with the same id apart", async () => {
@@ -99,7 +99,9 @@ describe("the offline database", () => {
      * are vanishingly unlikely — but a single-key store would make one SILENT, with a
      * temple's opening hours quietly overwriting a darshan's duration.
      */
-    await db().knowledge_entities.bulkPut([
+    await (
+      await db()
+    ).knowledge_entities.bulkPut([
       { entity_table: "places", id: "same", journey_id: JOURNEY_ID, payload: { kind: "place" } },
       {
         entity_table: "experiences",
@@ -109,7 +111,7 @@ describe("the offline database", () => {
       },
     ]);
 
-    expect(await db().knowledge_entities.count()).toBe(2);
+    expect(await (await db()).knowledge_entities.count()).toBe(2);
   });
 });
 
@@ -124,7 +126,7 @@ describe("syncJourneyOffline", () => {
     expect(stored?.journey.title).toBe("A journey");
     expect(stored?.items).toHaveLength(1);
     expect(stored?.entities).toHaveLength(1);
-    expect(await db().prepare_tasks.count()).toBe(1);
+    expect(await (await db()).prepare_tasks.count()).toBe(1);
   });
 
   it("records when the snapshot was written, which is what the banner reports", async () => {
@@ -273,7 +275,9 @@ describe("a guest's draft", () => {
   });
 
   it("expires after a month rather than lingering", async () => {
-    await db().meta.put({
+    await (
+      await db()
+    ).meta.put({
       key: "guest_draft",
       value: {
         brief: { destinationId: "d1" },
@@ -284,7 +288,7 @@ describe("a guest's draft", () => {
     // A half-finished thought from six weeks ago is more likely to confuse than help —
     // its dates have usually passed.
     expect(await readGuestDraft()).toBeNull();
-    expect(await db().meta.get("guest_draft")).toBeUndefined();
+    expect(await (await db()).meta.get("guest_draft")).toBeUndefined();
   });
 
   it("returns nothing when none was ever saved", async () => {

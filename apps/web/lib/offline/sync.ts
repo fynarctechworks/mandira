@@ -75,7 +75,7 @@ export async function syncJourneyOffline(
 }
 
 async function writeSnapshot(journeyId: string, snapshot: JourneySnapshot): Promise<void> {
-  const database = db();
+  const database = await db();
 
   await database.transaction(
     "rw",
@@ -139,7 +139,7 @@ export async function readSnapshot(journeyId: string): Promise<LocalSnapshot | n
   if (!offlineAvailable()) return null;
 
   try {
-    const database = db();
+    const database = await db();
     const journey = await database.journeys.get(journeyId);
     if (!journey) return null;
 
@@ -234,7 +234,7 @@ export async function forgetJourney(journeyId: string): Promise<void> {
   if (!offlineAvailable()) return;
 
   try {
-    const database = db();
+    const database = await db();
     await database.journeys.delete(journeyId);
     await database.journey_items.where("journey_id").equals(journeyId).delete();
     await database.knowledge_entities.where("journey_id").equals(journeyId).delete();

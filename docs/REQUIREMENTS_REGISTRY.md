@@ -226,15 +226,15 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-DSGN-002 | Typography | Inter/Fraunces/Noto Telugu/Devanagari; scale §12.2; 200% text scale | P0 | — |
 | PRD-DSGN-003 | Component library | §12.5 list incl. Change Card, NOW card, trust badge, health pill. **Partially implemented (B-002):** 13 of 15 §12.5 components shipped in `packages/ui`, presentational-only (D-021). Ops data table delivered in B-008; Ops side-by-side review → B-012 (D-022). | P0 | DSGN-001 |
 | PRD-DSGN-004 | Motion | Durations/easing §12.6; reduce-motion honored. **Implemented (B-002):** duration/easing tokens in `tokens.css`, collapsed to 0 ms under `prefers-reduced-motion`. | P1 | — |
-| PRD-DSGN-005 | Voice | §12.7 rules + reference strings; forbidden vocabulary enforced in copy review | P0 | — |
-| PRD-DSGN-006 | Accessibility | WCAG 2.2 AA; 44 px targets; icon+text status everywhere. **Partially implemented (B-002):** icon+text enforced by unit tests on every tier/trust/health state; 44 px minimums on interactive controls; axe smoke green on both shells except the OPEN-008 contrast pairs. | P0 | — |
+| PRD-DSGN-005 ✅ | Voice | §12.7 rules + reference strings; forbidden vocabulary enforced in copy review | P0 | — |
+| PRD-DSGN-006 ✅ | Accessibility | WCAG 2.2 AA; 44 px targets; icon+text status everywhere. **Partially implemented (B-002):** icon+text enforced by unit tests on every tier/trust/health state; 44 px minimums on interactive controls; axe smoke green on both shells except the OPEN-008 contrast pairs. | P0 | — |
 | PRD-PRIV-001 | Data minimisation | Only feature-necessary data; individual deletability | P0 | — |
 | PRD-PRIV-002 | Sensitive traveler attributes | Mobility/age never to Ops/exports/analytics/targeting | P0 | ACCT-003  **Implemented (B-006):** `traveler_profiles` is owner-only with NO ops policy of any kind; a pgTAP test asserts an admin sees zero rows, and was verified to fail when a leaking policy is added. |
 | PRD-PRIV-003 | Location discipline | On-device, Live-mode-only; no server location history; background off by default | P0 | LIVE-001 |
 | PRD-PRIV-004 | Children | Label+band only; no under-18 accounts | P0 | — |
 | PRD-PRIV-005 | DPDP rights | Export JSON; delete ≤30 d; consent notice; grievance contact | P1 | ACCT-002 |
 | PRD-PRIV-006 | Report privacy | Pseudonymised reporter; restricted roles | P1 | REPT-001 |
-| PRD-ANLY-001 | Privacy-safe instrumentation | PRD §7 metrics instrumented; zero user identifiers (schema-tested) | P1 | — |
+| PRD-ANLY-001 ✅ | Privacy-safe instrumentation | PRD §7 metrics instrumented; zero user identifiers (schema-tested) | P1 | — |
 
 ## TRD — Architecture & Platform
 | ID | Name | Description / Acceptance | Priority | Deps |
@@ -266,7 +266,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-SEC-002 | Headers & CSP | §6.1 CSP; storage bucket policies; signed URLs 15 min | P0 | — |
 | TRD-SEC-003 | Secrets & audit hygiene | Env-only secrets; .env.example; ip_hash salted; pnpm audit in CI | P0 | — |
 | TRD-SEC-004 ✅ | Share-token safety | 32-byte, expiring, revocable; excludes profiles/notes | P0 | — |
-| TRD-PERF-001 | M1 targets | LCP ≤3.0 s ref-device; ≤180 kB route JS; Live-from-cache ≤800 ms; Lighthouse ≥80/95/installable | P0 | — |
+| TRD-PERF-001 ✅ | M1 targets | LCP ≤3.0 s ref-device; ≤180 kB route JS; Live-from-cache ≤800 ms; Lighthouse ≥80/95/installable | P0 | — |
 | TRD-PERF-002 | Production targets | TRD §9 production column + 99.5% availability | P1 | PERF-001 |
 | TRD-PERF-003 | Mandated techniques | RSC-first, dynamic imports, font subsetting, virtualisation, memoized timeline, worker offload | P0 | — |
 | TRD-DEPL-001 | Environments & CI/CD | §8 steps 1–7; migration job gates deploy; preview strategy | P0 | — |

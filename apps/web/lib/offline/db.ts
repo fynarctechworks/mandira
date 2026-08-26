@@ -1,4 +1,5 @@
-import Dexie, { type EntityTable } from "dexie";
+import type Dexie from "dexie";
+import type { EntityTable } from "dexie";
 
 /**
  * The offline database (TRD §4.8, PRD F11).
@@ -89,37 +90,54 @@ export type MandhiraDb = Dexie & {
 export const SNAPSHOT_VERSION = 1;
 
 let instance: MandhiraDb | undefined;
+let opening: Promise<MandhiraDb> | undefined;
 
 /**
  * The database, created on first use.
  *
- * Lazy because IndexedDB does not exist on the server, and every page in this app renders
- * there first. Constructing at module scope would throw during SSR for any module that
- * merely imports this one.
+ * ASYNC, and Dexie is imported dynamically, for two separate reasons:
+ *
+ *   1. IndexedDB does not exist on the server, and every page here renders there first.
+ *      Constructing at module scope would throw during SSR for anything that merely
+ *      imports this file.
+ *   2. Dexie is ~50 kB. Statically imported it landed in the first load of the journeys
+ *      list, the plan preview and the Live screen — pushing all three past TRD-PERF-001's
+ *      180 kB budget for a dependency that is only ever touched after mount, inside an
+ *      effect. Measured in B-024, which is what a perf budget is for.
+ *
+ * The in-flight promise is cached as well as the instance: two callers racing on first
+ * mount would otherwise each construct a Dexie over the same database name.
  */
-export function db(): MandhiraDb {
+export async function db(): Promise<MandhiraDb> {
   if (instance) return instance;
+  if (opening) return opening;
 
-  const dexie = new Dexie("mandhira") as MandhiraDb;
+  opening = (async () => {
+    const { default: Dexie } = await import("dexie");
+    const dexie = new Dexie("mandhira") as MandhiraDb;
 
-  dexie.version(SNAPSHOT_VERSION).stores({
-    journeys: "id",
-    journey_items: "id, journey_id",
-    // Compound primary key, so the same uuid can exist as a place and as an experience
-    // without one silently overwriting the other.
-    knowledge_entities: "[entity_table+id], journey_id",
-    phrases: "id, destination_id",
-    prepare_tasks: "id, journey_id",
-    meta: "key",
-  });
+    dexie.version(SNAPSHOT_VERSION).stores({
+      journeys: "id",
+      journey_items: "id, journey_id",
+      // Compound primary key, so the same uuid can exist as a place and as an experience
+      // without one silently overwriting the other.
+      knowledge_entities: "[entity_table+id], journey_id",
+      phrases: "id, destination_id",
+      prepare_tasks: "id, journey_id",
+      meta: "key",
+    });
 
-  instance = dexie;
-  return dexie;
+    instance = dexie;
+    return dexie;
+  })();
+
+  return opening;
 }
 
 /** Test seam — `fake-indexeddb` gives each test a fresh backing store. */
 export function resetDb(): void {
   instance = undefined;
+  opening = undefined;
 }
 
 /** Whether this browser can store anything at all (private mode, or an old browser). */
@@ -131,10 +149,10 @@ export const META_LAST_SYNC = "last_sync_at";
 export const META_GUEST_DRAFT = "guest_draft";
 
 export async function readMeta<T>(key: string): Promise<T | undefined> {
-  const row = await db().meta.get(key);
+  const row = await (await db()).meta.get(key);
   return row?.value as T | undefined;
 }
 
 export async function writeMeta(key: string, value: unknown): Promise<void> {
-  await db().meta.put({ key, value });
+  await (await db()).meta.put({ key, value });
 }

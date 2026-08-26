@@ -23,7 +23,9 @@ export async function saveGuestDraft(brief: Record<string, unknown>): Promise<vo
   if (!offlineAvailable()) return;
 
   try {
-    await db().meta.put({
+    await (
+      await db()
+    ).meta.put({
       key: META_GUEST_DRAFT,
       value: { brief, savedAt: new Date().toISOString() } satisfies GuestDraft,
     });
@@ -37,7 +39,7 @@ export async function readGuestDraft(): Promise<GuestDraft | null> {
   if (!offlineAvailable()) return null;
 
   try {
-    const row = await db().meta.get(META_GUEST_DRAFT);
+    const row = await (await db()).meta.get(META_GUEST_DRAFT);
     const draft = row?.value as GuestDraft | undefined;
     if (!draft?.brief) return null;
 
@@ -61,7 +63,7 @@ export async function readGuestDraft(): Promise<GuestDraft | null> {
 export async function clearGuestDraft(): Promise<void> {
   if (!offlineAvailable()) return;
   try {
-    await db().meta.delete(META_GUEST_DRAFT);
+    await (await db()).meta.delete(META_GUEST_DRAFT);
   } catch {
     // Ignored deliberately — see the module comment.
   }
