@@ -4,6 +4,8 @@ import { setRequestLocale } from "next-intl/server";
 
 import { LiveJourney } from "../../../../../components/live-journey";
 import { StartToday } from "../../../../../components/start-today";
+import { LiveConditions } from "../../../../../components/live-conditions";
+import { getLiveConditions } from "../../../../../lib/live-conditions";
 import { getLiveView } from "../../../../../lib/live";
 import { webSupabase } from "../../../../../lib/supabase";
 
@@ -30,6 +32,20 @@ export default async function LivePage({
 
   const supabase = await webSupabase();
   const view = await getLiveView(supabase, id, locale, new Date().toISOString());
+
+  /*
+   * Live conditions (PRD F10). Read server-side and rendered above the plan, because a
+   * thunderstorm forecast during an outdoor evening aarti changes what a traveler does
+   * about the day — and PRD F10 requires it to be visibly distinct from verified
+   * knowledge, which is what the "Live · provider · as of" label does.
+   *
+   * Deliberately NOT part of the offline snapshot: a forecast cached yesterday is not a
+   * live value, and PRD F10 forbids showing one in a live slot. Offline, this section is
+   * simply absent.
+   */
+  const conditions = view?.destinationId
+    ? await getLiveConditions(supabase, view.destinationId, locale)
+    : [];
 
   /*
    * A null view here is NOT a 404 any more.
@@ -63,6 +79,8 @@ export default async function LivePage({
        * only when the traveler has not said so themselves.
        */}
       {view && !view.isActive ? <StartToday journeyId={id} /> : null}
+
+      <LiveConditions conditions={conditions} />
 
       <LiveJourney view={view} locale={locale} />
     </main>

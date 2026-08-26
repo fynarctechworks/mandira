@@ -132,12 +132,18 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-TRST-006 | Coverage | 100% published critical fields render a badge | P0 | TRST-001 |
 
 ## PRD-DYN — Live & Dynamic Info (F10)
+
+> ✅ = implemented and verified in B-031, for the WEATHER feed. PRD-DYN-005 asks for
+> weather **and ≥1 transport feed**; weather is done and needs no key, transport waits on
+> **OPEN-002** — nobody has said which provider exists for the launch destination, and an
+> adapter written against a guessed API is placeholder data with extra steps (PRD F10
+> forbids exactly that).
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-DYN-001 | Three visible categories | Verified / "Updated [date]" dynamic / "Live · provider · as of" | P1 | TRST-001 |
-| PRD-DYN-002 | Feed registry | Per-destination provider, refresh interval, fallback config | P1 | OPS-SRC-001 |
-| PRD-DYN-003 | Outage fallback | "Live update unavailable — last known (as of)" ≤60 s; badge → Check locally | P1 | DYN-001 |
-| PRD-DYN-004 | Feed→journey triggers | Live changes affecting items raise ADPT triggers | P1 | ADPT-001 |
+| PRD-DYN-001 ✅ | Three visible categories | Verified / "Updated [date]" dynamic / "Live · provider · as of" | P1 | TRST-001 |
+| PRD-DYN-002 ✅ | Feed registry | Per-destination provider, refresh interval, fallback config | P1 | OPS-SRC-001 |
+| PRD-DYN-003 ✅ | Outage fallback | "Live update unavailable — last known (as of)" ≤60 s; badge → Check locally | P1 | DYN-001 |
+| PRD-DYN-004 ✅ | Feed→journey triggers | Live changes affecting items raise ADPT triggers | P1 | ADPT-001 |
 | PRD-DYN-005 | Launch feeds | Weather + ≥1 transport feed for launch destinations | P1 | DYN-002 |
 
 ## PRD-OFFL — Offline (F11)

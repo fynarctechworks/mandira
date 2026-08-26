@@ -39,6 +39,8 @@ export type LiveItemView = {
 export type LiveView = {
   journeyId: string;
   journeyTitle: string;
+  /** Which destination, so live conditions can be read for it (PRD F10). */
+  destinationId: string | null;
   projection: LiveProjection;
   now: LiveItemView;
   next: LiveItemView | null;
@@ -115,6 +117,7 @@ export function assembleLiveView(input: {
   return {
     journeyId: journey.id,
     journeyTitle: journey.title ?? "Your journey",
+    destinationId: journey.destinationId,
     projection,
     now: view(projection.now)!,
     next: view(projection.next),

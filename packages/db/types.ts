@@ -1694,6 +1694,13 @@ export type Database = {
             referencedRelation: "live_feed_configs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "live_feed_readings_feed_config_id_fkey"
+            columns: ["feed_config_id"]
+            isOneToOne: false
+            referencedRelation: "v_published_live_conditions"
+            referencedColumns: ["feed_config_id"]
+          },
         ]
       }
       locales: {
@@ -3333,6 +3340,37 @@ export type Database = {
           trust?: never
         }
         Relationships: []
+      }
+      v_published_live_conditions: {
+        Row: {
+          affects_entity_ids: string[] | null
+          destination_id: string | null
+          feed_config_id: string | null
+          feed_kind: string | null
+          is_stale: boolean | null
+          payload: Json | null
+          provider: string | null
+          read_at: string | null
+          reading_id: string | null
+          refresh_minutes: number | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_feed_configs_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_feed_configs_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "v_published_destinations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_published_phrases: {
         Row: {
