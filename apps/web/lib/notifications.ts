@@ -113,7 +113,19 @@ export async function syncJourneyNotifications(
     .from("notifications")
     .insert(fresh.map((draft) => toRow(draft, userId, journeyId)));
 
-  return { scheduled: error ? 0 : fresh.length };
+  /*
+   * THROWS rather than reporting zero. This line returned `{ scheduled: 0 }` on failure
+   * for the whole of B-027, and `service_role` had no grant on any table (0025), so it
+   * failed every single time — silently, while the traveler was told their reminders were
+   * set. A privileged write that cannot say it failed is worse than one that is missing.
+   *
+   * The caller is inside `withApi`, which turns a throw into an honest error response.
+   */
+  if (error) {
+    throw new Error(`Could not schedule notifications: ${error.message}`);
+  }
+
+  return { scheduled: fresh.length };
 }
 
 function toRow(

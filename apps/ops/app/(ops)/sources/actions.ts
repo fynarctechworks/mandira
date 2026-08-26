@@ -12,9 +12,11 @@ import { asRow, opsAction } from "@/lib/action";
  * traveler's confidence badge is ultimately derived from — so this is not a reference
  * list, it is the root of the trust model.
  *
- * Only `manual` ingestion is offered in M1 (backlog B-011). The other methods exist in
- * the schema and arrive with the ingestion pipeline in M3 (B-029); offering them now would
- * let an operator configure a monitor that nothing runs.
+ * `url_monitor` became real with B-029: a source set to it is fetched on its cadence, its
+ * capture diffed against the last one, and a change candidate raised when the evidence for
+ * a published field disappears. `api` and `file_upload` remain in the schema and are
+ * deliberately NOT offered — a method nothing runs is worse than an absent one, because an
+ * operator would configure it and believe the source was being watched.
  */
 
 const sourceType = z.enum([
@@ -35,6 +37,7 @@ const sourceFields = {
   url: z.string().url("Enter a full URL").nullish().or(z.literal("")),
   contact: z.string().max(200).nullish(),
   refresh_cadence_days: z.number().int().positive().max(3650).nullish(),
+  ingestion_method: z.enum(["manual", "url_monitor"]).default("manual"),
   status: z.enum(["active", "paused", "retired"]).default("active"),
   notes: z.string().max(2000).nullish(),
 };
@@ -50,8 +53,6 @@ function toRow(input: Record<string, unknown>) {
     url: (rest["url"] as string) || null,
     contact: (rest["contact"] as string) || null,
     notes: (rest["notes"] as string) || null,
-    // M1 registers sources by hand; monitors and feeds land with B-029.
-    ingestion_method: "manual" as const,
   };
 }
 

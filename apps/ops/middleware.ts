@@ -2,7 +2,18 @@ import { refreshSession } from "@mandhira/db/client/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
 /** Paths reachable without being signed in. Everything else requires an Ops session. */
-const PUBLIC_PATHS = ["/sign-in", "/auth/callback", "/auth/error"];
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/auth/callback",
+  "/auth/error",
+  /*
+   * Cron routes carry `CRON_SECRET` and have no session, so this gate would redirect them
+   * to sign-in — a 307 that Vercel Cron records as a success while the job never runs.
+   * That exact failure was live for a week in the traveler app (D-097). Named narrowly:
+   * `/api/cron` only, and each route still refuses without the secret.
+   */
+  "/api/cron",
+];
 
 /**
  * Refreshes the session, then keeps anonymous visitors out of the Ops app entirely.

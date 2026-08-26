@@ -3832,6 +3832,32 @@ export type Database = {
         }
         Returns: boolean
       }
+      decide_change_candidate: {
+        Args: { p_decision: string; p_id: string; p_reason?: string }
+        Returns: {
+          capture_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          entity_id: string | null
+          entity_table: string
+          excerpt: string | null
+          field_name: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          source_id: string | null
+          status: Database["public"]["Enums"]["task_status_enum"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "change_candidates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       derive_confidence: {
         Args: {
           p_conflict_flag: boolean
@@ -3929,6 +3955,18 @@ export type Database = {
       }
       no_plan: { Args: never; Returns: boolean[] }
       num_failed: { Args: never; Returns: number }
+      open_change_candidate: {
+        Args: {
+          p_capture_id: string
+          p_entity_id: string
+          p_entity_table: string
+          p_excerpt: string
+          p_field_name: string
+          p_old_value?: Json
+          p_source_id: string
+        }
+        Returns: string
+      }
       os_name: { Args: never; Returns: string }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }

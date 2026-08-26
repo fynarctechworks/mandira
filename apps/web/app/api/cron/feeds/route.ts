@@ -36,6 +36,12 @@ export async function GET(request: Request): Promise<Response> {
 
   let polled = 0;
   let unavailable = 0;
+  /*
+   * A write that fails is COUNTED and reported, not swallowed. Until 0025 every one of
+   * them failed — `service_role` held no grant on any table — and because the result was
+   * discarded this job reported success on every run while writing nothing at all.
+   */
+  const writeFailures: string[] = [];
 
   for (const config of configs ?? []) {
     /*
@@ -52,7 +58,9 @@ export async function GET(request: Request): Promise<Response> {
     if (!centre) {
       // No coordinates: nothing to ask about. Recorded so the gap is visible in Ops
       // rather than presenting as a feed that never updates.
-      await record(supabase, config.id, "unavailable", { reason: "no_destination_centre" });
+      if (!(await record(supabase, config.id, "unavailable", { reason: "no_destination_centre" }, writeFailures))) {
+        continue;
+      }
       unavailable += 1;
       continue;
     }
@@ -65,7 +73,9 @@ export async function GET(request: Request): Promise<Response> {
     });
 
     if (!reading) {
-      await record(supabase, config.id, "unavailable", { reason: "provider_unavailable" });
+      if (!(await record(supabase, config.id, "unavailable", { reason: "provider_unavailable" }, writeFailures))) {
+        continue;
+      }
       unavailable += 1;
       continue;
     }
@@ -82,19 +92,33 @@ export async function GET(request: Request): Promise<Response> {
       precipitationChance: hour.precipitationChance,
     }));
 
-    await record(supabase, config.id, "ok", {
-      provider: reading.provider,
-      observedAt: reading.observedAt,
-      hours: reading.hours,
-      disruptive,
-    });
+    const wrote = await record(
+      supabase,
+      config.id,
+      "ok",
+      { provider: reading.provider, observedAt: reading.observedAt, hours: reading.hours, disruptive },
+      writeFailures,
+    );
 
-    polled += 1;
+    if (wrote) polled += 1;
   }
 
+  /*
+   * `ok: false` when nothing could be written. A cron that always answers 200 is a cron
+   * whose failures are invisible, which is exactly how this went unnoticed — and Vercel
+   * records a non-2xx, so somebody finds out.
+   */
+  const broken = writeFailures.length > 0 && polled === 0 && unavailable === 0;
+
   return Response.json(
-    { ok: true, polled, unavailable, at: new Date().toISOString() },
-    { headers: { "cache-control": "no-store" } },
+    {
+      ok: !broken,
+      polled,
+      unavailable,
+      ...(writeFailures.length > 0 ? { writeFailures: writeFailures.slice(0, 5) } : {}),
+      at: new Date().toISOString(),
+    },
+    { status: broken ? 500 : 200, headers: { "cache-control": "no-store" } },
   );
 }
 
@@ -115,15 +139,26 @@ async function centreOf(
   return { latitude: data.latitude as number, longitude: data.longitude as number };
 }
 
+/** Writes one reading. Returns whether it landed — see the note on `writeFailures`. */
 async function record(
   supabase: ReturnType<typeof createServiceRoleSupabase>,
   feedConfigId: string,
   status: "ok" | "stale" | "unavailable",
   payload: Record<string, unknown>,
-): Promise<void> {
-  await supabase.from("live_feed_readings").insert({
+  failures: string[],
+): Promise<boolean> {
+  const { error } = await supabase.from("live_feed_readings").insert({
     feed_config_id: feedConfigId,
     status,
     payload: payload as unknown as Json,
   });
+
+  if (error) {
+    // Collected rather than thrown: one unwritable feed must not stop the others from
+    // being polled. The caller reports the failures and fails the run if none landed.
+    failures.push(`${feedConfigId}: ${error.message}`);
+    return false;
+  }
+
+  return true;
 }

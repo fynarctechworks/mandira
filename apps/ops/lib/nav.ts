@@ -92,10 +92,22 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/sources",
     keywords: ["captures", "diffs", "trust", "tier"],
   },
-  { id: "O09", label: "Ingestion & AI extraction", section: "sources", href: null, comingIn: "M3" },
+  {
+    id: "O09",
+    label: "Ingestion & AI extraction",
+    section: "sources",
+    href: "/ingestion",
+    keywords: ["captures", "diffs", "monitor", "run", "url"],
+  },
 
   // ── Queues ──────────────────────────────────────────────────────────────────
-  { id: "O10", label: "Review queue", section: "queues", href: null, comingIn: "M3" },
+  {
+    id: "O10",
+    label: "Review queue",
+    section: "queues",
+    href: "/review",
+    keywords: ["change candidates", "excerpt", "accept", "reject"],
+  },
   { id: "O11", label: "Verify queue", section: "queues", href: null, comingIn: "B-012" },
   { id: "O12", label: "Conflicts", section: "queues", href: null, comingIn: "M3" },
   {

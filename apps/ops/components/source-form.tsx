@@ -32,6 +32,7 @@ export type SourceDraft = {
   url: string;
   contact: string;
   refresh_cadence_days: number | null;
+  ingestion_method: "manual" | "url_monitor";
   status: "active" | "paused" | "retired";
   notes: string;
 };
@@ -43,6 +44,7 @@ export const EMPTY_SOURCE: SourceDraft = {
   url: "",
   contact: "",
   refresh_cadence_days: null,
+  ingestion_method: "manual",
   status: "active",
   notes: "",
 };
@@ -180,6 +182,31 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
             }
             className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
           />
+        </label>
+        {/*
+          The switch that makes a source watched (PRD F17). Only two of the schema's four
+          methods are offered: `api` and `file_upload` exist in the enum and nothing runs
+          them, and offering a method that does nothing is worse than not offering it —
+          an operator would configure it and believe the source was being monitored.
+        */}
+        <label className="flex w-56 flex-col gap-1 text-body-sm font-medium">
+          Ingestion method
+          <select
+            value={draft.ingestion_method}
+            onChange={(e) =>
+              set("ingestion_method", e.target.value as SourceDraft["ingestion_method"])
+            }
+            className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
+          >
+            <option value="manual">Checked by hand</option>
+            {/*
+              Deliberately not "Watch the URL". A `<label>` wrapping a `<select>` folds its
+              OPTION text into the control's accessible name, so that wording made every
+              `getByLabel("URL")` in the suite ambiguous with the URL field above — and it
+              would do the same to a screen reader user hunting for the URL box.
+            */}
+            <option value="url_monitor">Watch the page for changes</option>
+          </select>
         </label>
         <label className="flex w-40 flex-col gap-1 text-body-sm font-medium">
           Status

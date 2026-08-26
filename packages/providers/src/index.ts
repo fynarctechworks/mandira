@@ -7,6 +7,7 @@
 
 export * from "./geocoding";
 export * from "./ai";
+export * from "./capture";
 export * from "./push";
 export * from "./routing";
 export * from "./weather";

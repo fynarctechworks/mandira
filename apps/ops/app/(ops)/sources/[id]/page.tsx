@@ -19,6 +19,9 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
     url: data.url ?? "",
     contact: data.contact ?? "",
     refresh_cadence_days: data.refresh_cadence_days,
+    // `api` and `file_upload` exist in the schema but nothing runs them, so a source
+    // carrying one reads as manual here rather than offering a method that does nothing.
+    ingestion_method: data.ingestion_method === "url_monitor" ? "url_monitor" : "manual",
     status: data.status as SourceDraft["status"],
     notes: data.notes ?? "",
   };

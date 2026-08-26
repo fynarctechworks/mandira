@@ -217,11 +217,11 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
 | PRD-OPS-SRC-001 | Source registry | Types/tiers T1–T5, coverage, cadence, method, owner, status | P0 | —  **Implemented (B-011):** O08 registry with type/tier/cadence/status; manual method only in M1 (other methods arrive with B-029). |
-| PRD-OPS-SRC-002 | Ingestion + captures + diffs | Raw capture stored; diff vs previous per run | P1 | OPS-SRC-001 |
+| PRD-OPS-SRC-002 ✅ | Ingestion + captures + diffs | Raw capture stored; diff vs previous per run | P1 | OPS-SRC-001 |
 | PRD-OPS-SRC-003 | AI extraction (ops) | Per-field confidence + verbatim excerpt; always `ai_extracted`; cannot publish | P1 | TRD-AI-004 |
-| PRD-OPS-SRC-004 | Change detection | Monitored diff on published field → Change candidate ≤1 cycle with excerpt | P1 | OPS-SRC-002 |
+| PRD-OPS-SRC-004 ✅ | Change detection | Monitored diff on published field → Change candidate ≤1 cycle with excerpt | P1 | OPS-SRC-002 |
 | PRD-OPS-SRC-005 | Conflict auto-detection | ≥2 sources ≤T3 disagree → Conflict opened | P1 | OPS-SRC-002 |
-| PRD-OPS-WF-001 | Review queue | Side-by-side proposed/current + excerpt; accept/edit/reject/request-verify | P1 | OPS-SRC-003 |
+| PRD-OPS-WF-001 ✅ | Review queue | Side-by-side proposed/current + excerpt; accept/edit/reject/request-verify | P1 | OPS-SRC-003 |
 | PRD-OPS-WF-002 | Verify queue | Evidence attach; verified_at/valid_until | P0 | KNOW-002 |
 | PRD-OPS-WF-003 | Conflict resolution | Winner/both-valid-with-context/escalate; clears flag with reason | P1 | OPS-SRC-005 |
 | PRD-OPS-WF-004 | Approve & publish | Entity diff + validation + affected-journey count + notification preview; validation rules per F18 block publish naming the field | P0 | KNOW-003  **Implemented (B-012):** `validate_for_publish()` returns per-field problems; the Approve queue and entity panel render the same list the gate enforces. Affected-journey counts wait for journeys to exist (B-019+). |
