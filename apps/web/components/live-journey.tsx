@@ -4,7 +4,10 @@ import { HealthPill, NowCard, TierChip } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import type { ChangeCard } from "@mandhira/journey-engine";
+
 import type { LiveItemView, LiveView } from "../lib/live-view";
+import { ChangeSheet } from "./change-sheet";
 import { readLiveViewLocally } from "../lib/offline/live-local";
 import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
@@ -52,6 +55,16 @@ export function LiveJourney({
    * exactly like a live one. That is the single most dangerous failure this screen has.
    */
   const [manualView, setManualView] = useState<LiveView | null>(null);
+
+  /*
+   * The Change Card, when one is offered (PRD F6, B-026).
+   *
+   * Held here rather than fetched by the sheet, because the card is EVALUATED at the moment
+   * the traveler said they were running late and answered a few seconds later. Re-fetching
+   * on open would show them options computed against a journey that had already moved.
+   */
+  const [change, setChange] = useState<{ id: string; card: ChangeCard } | null>(null);
+  const [quiet, setQuiet] = useState<string | null>(null);
   const journeyId = serverView?.journeyId ?? "";
 
   const {
@@ -103,9 +116,86 @@ export function LiveJourney({
 
     // Keep the snapshot in step, so the offline copy reflects what just happened rather
     // than waiting for the next revalidation tick to notice.
+    await reproject();
+
+    /*
+     * Running late or staying longer means the plan no longer matches reality, so this is
+     * the moment to ask whether anything can be done about it (PRD F6).
+     *
+     * "Done" deliberately does not trigger it: finishing something roughly on time is not
+     * a change worth interrupting anyone over.
+     */
+    if (action === "running_late" || action === "stay_longer") {
+      await offerOptions(action, extraMinutes ?? 15);
+    }
+  }
+
+  /** Re-read the local snapshot after a write, rather than waiting for the next tick. */
+  async function reproject() {
     await syncJourneyOffline(journeyId, locale);
     const local = await readLiveViewLocally(journeyId, locale, new Date().toISOString());
     if (local) setManualView(local);
+  }
+
+  /**
+   * Ask the engine what could be done, and show it — or say almost nothing.
+   *
+   * PRD-ADPT-005: a `no_impact` outcome gets a quiet line, never a card. Interrupting
+   * someone to tell them nothing needs to change is exactly how they learn to dismiss the
+   * card that does matter.
+   */
+  async function offerOptions(action: string, extraMinutes: number) {
+    setQuiet(null);
+
+    // Declared before the null guard in the render below, so it has to check for itself.
+    // There is nothing to replan against without a view.
+    const current = manualView ?? localView ?? serverView;
+    if (!current) return;
+
+    const response = await fetch(`/api/journeys/${journeyId}/changes`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: action === "running_late" ? "user_late" : "user_stay_longer",
+        dayIndex: current.projection.dayIndex,
+        deltaMinutes: extraMinutes,
+        ...(current.now.itemId ? { itemId: current.now.itemId } : {}),
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({ ok: false }));
+    if (!payload.ok) return;
+
+    const card = payload.data.card as ChangeCard;
+
+    if (card.outcome === "no_impact" || !card.recommended) {
+      setQuiet("That still fits — nothing else needs to move.");
+      return;
+    }
+
+    setChange({ id: payload.data.id as string, card });
+  }
+
+  /** The tap. The only thing in this product that rearranges a journey. */
+  async function decide(optionId: string | null) {
+    if (!change) return;
+
+    setPending(true);
+    setProblem(null);
+
+    const response = await fetch(`/api/journeys/${journeyId}/changes/${change.id}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ optionId }),
+    });
+
+    const payload = await response.json().catch(() => ({ ok: false }));
+    if (!payload.ok) setProblem("That didn't save. Please try again.");
+
+    setChange(null);
+    setPending(false);
+    router.refresh();
+    await reproject();
   }
 
   const { projection, now: nowView } = view;
@@ -142,6 +232,27 @@ export function LiveJourney({
         <p role="alert" className="text-body-sm text-status-broken">
           {problem}
         </p>
+      ) : null}
+
+      {/* PRD-ADPT-005's quiet half: said once, in passing, with nothing to dismiss. */}
+      {quiet ? (
+        <p role="status" className="text-body-sm text-text-secondary">
+          {quiet}
+        </p>
+      ) : null}
+
+      {change ? (
+        <ChangeSheet
+          card={change.card}
+          open
+          pending={pending}
+          onDecide={(optionId) => void decide(optionId)}
+          onOpenChange={(next) => {
+            // Closing without choosing is not a decision. The card stays unanswered in
+            // `journey_change_events` and the plan is untouched.
+            if (!next) setChange(null);
+          }}
+        />
       ) : null}
 
       {/* ── NOW ─────────────────────────────────────────────────────────────── */}

@@ -77,14 +77,18 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-HLTH-005 | Physical-load defaults | limited_walking 2,000 m/day; wheelchair step-free only; rest ≥10 min/90 min | P0 | PLAN-010 |
 
 ## PRD-ADPT — Adaptive Replanning (F6)
+
+> ✅ = implemented and verified in B-026. PRD-ADPT-007 (offline user-triggers) is B-033;
+> PRD-ADPT-008 (the 50×8 matrix acceptance) needs seeded content and is **not claimed** —
+> the engine's own ladder tests cover the rules, the matrix covers the scale.
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-ADPT-001 | Trigger set | 8 trigger classes per F6 table (user late/done-delta/stay-longer/knowledge/transport/weather/add-remove/preferences) | P0 | LIVE-003 |
-| PRD-ADPT-002 | Option ladder | Fixed order a–f; stop at Tight-or-better; never remove PROTECTED, never move FIXED | P0 | HLTH-002 |
-| PRD-ADPT-003 | Option ranking | More PROTECTED kept → fewer removals → fewer moves → less travel | P0 | ADPT-002 |
-| PRD-ADPT-004 | Change Card contract | What changed / Why it matters / Recommended+because / ≤2 others / Keep-as-is with resulting state; before/after times per affected item | P0 | ADPT-002 |
-| PRD-ADPT-005 | Consent | Nothing applied without a tap; no_impact → quiet toast only | P0 | PRIN-006 |
-| PRD-ADPT-006 | Low-confidence disclosure | Cards triggered by knowledge/live changes show trust badge; low confidence adds "check locally" line | P0 | KNOW-002 |
+| PRD-ADPT-001 ✅ | Trigger set | 8 trigger classes per F6 table (user late/done-delta/stay-longer/knowledge/transport/weather/add-remove/preferences) | P0 | LIVE-003 |
+| PRD-ADPT-002 ✅ | Option ladder | Fixed order a–f; stop at Tight-or-better; never remove PROTECTED, never move FIXED | P0 | HLTH-002 |
+| PRD-ADPT-003 ✅ | Option ranking | More PROTECTED kept → fewer removals → fewer moves → less travel | P0 | ADPT-002 |
+| PRD-ADPT-004 ✅ | Change Card contract | What changed / Why it matters / Recommended+because / ≤2 others / Keep-as-is with resulting state; before/after times per affected item | P0 | ADPT-002 |
+| PRD-ADPT-005 ✅ | Consent | Nothing applied without a tap; no_impact → quiet toast only | P0 | PRIN-006 |
+| PRD-ADPT-006 ✅ | Low-confidence disclosure | Cards triggered by knowledge/live changes show trust badge; low confidence adds "check locally" line | P0 | KNOW-002 |
 | PRD-ADPT-007 | Offline user-triggers | Late/done/stay replanning works offline from cached knowledge; external triggers queue | P1 | OFFL-005 |
 | PRD-ADPT-008 | Matrix acceptance | 50 journeys × 8 triggers: option restoring Tight+ whenever mathematically possible; zero forbidden moves | P0 | ADPT-002 |
 
