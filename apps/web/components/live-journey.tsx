@@ -9,6 +9,8 @@ import type { ChangeCard } from "@mandhira/journey-engine";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import { ChangeSheet } from "./change-sheet";
 import { readLiveViewLocally } from "../lib/offline/live-local";
+import { enqueue, flushOutbox, pendingCount } from "../lib/offline/outbox";
+import { replanLocally } from "../lib/offline/replan-local";
 import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
 import { OfflineNotice } from "./offline-notice";
@@ -63,8 +65,14 @@ export function LiveJourney({
    * the traveler said they were running late and answered a few seconds later. Re-fetching
    * on open would show them options computed against a journey that had already moved.
    */
-  const [change, setChange] = useState<{ id: string; card: ChangeCard } | null>(null);
+  const [change, setChange] = useState<{
+    id: string | null;
+    card: ChangeCard;
+    offline: boolean;
+  } | null>(null);
   const [quiet, setQuiet] = useState<string | null>(null);
+  /** How many actions are waiting to be sent (PRD-OFFL-004). */
+  const [queued, setQueued] = useState(0);
   const journeyId = serverView?.journeyId ?? "";
 
   const {
@@ -73,7 +81,21 @@ export function LiveJourney({
     dismissChanged,
   } = useOfflineFirst<LiveView>({
     key: journeyId,
-    revalidate: () => syncJourneyOffline(journeyId, locale),
+    /*
+     * The outbox drains HERE, on the revalidation path — not only after an action.
+     *
+     * Getting that wrong is subtle and total: with the flush only in `reproject`, a
+     * traveler who marked something done offline and then closed the app would come back
+     * with a signal, see everything look normal, and never send it. The queue only moved
+     * if they happened to tap something else. `useOfflineFirst` runs on mount, on a timer,
+     * and on the browser's `online` event, which is exactly when a queue should drain.
+     */
+    revalidate: async () => {
+      const flushed = await flushOutbox();
+      if (flushed.sent > 0 || flushed.dropped > 0) setQueued(await pendingCount());
+
+      return syncJourneyOffline(journeyId, locale);
+    },
     read: () => readLiveViewLocally(journeyId, locale, new Date().toISOString()),
   });
 
@@ -102,14 +124,26 @@ export function LiveJourney({
     setPending(true);
     setProblem(null);
 
-    const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}/status`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action, ...(extraMinutes ? { extraMinutes } : {}) }),
-    });
+    const body = { action, ...(extraMinutes ? { extraMinutes } : {}) };
 
-    const payload = await response.json().catch(() => ({ ok: false }));
-    if (!payload.ok) setProblem("That didn't save. Please try again.");
+    try {
+      const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}/status`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const payload = await response.json().catch(() => ({ ok: false }));
+      if (!payload.ok) setProblem("That didn't save. Please try again.");
+    } catch {
+      /*
+       * No network (PRD-OFFL-004). Queued and sent on reconnect — and NOT reported as a
+       * problem, because from the traveler's side nothing went wrong: they marked
+       * something done on a hillside and it will reach us when there is signal.
+       */
+      await enqueue("item_status_update", { journeyId, itemId, ...body });
+      setQueued(await pendingCount());
+    }
 
     setPending(false);
     router.refresh();
@@ -130,8 +164,18 @@ export function LiveJourney({
     }
   }
 
-  /** Re-read the local snapshot after a write, rather than waiting for the next tick. */
+  /**
+   * Re-read the local snapshot after a write, rather than waiting for the next tick.
+   *
+   * Anything queued goes FIRST, so the snapshot that follows reflects it. Flushing after
+   * the sync would fetch a server state that does not yet know about the item the traveler
+   * marked done on a hillside, and then overwrite the local copy with it — losing the very
+   * thing the outbox exists to protect.
+   */
   async function reproject() {
+    const flushed = await flushOutbox();
+    if (flushed.sent > 0) setQueued(await pendingCount());
+
     await syncJourneyOffline(journeyId, locale);
     const local = await readLiveViewLocally(journeyId, locale, new Date().toISOString());
     if (local) setManualView(local);
@@ -152,28 +196,52 @@ export function LiveJourney({
     const current = manualView ?? localView ?? serverView;
     if (!current) return;
 
-    const response = await fetch(`/api/journeys/${journeyId}/changes`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        kind: action === "running_late" ? "user_late" : "user_stay_longer",
-        dayIndex: current.projection.dayIndex,
-        deltaMinutes: extraMinutes,
-        ...(current.now.itemId ? { itemId: current.now.itemId } : {}),
-      }),
-    });
+    const trigger = {
+      kind: (action === "running_late" ? "user_late" : "user_stay_longer") as
+        "user_late" | "user_stay_longer",
+      dayIndex: current.projection.dayIndex,
+      deltaMinutes: extraMinutes,
+      ...(current.now.itemId ? { itemId: current.now.itemId } : {}),
+    };
 
-    const payload = await response.json().catch(() => ({ ok: false }));
-    if (!payload.ok) return;
+    let card: ChangeCard | null = null;
+    let eventId: string | null = null;
 
-    const card = payload.data.card as ChangeCard;
+    try {
+      const response = await fetch(`/api/journeys/${journeyId}/changes`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(trigger),
+      });
+
+      const payload = await response.json().catch(() => ({ ok: false }));
+      if (payload.ok) {
+        card = payload.data.card as ChangeCard;
+        eventId = payload.data.id as string;
+      }
+    } catch {
+      /*
+       * No network — and this is the case the whole engine was kept pure for
+       * (PRD-OFFL-005, PRD-ADPT-007). Someone on a hillside forty minutes behind needs to
+       * know whether the evening aarti is still reachable, and that is answerable from the
+       * snapshot already on the device.
+       */
+      card = await replanLocally(journeyId, trigger, new Date().toISOString());
+    }
+
+    if (!card) return;
 
     if (card.outcome === "no_impact" || !card.recommended) {
       setQuiet("That still fits — nothing else needs to move.");
       return;
     }
 
-    setChange({ id: payload.data.id as string, card });
+    /*
+     * `eventId` is null when this was computed offline: there is no server row to answer
+     * yet. The decision is queued instead (see `decide`), and the card says so — a
+     * traveler should know their choice is waiting rather than applied.
+     */
+    setChange({ id: eventId, card, offline: eventId === null });
   }
 
   /** The tap. The only thing in this product that rearranges a journey. */
@@ -183,14 +251,30 @@ export function LiveJourney({
     setPending(true);
     setProblem(null);
 
-    const response = await fetch(`/api/journeys/${journeyId}/changes/${change.id}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ optionId }),
-    });
+    if (change.offline || !change.id) {
+      /*
+       * Computed offline, so there is no server row to answer. The decision is queued and
+       * replayed in order on reconnect — after the item-status update that triggered it,
+       * which is precisely why the outbox preserves the order actions were taken in.
+       */
+      await enqueue("change_decision", { journeyId, eventId: change.id ?? "", optionId });
+      setQueued(await pendingCount());
+    } else {
+      try {
+        const response = await fetch(`/api/journeys/${journeyId}/changes/${change.id}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ optionId }),
+        });
 
-    const payload = await response.json().catch(() => ({ ok: false }));
-    if (!payload.ok) setProblem("That didn't save. Please try again.");
+        const payload = await response.json().catch(() => ({ ok: false }));
+        if (!payload.ok) setProblem("That didn't save. Please try again.");
+      } catch {
+        // Signal went while the sheet was open. Queued rather than lost.
+        await enqueue("change_decision", { journeyId, eventId: change.id, optionId });
+        setQueued(await pendingCount());
+      }
+    }
 
     setChange(null);
     setPending(false);
@@ -234,6 +318,18 @@ export function LiveJourney({
         </p>
       ) : null}
 
+      {/*
+        What is waiting to be sent (PRD-OFFL-004). Stated as a fact, not a warning: the
+        traveler did the thing, and it will reach us. There is nothing for them to do, and
+        PRD-OFFL-003 forbids presenting it as a failure.
+      */}
+      {queued > 0 ? (
+        <p role="status" className="text-caption text-text-secondary">
+          {queued === 1 ? "One change" : `${queued} changes`} saved on this device, waiting for a
+          signal.
+        </p>
+      ) : null}
+
       {/* PRD-ADPT-005's quiet half: said once, in passing, with nothing to dismiss. */}
       {quiet ? (
         <p role="status" className="text-body-sm text-text-secondary">
@@ -245,6 +341,7 @@ export function LiveJourney({
         <ChangeSheet
           card={change.card}
           open
+          offline={change.offline}
           pending={pending}
           onDecide={(optionId) => void decide(optionId)}
           onOpenChange={(next) => {

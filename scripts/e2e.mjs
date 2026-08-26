@@ -25,5 +25,50 @@ function run(command, commandArgs) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+/**
+ * Reset the LOCAL rate-limit counters before the suite runs.
+ *
+ * Not a bypass, and the distinction matters (CLAUDE.md §5 forbids weakening a rate limit
+ * even in tests). The limits themselves are untouched and still asserted in pgTAP `0010`;
+ * this clears the accumulated COUNTERS in a local development database, the way any other
+ * fixture is reset between runs.
+ *
+ * Without it the suite quietly stops working after a few runs in one day: `share_create`
+ * is 10 per day per user (TRD §6.2), the prepare spec mints several links per run, and the
+ * fourth run of an afternoon starts failing with 429s that look like product bugs. That
+ * cost real time to diagnose, which is the argument for doing it here rather than
+ * remembering to do it by hand.
+ */
+function resetRateLimits() {
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      process.env["SUPABASE_DB_CONTAINER"] ?? "supabase_db_Mandira",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-q",
+      "-c",
+      "truncate rate_limits;",
+    ],
+    /*
+     * NOT `shell: true`. On Windows the shell re-splits the argument array on spaces, so
+     * `truncate rate_limits;` arrives as two arguments and psql fails with "syntax error at
+     * end of input" — which looks nothing like a quoting problem. `docker` is a real
+     * executable and needs no shell.
+     */
+    { stdio: "ignore", env },
+  );
+
+  if (result.status !== 0) {
+    // Not fatal: the suite still runs, it just may hit a limit it accumulated earlier.
+    console.warn("note: could not reset rate limits — a long run may hit 429s.");
+  }
+}
+
+resetRateLimits();
 run("pnpm", ["turbo", "run", "build"]);
 run("pnpm", ["exec", "playwright", "test", ...args]);

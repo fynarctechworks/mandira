@@ -19,6 +19,7 @@ export function ChangeSheet({
   onDecide,
   onOpenChange,
   pending,
+  offline = false,
 }: {
   card: ChangeCard;
   open: boolean;
@@ -26,6 +27,8 @@ export function ChangeSheet({
   onDecide: (optionId: string | null) => void;
   onOpenChange: (open: boolean) => void;
   pending: boolean;
+  /** Worked out on the device, from the cached snapshot (PRD-ADPT-007). */
+  offline?: boolean;
 }) {
   const recommended = card.recommended;
   if (!recommended) return null;
@@ -68,7 +71,22 @@ export function ChangeSheet({
        * and low confidence adds the line telling the traveler to check locally. A
        * recommendation built on a fact nobody has verified recently must say so.
        */
-      {...(card.trustExposure?.length ? { lowConfidenceNote: trustNote(card.trustExposure) } : {})}
+      {...(offline
+        ? {
+            /*
+             * PRD-ADPT-007, said plainly because an offline evaluation is genuinely less
+             * complete: traveler profiles are deliberately NOT cached (PRD-PRIV-002), so
+             * the buffer multipliers for someone using a wheelchair or needing frequent
+             * rest are not applied here. An option can therefore look slightly more
+             * comfortable than it is, and the next online check is authoritative.
+             */
+            lowConfidenceNote:
+              "Worked out from what's saved on this device. Your choice is kept and sent " +
+              "when there's a signal, and we'll check it again then.",
+          }
+        : card.trustExposure?.length
+          ? { lowConfidenceNote: trustNote(card.trustExposure) }
+          : {})}
     />
   );
 }

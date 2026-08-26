@@ -89,7 +89,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-ADPT-004 ✅ | Change Card contract | What changed / Why it matters / Recommended+because / ≤2 others / Keep-as-is with resulting state; before/after times per affected item | P0 | ADPT-002 |
 | PRD-ADPT-005 ✅ | Consent | Nothing applied without a tap; no_impact → quiet toast only | P0 | PRIN-006 |
 | PRD-ADPT-006 ✅ | Low-confidence disclosure | Cards triggered by knowledge/live changes show trust badge; low confidence adds "check locally" line | P0 | KNOW-002 |
-| PRD-ADPT-007 | Offline user-triggers | Late/done/stay replanning works offline from cached knowledge; external triggers queue | P1 | OFFL-005 |
+| PRD-ADPT-007 ✅ | Offline user-triggers | Late/done/stay replanning works offline from cached knowledge; external triggers queue | P1 | OFFL-005 |
 | PRD-ADPT-008 | Matrix acceptance | 50 journeys × 8 triggers: option restoring Tight+ whenever mathematically possible; zero forbidden moves | P0 | ADPT-002 |
 
 ## PRD-PREP — Prepare (F7)
@@ -151,8 +151,8 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-OFFL-001 ✅ | Auto snapshot | Journey + referenced knowledge + guidance + phrase packs + facility essentials on create/edit/open | P0 | PLAN-001 |
 | PRD-OFFL-002 ✅ | Offline read set | Live Journey fully, Prepare, saved pages, trust sheets; indicator "Offline — saved info (as of)" | P0 | OFFL-001 |
 | PRD-OFFL-003 ✅ | Reconnect reconciliation | Silent sync; single "updated while offline" card when active journey affected; no sync-error dialogs; user-edit LWW, knowledge server-wins | P0 | OFFL-001 |
-| PRD-OFFL-004 | Queued writes | Reports and item-status queue offline, send on reconnect | P1 | OFFL-001 |
-| PRD-OFFL-005 | Offline replanning | User-initiated triggers replans from cache | P1 | ADPT-002 |
+| PRD-OFFL-004 ✅ | Queued writes | Reports and item-status queue offline, send on reconnect | P1 | OFFL-001 |
+| PRD-OFFL-005 ✅ | Offline replanning | User-initiated triggers replans from cache | P1 | ADPT-002 |
 | PRD-OFFL-006 | Map tiles (deferred) | 5 km default/15 km expandable; Downloads shows size+update | P2 | MAPS-001 |
 | PRD-OFFL-007 ✅ | Airplane-mode acceptance | Full 3-day journey readable+ (M3: replannable); reconcile ≤30 s, zero loss | P0 | OFFL-002 |
 

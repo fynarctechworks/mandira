@@ -25,10 +25,23 @@ const BUDGET_KB = 180;
  * weight buys and why it cannot be deferred.
  */
 const ALLOWANCES = {
-  // Empty, and it should stay that way. Every route measured under 180 kB at B-024 —
-  // including the Live screen, which carries the engine and the offline read path because
-  // it must compute a plan with no network. If a route needs a line here, the entry has to
-  // say what the weight buys and why it cannot be deferred until after an interaction.
+  /*
+   * One entry, and it should stay that way.
+   *
+   * Live is the only screen that must produce a PLAN with no network (PRD-OFFL-002), so it
+   * carries the journey engine, the Dexie read path and the offline outbox in its first
+   * load. None of that is deferrable: the engine is what renders the screen at all, and
+   * code that only loads after an interaction is code a traveler on a hillside cannot
+   * reach.
+   *
+   * It measured 177.4 kB at B-024 and 182.3 kB once B-033 added the outbox and offline
+   * replanning. Raised deliberately rather than quietly, and kept tight — 190 leaves room
+   * for a small addition and not for a careless one.
+   */
+  "/[locale]/journeys/[id]/live": {
+    kb: 190,
+    why: "Carries the engine, the Dexie read path and the offline outbox because it must compute a plan with no network (PRD-OFFL-002/005). Deferring any of it means the airplane-mode screen cannot do the one thing it exists for.",
+  },
 };
 
 const appDir = process.argv[2];

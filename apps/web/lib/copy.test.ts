@@ -49,7 +49,18 @@ function sourceFiles(dir: string, base = ""): string[] {
 
     if (statSync(full).isDirectory()) {
       out.push(...sourceFiles(full, rel));
-    } else if (/\.(tsx?|json)$/.test(entry) && !EXEMPT.has(rel)) {
+    } else if (
+      /\.(tsx?|json)$/.test(entry) &&
+      /*
+       * Test files are skipped. A test's own name is never rendered, and tests discuss
+       * "error" and "failure" constantly — asserting on them, or describing the case they
+       * cover ("stops at the first network failure"). Scanning them teaches people to
+       * rename tests to please a linter, which makes the tests worse and the copy no
+       * better.
+       */
+      !/\.test\.(ts|tsx)$/.test(entry) &&
+      !EXEMPT.has(rel)
+    ) {
       out.push(rel);
     }
   }

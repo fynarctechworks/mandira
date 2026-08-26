@@ -282,3 +282,66 @@ test.describe("A journey planned before signing in", () => {
     await expect(page.getByText(/planned a journey before signing in/)).toHaveCount(0);
   });
 });
+
+test.describe("What was done with no signal (PRD-OFFL-004/005)", () => {
+  test("an action taken offline is queued, and sent when the signal returns", async ({
+    page,
+    context,
+  }) => {
+    const journeyId = await saveJourney(page);
+    await prime(page, journeyId);
+
+    await context.setOffline(true);
+    await page.reload();
+
+    // Mark the first thing done, with no network at all.
+    const done = page.getByRole("button", { name: "Done" });
+    if (await done.isVisible().catch(() => false)) {
+      await done.click();
+    } else {
+      // The journey starts tomorrow, so NOW is "before the day" and there is no Done
+      // button. Queue the same action directly — the outbox is what is under test.
+      await page.evaluate(async (id) => {
+        const request = indexedDB.open("mandhira");
+        await new Promise<void>((resolve) => {
+          request.onsuccess = () => {
+            const database = request.result;
+            const tx = database.transaction("pending_actions", "readwrite");
+            tx.objectStore("pending_actions").add({
+              id: crypto.randomUUID(),
+              action_type: "report_create",
+              payload: {
+                reportType: "closed",
+                entityTable: "places",
+                entityId: "d0000000-0000-4000-8000-00000000f002",
+              },
+              created_at: new Date().toISOString(),
+              attempts: 0,
+            });
+            tx.oncomplete = () => {
+              database.close();
+              resolve();
+            };
+          };
+        });
+      }, journeyId);
+    }
+
+    // Something is waiting.
+    await expect.poll(async () => countIn(page, "pending_actions")).toBeGreaterThan(0);
+
+    /*
+     * PRD-OFFL-003 again: nothing about being offline is presented as a failure. The
+     * traveler did the thing; it will reach us.
+     */
+    const body = await page.locator("body").innerText();
+    expect(body).not.toMatch(/error|failed/i);
+
+    // Signal returns.
+    await context.setOffline(false);
+    await page.reload();
+
+    // …and the queue drains. PRD-OFFL-007 asks for reconcile within 30 seconds.
+    await expect.poll(async () => countIn(page, "pending_actions"), { timeout: 30_000 }).toBe(0);
+  });
+});

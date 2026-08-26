@@ -133,8 +133,10 @@ select is(
   (select count(*)::int from profiles), 1,
   'traveler A sees only their own profile row'
 );
+-- Scoped to this test's own fixture rather than counting the table (D-082). Anything else
+-- that writes a report — the E2E outbox, once it reconnects — must not break this.
 select is(
-  (select count(*)::int from user_reports), 1,
+  (select count(*)::int from user_reports where id = 'e0000000-0000-4000-8000-000000000001'), 1,
   'traveler A sees their own report'
 );
 select throws_ok(
@@ -171,7 +173,7 @@ select is(
   'traveler B cannot see traveler A''s traveler profiles'
 );
 select is(
-  (select count(*)::int from user_reports), 0,
+  (select count(*)::int from user_reports where id = 'e0000000-0000-4000-8000-000000000001'), 0,
   'traveler B cannot see traveler A''s report'
 );
 select is(
@@ -254,7 +256,7 @@ select throws_ok(
 select test_become('a0000000-0000-4000-8000-000000000004'::uuid);
 
 select is(
-  (select count(*)::int from user_reports), 1,
+  (select count(*)::int from user_reports where id = 'e0000000-0000-4000-8000-000000000001'), 1,
   'support can read the reports queue'
 );
 select is(

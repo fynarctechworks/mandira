@@ -64,6 +64,22 @@ export type OfflinePrepareTask = {
   payload: Record<string, unknown>;
 };
 
+/**
+ * What a traveler did with no signal, waiting to be sent (TRD §4.7, PRD-OFFL-004).
+ *
+ * Indexed on `created_at` because the replay order is the whole contract: someone who
+ * marked an item done and then answered a Change Card about the rest of their day did
+ * those things in that sequence, and replaying them the other way round evaluates the card
+ * against a day that had not happened yet.
+ */
+export type OfflinePendingAction = {
+  id: string;
+  action_type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+  attempts: number;
+};
+
 /** `last_sync_at`, `snapshot_version`, and the guest draft. */
 export type OfflineMeta = {
   key: string;
@@ -76,6 +92,7 @@ export type MandhiraDb = Dexie & {
   knowledge_entities: EntityTable<OfflineEntity, "id">;
   phrases: EntityTable<OfflinePhrase, "id">;
   prepare_tasks: EntityTable<OfflinePrepareTask, "id">;
+  pending_actions: EntityTable<OfflinePendingAction, "id">;
   meta: EntityTable<OfflineMeta, "key">;
 };
 
@@ -83,11 +100,14 @@ export type MandhiraDb = Dexie & {
  * Bumped whenever a store's SHAPE changes — including when a `v_published_*` view changes
  * what it returns, because that changes what lands in `knowledge_entities`.
  *
- * Version 1 is written fresh against the views as they stand after `0021`, so KNOW-04's
- * deferred bump has nothing to migrate: there is no version 0 in the wild. The next shape
- * change is the one that has to do this deliberately (CLAUDE.md §4).
+ * Version 1 was written fresh against the views as they stand after `0021`, so KNOW-04's
+ * deferred bump had nothing to migrate.
+ *
+ * Version 2 adds `pending_actions` (B-033). Dexie creates a new store on upgrade without
+ * touching the existing ones, so a traveler mid-journey keeps their snapshot — which is the
+ * point of bumping deliberately rather than renaming the database.
  */
-export const SNAPSHOT_VERSION = 1;
+export const SNAPSHOT_VERSION = 2;
 
 let instance: MandhiraDb | undefined;
 let opening: Promise<MandhiraDb> | undefined;
@@ -116,7 +136,7 @@ export async function db(): Promise<MandhiraDb> {
     const { default: Dexie } = await import("dexie");
     const dexie = new Dexie("mandhira") as MandhiraDb;
 
-    dexie.version(SNAPSHOT_VERSION).stores({
+    const stores = {
       journeys: "id",
       journey_items: "id, journey_id",
       // Compound primary key, so the same uuid can exist as a place and as an experience
@@ -125,7 +145,15 @@ export async function db(): Promise<MandhiraDb> {
       phrases: "id, destination_id",
       prepare_tasks: "id, journey_id",
       meta: "key",
-    });
+    };
+
+    /*
+     * Both versions declared, so a browser holding version 1 upgrades rather than being
+     * handed a schema it has never seen. Dexie applies them in order and leaves the
+     * existing stores alone — a traveler mid-journey keeps their snapshot.
+     */
+    dexie.version(1).stores(stores);
+    dexie.version(2).stores({ ...stores, pending_actions: "id, created_at" });
 
     instance = dexie;
     return dexie;
