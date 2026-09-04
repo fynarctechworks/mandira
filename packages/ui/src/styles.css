@@ -1,17 +1,28 @@
 /*
- * Mandhira base stylesheet: tokens + preset + base element styles.
+ * Mandhira base stylesheet: legacy tokens + the new shadcn `base-lyra` design system.
  * The importing app must `@import "tailwindcss"` BEFORE this file — tailwindcss is a
  * dependency of the apps, not of this package (pnpm strict resolution).
+ *
+ * ORDER MATTERS, AND IT IS A MIGRATION ORDER, NOT A PREFERENCE.
+ *
+ * `tokens.css` + `preset.css` still define the PRD §12 utilities (`bg-canvas`,
+ * `text-secondary`, `bg-tier-protected-fill`…) that the not-yet-migrated routes are
+ * written against. They stay until the last of those routes moves over, then they go.
+ *
+ * `design-system.css` is loaded LAST and therefore wins wherever the two overlap — which
+ * is exactly the shadcn contract (`--color-primary`, `--color-background`, `--radius`…).
+ * That overlap is what makes the redesign land on old and new screens at the same time
+ * instead of only where components have been rewritten. `shadcn-bridge.css` used to own
+ * that contract by aliasing it back to the PRD palette; it is deliberately no longer in
+ * this chain, because two files answering to `--color-primary` is how a palette quietly
+ * forks in half.
  */
 @import "./tokens.css";
 @import "@mandhira/config/tailwind/preset.css";
-@import "@mandhira/config/tailwind/shadcn-bridge.css";
+@import "./design-system.css";
 
 @layer base {
   html {
-    background: var(--bg-canvas);
-    color: var(--text-primary);
-    font-family: var(--font-sans);
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
   }
@@ -22,8 +33,7 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
     font-weight: 600;
-    color: var(--brand-ink);
   }
 }

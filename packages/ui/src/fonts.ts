@@ -1,4 +1,4 @@
-import { Fraunces, Inter, Noto_Sans_Devanagari, Noto_Sans_Telugu } from "next/font/google";
+import { Fraunces, Inter, Noto_Sans_Devanagari, Noto_Sans_Telugu, Outfit } from "next/font/google";
 
 /**
  * PRD 12.2 typography via next/font (subset + self-hosted at build time).
@@ -17,6 +17,17 @@ export const fraunces = Fraunces({
   axes: ["SOFT", "opsz"],
 });
 
+/**
+ * Headings, per the shadcn `base-lyra` preset (D-148). Fraunces stays exported below: it is
+ * still referenced by `--font-display` in the Tailwind preset, which the not-yet-migrated
+ * routes read. It goes when the last of them does.
+ */
+export const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
 export const notoSansTelugu = Noto_Sans_Telugu({
   subsets: ["telugu"],
   weight: ["400", "500", "600"],
@@ -33,6 +44,7 @@ export const notoSansDevanagari = Noto_Sans_Devanagari({
 
 export const fontVariables = [
   inter.variable,
+  outfit.variable,
   fraunces.variable,
   notoSansTelugu.variable,
   notoSansDevanagari.variable,

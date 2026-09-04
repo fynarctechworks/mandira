@@ -112,7 +112,11 @@ export const config = {
      * keepalive silently never ran (cron does not follow redirects) and a traveler
      * following a magic link landed on a 404. Both were live from B-014 until B-019 became
      * the first thing to call an API route from a browser.
+     *
+     * `design-system` is excluded for the same reason: the reference page is locale-less
+     * and carries its own <html>, so negotiating a locale for it would only redirect to
+     * /en/design-system, which does not exist.
      */
-    "/((?!api/|auth/|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/|auth/|design-system|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

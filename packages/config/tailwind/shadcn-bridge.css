@@ -1,4 +1,16 @@
 /*
+ * NO LONGER IN THE STYLESHEET CHAIN (D-148).
+ *
+ * `@mandhira/ui/styles.css` now imports `design-system.css` instead, and that file owns the
+ * shadcn contract directly. This one is kept, unimported, only until the last route has
+ * moved off the PRD §12 utilities — at which point it and its test go together.
+ *
+ * Its test (`packages/ui/src/shadcn-bridge.test.ts`) still passes, because it reads this
+ * file from disk rather than the compiled stylesheet. So it currently guards a file that
+ * nothing loads: do not read a green run there as evidence that the live palette is right.
+ * The live contract is what `design-system.css` declares and what `/design-system` renders.
+ */
+/*
  * The shadcn token contract, mapped onto Mandhira's palette.
  *
  * WHY THIS FILE EXISTS. `packages/ui` was already built in shadcn's idiom by hand — Radix
