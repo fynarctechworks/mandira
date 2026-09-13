@@ -1,6 +1,6 @@
 # Mandhira — Development Backlog
 
-Ordered execution queue derived from REQUIREMENTS_REGISTRY + FEATURE_INVENTORY + DEPENDENCY_MAP. Work top-down; do not start an item whose dependencies aren't COMPLETE. Status for all items: `NOT_STARTED` (track in PROJECT_STATUS.md). Day references map to TRD §11.2.
+Ordered execution queue derived from REQUIREMENTS_REGISTRY + FEATURE_INVENTORY + DEPENDENCY_MAP. Work top-down; do not start an item whose dependencies aren't COMPLETE. Item status is tracked in PROJECT_STATUS.md, not here. Day references map to TRD §11.2.
 
 | # | Backlog item | Feature IDs | Requirement IDs (key) | Priority | Depends on | Milestone |
 |---|---|---|---|---|---|---|

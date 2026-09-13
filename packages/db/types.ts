@@ -3943,6 +3943,15 @@ export type Database = {
         Args: { p_journey_id: string; p_locale: string }
         Returns: Json
       }
+      knowledge_field_text: {
+        Args: {
+          p_entity_id: string
+          p_entity_table: string
+          p_field_name: string
+          p_locale?: string
+        }
+        Returns: string
+      }
       knowledge_health: { Args: never; Returns: Json }
       latitude:
         | {
@@ -3974,6 +3983,7 @@ export type Database = {
         Args: { p_journey_id: string; p_locale?: string }
         Returns: Json
       }
+      normalise_claim_text: { Args: { p_text: string }; Returns: string }
       open_change_candidate: {
         Args: {
           p_capture_id: string
@@ -3987,6 +3997,15 @@ export type Database = {
         Returns: string
       }
       open_conflict: {
+        Args: {
+          p_entity_id: string
+          p_entity_table: string
+          p_field_name: string
+          p_values: Json
+        }
+        Returns: string
+      }
+      open_conflict_internal: {
         Args: {
           p_entity_id: string
           p_entity_table: string
@@ -4039,6 +4058,15 @@ export type Database = {
           p_entity_table: string
         }
         Returns: undefined
+      }
+      record_extraction: {
+        Args: {
+          p_capture_id: string
+          p_claims: Json
+          p_model: string
+          p_provider: string
+        }
+        Returns: Json
       }
       record_knowledge_update: {
         Args: {

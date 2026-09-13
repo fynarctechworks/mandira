@@ -102,7 +102,11 @@ function setDifference(before: string[], after: string[]): DiffLine[] {
   const inBefore = new Set(before);
 
   return [
-    ...before.filter((line) => !inAfter.has(line)).map((text) => ({ kind: "removed" as const, text })),
-    ...after.filter((line) => !inBefore.has(line)).map((text) => ({ kind: "added" as const, text })),
+    ...before
+      .filter((line) => !inAfter.has(line))
+      .map((text) => ({ kind: "removed" as const, text })),
+    ...after
+      .filter((line) => !inBefore.has(line))
+      .map((text) => ({ kind: "added" as const, text })),
   ];
 }

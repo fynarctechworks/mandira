@@ -67,13 +67,15 @@ export function normaliseCapture(body: string, contentType = "text/html"): strin
 
   text = decodeEntities(text);
 
-  return text
-    .split("\n")
-    // Collapse runs of whitespace INSIDE a line; a page reflowing its indentation is not a
-    // change to anything a traveler would notice.
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter((line) => line.length > 0)
-    .join("\n");
+  return (
+    text
+      .split("\n")
+      // Collapse runs of whitespace INSIDE a line; a page reflowing its indentation is not a
+      // change to anything a traveler would notice.
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter((line) => line.length > 0)
+      .join("\n")
+  );
 }
 
 function decodeEntities(text: string): string {

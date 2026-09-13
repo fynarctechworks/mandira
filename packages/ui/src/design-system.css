@@ -7,7 +7,7 @@
  *
  * THE ONE THING YOU MUST NOT "TIDY UP". The preset pairs a DARK primary (#ca3500) with a
  * near-white foreground. #FF660E is far lighter — it scores only 2.93:1 against white, which
- * is not readable text. So `--primary-foreground` is dark ink here (5.69:1), not the near-white
+ * is not readable text. So `--primary-foreground` is dark ink here (about 6:1), not the near-white
  * the preset ships. Swapping it back to a light value silently makes every primary button
  * illegible. The same applies to `--sidebar-primary-foreground`.
  *
@@ -33,10 +33,21 @@
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.963 0.002 197.1);
-  --muted-foreground: oklch(0.56 0.021 213.5);
+  /*
+   * Darker than the preset's 0.56, which measured 4.13:1 on `--muted` (Kbd, AvatarFallback,
+   * ItemDescription). 0.52 clears 4.5:1 without leaving the grey family.
+   */
+  --muted-foreground: oklch(0.52 0.021 213.5);
   --accent: oklch(0.963 0.002 197.1);
   --accent-foreground: oklch(0.218 0.008 223.9);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Darker than the preset's 0.577, which read 3.98:1 as text on its own 10% tint. */
+  --destructive: oklch(0.53 0.23 27.325);
+
+  /*
+   * The brand orange as TEXT. #FF660E is a fill (2.93:1 as text on white); links and
+   * text-only buttons use this deeper orange from the same hue instead.
+   */
+  --primary-text: oklch(0.53 0.155 42.743);
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.925 0.005 214.3);
 
@@ -88,6 +99,9 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.696 0.203 42.743);
 
+  /* On the dark background #FF660E itself reads at 5.93:1, so text uses the brand orange. */
+  --primary-text: oklch(0.696 0.203 42.743);
+
   --chart-1: oklch(0.837 0.128 42.743);
   --chart-2: oklch(0.78 0.165 42.743);
   --chart-3: oklch(0.696 0.203 42.743);
@@ -112,8 +126,7 @@
    */
   --font-sans:
     var(--font-inter), var(--font-noto-telugu), var(--font-noto-devanagari), system-ui, sans-serif;
-  --font-heading:
-    var(--font-outfit), var(--font-inter), system-ui, sans-serif;
+  --font-heading: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -139,6 +152,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
@@ -164,5 +178,34 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /*
+   * WCAG 2.2 target size on touch (D-148's open item). The preset's dense controls stay as
+   * designed wherever the pointer is precise; on a finger they grow to 44px, which is where
+   * the rule exists to protect someone. `:where` keeps specificity at zero, so a component
+   * that deliberately sets a larger size still wins.
+   */
+  @media (pointer: coarse) {
+    :where(
+      [data-slot="button"],
+      [data-slot="toggle"],
+      [data-slot="toggle-group-item"],
+      [data-slot="tabs-trigger"],
+      [data-slot="select-trigger"],
+      [data-slot="combobox-trigger"],
+      [data-slot="native-select"],
+      [data-slot="input"],
+      [data-slot="input-group"],
+      [data-slot="dropdown-menu-item"],
+      [data-slot="accordion-trigger"],
+      [data-slot="pagination-link"]
+    ) {
+      min-height: 2.75rem;
+    }
+
+    :where([data-slot="button"][data-size^="icon"], [data-slot="toggle"]) {
+      min-width: 2.75rem;
+    }
   }
 }

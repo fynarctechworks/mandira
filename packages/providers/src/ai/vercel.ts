@@ -1,12 +1,27 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import type { LanguageModel } from "ai";
 
 import { candidateBlock, journeyBriefSchema } from "./brief-schema";
 import { aiConfig, hasAiCredentials, type AiConfig } from "./config";
 import { groundingHash, inputHash, keepKnownIds } from "./grounding";
+import {
+  groundKnowledgeClaims,
+  knowledgeClaimsSchema,
+  knowledgePrompt,
+  MAX_CAPTURE_CHARS,
+  MAX_TARGETS,
+  type ExtractedKnowledge,
+  type ExtractKnowledgeInput,
+} from "./knowledge";
 import { runAiTask, type AiCacheStore, type AiCallLog } from "./runtime";
+import {
+  groundTranslation,
+  MAX_TRANSLATION_CHARS,
+  type SuggestedTranslation,
+  type SuggestTranslationInput,
+} from "./translation";
 import type {
   AiProvider,
   AiProviderName,
@@ -35,6 +50,13 @@ export function createVercelAiProvider(
 ): AiProvider {
   const env = options.env ?? process.env;
   const config = options.config ?? aiConfig(env);
+  const stores = {
+    ...(options.cache ? { cache: options.cache } : {}),
+    ...(options.log ? { log: options.log } : {}),
+  };
+  const availableProviders = (["google", "anthropic", "openai"] as AiProviderName[]).filter((p) =>
+    hasAiCredentials(p, env),
+  );
 
   return {
     name: config.provider,
@@ -54,11 +76,8 @@ export function createVercelAiProvider(
           ...(input.destinationId ? { destinationId: input.destinationId } : {}),
         }),
         inputHash: inputHash(text),
-        ...(options.cache ? { cache: options.cache } : {}),
-        ...(options.log ? { log: options.log } : {}),
-        availableProviders: (["google", "anthropic", "openai"] as AiProviderName[]).filter((p) =>
-          hasAiCredentials(p, env),
-        ),
+        ...stores,
+        availableProviders,
         attempt: async ({ provider, model, signal }) => {
           const generated = await generateObject({
             model: languageModel(provider, model, env),
@@ -69,20 +88,119 @@ export function createVercelAiProvider(
             temperature: 0,
           });
 
-          return {
-            value: toBrief(generated.object, candidates),
-            ...(generated.usage?.inputTokens !== undefined
-              ? { tokensIn: generated.usage.inputTokens }
-              : {}),
-            ...(generated.usage?.outputTokens !== undefined
-              ? { tokensOut: generated.usage.outputTokens }
-              : {}),
-          };
+          return { value: toBrief(generated.object, candidates), ...usageOf(generated.usage) };
         },
       });
 
       return result;
     },
+
+    async extractKnowledge(input: ExtractKnowledgeInput): Promise<AiResult<ExtractedKnowledge>> {
+      const targets = input.targets.slice(0, MAX_TARGETS);
+      const clipped = {
+        ...input,
+        targets,
+        captureText: input.captureText.slice(0, MAX_CAPTURE_CHARS),
+      };
+
+      return runAiTask<ExtractedKnowledge>({
+        task: "extract_knowledge",
+        tier: "structured",
+        config,
+        groundingHash: groundingHash({
+          candidates: targets.map((t) => ({ id: `${t.entityId}:${t.fields.join(",")}` })),
+          locale: input.locale,
+          extra: input.sourceName,
+        }),
+        inputHash: inputHash(clipped.captureText),
+        ...stores,
+        availableProviders,
+        attempt: async ({ provider, model, signal }) => {
+          const generated = await generateObject({
+            model: languageModel(provider, model, env),
+            schema: knowledgeClaimsSchema(targets),
+            system: KNOWLEDGE_SYSTEM_PROMPT,
+            prompt: knowledgePrompt(clipped),
+            abortSignal: signal,
+            temperature: 0,
+          });
+
+          return {
+            value: groundKnowledgeClaims({
+              proposed: generated.object.claims,
+              captureText: clipped.captureText,
+              targets,
+              locale: input.locale,
+            }),
+            ...usageOf(generated.usage),
+          };
+        },
+      });
+    },
+
+    async suggestTranslation(
+      input: SuggestTranslationInput,
+    ): Promise<AiResult<SuggestedTranslation>> {
+      const text = input.text.slice(0, MAX_TRANSLATION_CHARS);
+
+      return runAiTask<SuggestedTranslation>({
+        task: "suggest_translation",
+        tier: "fast",
+        config,
+        groundingHash: groundingHash({
+          locale: input.to,
+          extra: `${input.from}|${input.context ?? ""}`,
+        }),
+        inputHash: inputHash(text),
+        ...stores,
+        availableProviders,
+        attempt: async ({ provider, model, signal }) => {
+          const generated = await generateText({
+            model: languageModel(provider, model, env),
+            system: TRANSLATION_SYSTEM_PROMPT,
+            prompt: [
+              `Translate from locale "${input.from}" to locale "${input.to}".`,
+              input.context ? `Where it appears: ${input.context}` : "",
+              "",
+              text,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+            abortSignal: signal,
+            temperature: 0,
+          });
+
+          return { value: groundTranslation(generated.text, text), ...usageOf(generated.usage) };
+        },
+      });
+    },
+  };
+}
+
+const KNOWLEDGE_SYSTEM_PROMPT = [
+  "You read text published by a source and report what it states about specific fields of",
+  "specific places and experiences on a pilgrimage planner.",
+  "",
+  "Rules:",
+  "- Report only what the text states explicitly. Never infer, complete or convert a value.",
+  "- Copy the excerpt verbatim from the source text: the exact sentence that says it.",
+  "- Only use the entity ids and field names you are given.",
+  "- Write times, dates and amounts exactly as the source writes them.",
+  "- If the text says nothing about a field, report nothing for it.",
+].join("\n");
+
+const TRANSLATION_SYSTEM_PROMPT = [
+  "You translate short interface and pilgrimage-information text for travelers in India.",
+  "Keep every time, date, number and proper name exactly as written.",
+  "Use plain, respectful, natural phrasing. Return only the translation.",
+].join("\n");
+
+function usageOf(
+  usage: { inputTokens?: number | undefined; outputTokens?: number | undefined } | undefined,
+) {
+  return {
+    ...(usage?.inputTokens !== undefined ? { tokensIn: usage.inputTokens } : {}),
+    ...(usage?.outputTokens !== undefined ? { tokensOut: usage.outputTokens } : {}),
   };
 }
 

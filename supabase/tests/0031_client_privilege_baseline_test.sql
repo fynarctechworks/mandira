@@ -26,6 +26,8 @@ select is_empty(
       where n.nspname = 'public'
         and c.relkind = 'v'
         and c.relname not like 'v\_published\_%'
+        -- Views an extension owns (pgTAP ships some into public on test databases) are not ours.
+        and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
         and has_table_privilege('anon', c.oid, 'select') $$,
   'anon reads no view except the published ones');
 

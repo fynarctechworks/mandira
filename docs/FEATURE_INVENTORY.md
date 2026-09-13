@@ -1,6 +1,6 @@
 # Mandhira — Feature & Module Inventory
 
-Hierarchical inventory of the complete product. **Status: `NOT_STARTED` for every feature** (live status in `PROJECT_STATUS.md`). Feature IDs are stable; requirement links point to `REQUIREMENTS_REGISTRY.md`. Priority: P0 launch-blocking for its milestone / P1 complete-product / P2 M5.
+Hierarchical inventory of the complete product. **Status is not tracked in this file** — see `PROJECT_STATUS.md` for where each feature stands. Feature IDs are stable; requirement links point to `REQUIREMENTS_REGISTRY.md`. Priority: P0 launch-blocking for its milestone / P1 complete-product / P2 M5.
 
 ```text
 PLATFORM (PLAT)

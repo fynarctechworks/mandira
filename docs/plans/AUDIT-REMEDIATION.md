@@ -24,6 +24,24 @@ privacy boundary) are kept, because the audit's findings are violations of exact
 | R8 | Design system | Traveler + Ops screens on preset components; coarse-pointer 44 px targets (keeps preset density on desktop, meets WCAG 2.2 on touch); contrast fixes; legacy duplicates removed | axe clean both themes at 390 px |
 | R9 | Documentation truth | README, registry headers/totals/markers, status granularity, architecture docs, risk register, decision log | No doc contradicts the code |
 
+## Progress log
+
+### 2026-09-13
+Verified locally unless marked otherwise. Committed checkpoint `f76cfd4`; the rest is on the branch awaiting integration.
+
+- **R0** — CI gains `format:check` (vendored preset excluded, D-168), the privacy-boundary gate, `check:bundle` on PRs and a Playwright job; `/design-system` bundle allowance (D-163). Local Supabase requires CLI ≥ 2.117.
+- **R1** — `0029` (S-1…S-10) and `0030`: client roles hold exactly the declared grants. The audit's premise that anon held no table grant was false on this Supabase image; fixed and pinned by catalogue tests (D-152–D-155). pgTAP `0030`, `0031`.
+- **R2** — engine: FIXED-stretch time load, whole-visit availability, return guard on its day, every day reported, per-day option judgement with before/after times (D-156, D-157); Change Card and health text from the catalogs (D-158); travel routed and cached on every plan build (D-159); atomic `create_journey` (D-160, OPEN-012); web data layer throws on failed queries instead of rendering empty states.
+- **R3/R4 SQL** — `0032` Ops admin surfaces (scheduled publish, restore, team, dashboards; D-162), `0033` traveler data rights (D-161). Screens are being built.
+- **R5** — `extractKnowledge` / `suggestTranslation` with grounding in code; `0034` routes claims to review and opens conflicts automatically (D-164, OPEN-014). Wiring into ingestion follows the Ops screens.
+- **R6** — engine keys, health and Change Card text in en/te/hi catalogs (te/hi machine-authored; OPEN-004 native review still required).
+- **R7** — EmailProvider over Resend REST (D-167); vendor-SDK lint ban in the shared base, re-probed (D-166); `.env.example` completed.
+- **R8** — preset contrast failures fixed in tokens and coarse-pointer 44 px targets (D-165), with a WCAG ratio test.
+- **R9** — README, registry header and totals, inventory/backlog headers, backend and database architecture, risk register re-reviewed, GIT-01 count.
+- **Engine tests added** — PRD-ADPT-008 matrix (50 journeys × 8 triggers) and PRD-PLAN-009 performance budget.
+
+Counts at this point: pgTAP 633/633 (34 files); providers + UI vitest 313/313; full unit suite 766/766 before the latest additions.
+
 ## Out of reach from this machine (built to be ready, not claimed done)
 GIT-01 push credentials · real provider keys (Gemini, Resend, MapTiler, ORS, Sentry) ·
 production domain and deployment · pilot planners. Each code path works locally and

@@ -39,5 +39,8 @@ export type CaptureResult =
 
 export type CaptureProvider = {
   readonly name: string;
-  fetchCapture(url: string, options?: { timeoutMs?: number; maxBytes?: number }): Promise<CaptureResult>;
+  fetchCapture(
+    url: string,
+    options?: { timeoutMs?: number; maxBytes?: number },
+  ): Promise<CaptureResult>;
 };

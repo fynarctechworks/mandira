@@ -9,3 +9,6 @@ CLAUDE.md
 packages/db/types.ts
 apps/web/public/sw.js
 apps/web/public/swe-worker-*.js
+# The shadcn base-lyra preset, vendored as upstream generates it (D-148). Keeping its own
+# formatting keeps `pnpm ui:add` updates reviewable as upstream diffs.
+packages/ui/src/components/ui

@@ -44,7 +44,10 @@ export function createHttpCaptureProvider(): CaptureProvider {
           response = await fetch(current, {
             redirect: "manual",
             signal: controller.signal,
-            headers: { "user-agent": USER_AGENT, accept: "text/html, text/plain, application/json" },
+            headers: {
+              "user-agent": USER_AGENT,
+              accept: "text/html, text/plain, application/json",
+            },
           });
 
           if (response.status < 300 || response.status >= 400) break;

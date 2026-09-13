@@ -49,7 +49,12 @@ export type DetectionResult = {
    * Fields that could not be checked, and why — surfaced in the UI rather than swallowed.
    * A queue implying full coverage it does not have is worse than one admitting the gap.
    */
-  skipped: { entityTable: string; entityId: string; fieldName: string | null; reason: SkipReason }[];
+  skipped: {
+    entityTable: string;
+    entityId: string;
+    fieldName: string | null;
+    reason: SkipReason;
+  }[];
 };
 
 export type SkipReason = "no_excerpt" | "whole_entity" | "excerpt_absent_before";
@@ -93,7 +98,11 @@ export function detectChangeCandidates(input: {
      * is the noise this whole design exists to avoid.
      */
     if (!previousHaystack.includes(needle)) {
-      skipped.push({ ...ids(record), fieldName: record.fieldName, reason: "excerpt_absent_before" });
+      skipped.push({
+        ...ids(record),
+        fieldName: record.fieldName,
+        reason: "excerpt_absent_before",
+      });
       continue;
     }
 

@@ -2,7 +2,7 @@
 
 ## Placement rules
 - **Next.js Route Handlers / Server Actions:** request-scoped logic — validation, auth/role checks, engine invocation, AI calls, provider calls, rate limits. Surface: TRD §5.2–§5.3 verbatim.
-- **Supabase Edge Functions:** scheduled/background work only (TRD §5.4): `ingest_sources`, `refresh_live_feeds`, `schedule_notifications`, `send_notifications`, `keepalive` (+ pg_cron for `recompute_freshness`, `journey_status_roller`, `account_deletion`).
+- **Scheduled/background work (TRD §5.4, as built):** pg_cron inside Postgres for `recompute_freshness`, `journey_status_roller`, `account_deletion`, `prune_ai_cache`, `prune_rate_limits` and `publish_scheduled_entities`, each run through `run_scheduled_job` (single-flight, logged to `job_runs`, watched by `v_job_health`); Vercel Cron routes for `keepalive`, `feeds` and `notifications` in apps/web and `ingest` in apps/ops. There are no Supabase Edge Functions — see D-072, D-124, D-141 for why each moved.
 - **Postgres:** integrity that must never be bypassed — RLS, publish-gate checks, versioning/audit triggers, freshness/confidence computation, report auto-downgrade counter.
 
 ## Request pipeline (every route)

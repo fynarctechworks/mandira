@@ -44,4 +44,22 @@ export {
 } from "./runtime";
 
 export { journeyBriefSchema, candidateBlock } from "./brief-schema";
+export {
+  groundKnowledgeClaims,
+  knowledgeClaimsSchema,
+  knowledgePrompt,
+  MAX_CAPTURE_CHARS,
+  MAX_TARGETS,
+  type ExtractedClaim,
+  type ExtractedKnowledge,
+  type ExtractKnowledgeInput,
+  type KnowledgeTarget,
+  type RejectedClaim,
+} from "./knowledge";
+export {
+  groundTranslation,
+  MAX_TRANSLATION_CHARS,
+  type SuggestedTranslation,
+  type SuggestTranslationInput,
+} from "./translation";
 export { createVercelAiProvider } from "./vercel";

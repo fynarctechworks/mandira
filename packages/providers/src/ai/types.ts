@@ -7,6 +7,9 @@
  * to the published ones (TRD §7.3.1).
  */
 
+import type { ExtractedKnowledge, ExtractKnowledgeInput } from "./knowledge";
+import type { SuggestedTranslation, SuggestTranslationInput } from "./translation";
+
 export type AiTask =
   | "intent_extract"
   | "explain"
@@ -70,6 +73,10 @@ export type AiProvider = {
   readonly name: AiProviderName;
   /** F3: natural language → a Journey Brief the traveler reviews before anything is built. */
   extractIntent(input: ExtractIntentInput): Promise<AiResult<ExtractedBrief>>;
+  /** F17: what a source capture claims about tracked fields, each claim traced to the capture. */
+  extractKnowledge(input: ExtractKnowledgeInput): Promise<AiResult<ExtractedKnowledge>>;
+  /** O17: a translation a translator confirms; `text` is null when it is not grounded. */
+  suggestTranslation(input: SuggestTranslationInput): Promise<AiResult<SuggestedTranslation>>;
 };
 
 /**

@@ -2,7 +2,7 @@
 
 Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No requirement may disappear during development.**
 
-- **Implementation status: `NOT_STARTED` for every requirement in this file** (live status tracked per-requirement in `PROJECT_STATUS.md`; update both on change).
+- **Implementation status lives in `PROJECT_STATUS.md`, not in this header.** Rows marked ✅ below were verified against code when marked; an unmarked row is not a claim that nothing exists. The 2026-09-12 audit (`docs/PROJECT_AUDIT.md`) is the most recent code-verified assessment of every row.
 - Source is encoded in the ID prefix (PRD-/TRD-). Priority: **P0** = launch-blocking for its milestone, **P1** = required for the complete product, **P2** = M5/expansion.
 - Acceptance criteria are abbreviated here; the authoritative acceptance text is the referenced PRD/TRD section.
 
@@ -295,4 +295,4 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-OBSV-001 | Sentry + analytics events | Both apps; allowlisted event names; queue-age alerts | P1 | — |
 | TRD-COST-001 | Cost controls | Quota alerts at 70%; caches per §10; $0 M1 infra | P1 | — |
 
-**Registry totals: 132 requirements** (PRD 95 / TRD 37). Phase-18 cross-check: every PRD F1–F20 feature, principle, privacy rule, and design mandate above; every TRD section §2–§12 represented. Any newly discovered requirement must be added here with the next free ID — never tracked ad hoc.
+**Registry totals: 146 unique requirement IDs across 168 table rows** (133 PRD rows, 35 TRD rows; some IDs appear in more than one section's table). Counted from the file on 2026-09-13 — the earlier "132 requirements (PRD 95 / TRD 37)" had not been updated as requirements were added. Phase-18 cross-check: every PRD F1–F20 feature, principle, privacy rule, and design mandate above; every TRD section §2–§12 represented. Any newly discovered requirement must be added here with the next free ID — never tracked ad hoc.
