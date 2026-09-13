@@ -4,6 +4,7 @@ import { z } from "zod";
 import { withApi } from "../../../../../../lib/api";
 import { decideChange } from "../../../../../../lib/changes";
 import { getJourney } from "../../../../../../lib/journeys";
+import { resyncNotifications } from "../../../../../../lib/notifications";
 
 /**
  * The traveler's decision on a Change Card (PRD-ADPT-005).
@@ -31,7 +32,7 @@ export const POST = withApi({
   schema,
   requireAuth: true,
   rateLimit: "journeys_write",
-  handler: async ({ input, request, supabase }) => {
+  handler: async ({ input, request, supabase, user }) => {
     const { journeyId, eventId } = idsFrom(request);
 
     const result = await decideChange(supabase, journeyId, eventId, input.optionId, "en");
@@ -44,6 +45,14 @@ export const POST = withApi({
 
     // Fresh items AND fresh health, like every other mutation — a screen showing the old
     // verdict beside the new plan is the failure this guards against.
+    if (result.applied) {
+      await resyncNotifications(
+        supabase,
+        journeyId,
+        user!.id,
+        "POST /api/journeys/:id/changes/:eventId",
+      );
+    }
     const updated = await getJourney(supabase, journeyId, "en");
 
     return {

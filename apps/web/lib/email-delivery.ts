@@ -32,6 +32,8 @@ export async function deliverEmail(
   row: EmailRow,
   deps: {
     provider: EmailProvider;
+    /** The traveler's language; English when unknown. */
+    locale?: string;
     /** The stored switches; null when there is no live account to write to. */
     prefsOf: (userId: string) => Promise<Record<string, boolean> | null>;
     addressOf: (userId: string) => Promise<string | null>;
@@ -50,8 +52,8 @@ export async function deliverEmail(
 
   const result = await deps.provider.send({
     to,
-    subject: render(keyOf(row.title_i18n), params, "en"),
-    text: render(keyOf(row.body_i18n), params, "en"),
+    subject: render(keyOf(row.title_i18n), params, deps.locale ?? "en"),
+    text: render(keyOf(row.body_i18n), params, deps.locale ?? "en"),
     // A category for the provider's dashboard — the type, never anything about the person.
     tag: row.notification_type,
   });

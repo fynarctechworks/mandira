@@ -53,8 +53,9 @@ test.describe("O15 — Freshness monitor", () => {
     const rows = page.getByRole("row");
     const empty = page.getByText(/healthy state, not an empty one|nothing to keep an eye on/);
 
-    // Whichever is true of this database, one of them must be on screen.
-    expect((await rows.count()) + (await empty.count())).toBeGreaterThan(0);
+    // Whichever is true of this database, one of them must be on screen — once the queue has
+    // streamed in, which is why this waits rather than counting at the first paint.
+    await expect(rows.first().or(empty).first()).toBeVisible();
   });
 
   test("says what a row means in words, not colour alone", async ({ page }) => {

@@ -284,7 +284,10 @@ select test_become_postgres();
 select bag_eq(
   $$ select tablename || ':' || cmd
        from pg_policies
-      where schemaname = 'public' and 'anon' = any(roles) $$,
+      where schemaname = 'public' and 'anon' = any(roles)
+        -- Doors only. A RESTRICTIVE policy can narrow what anon reads but never open
+        -- anything (0036 adds one on media_assets), so it is not attack surface.
+        and permissive = 'PERMISSIVE' $$,
   $$ values
        ('locales:SELECT'),
        ('media_assets:SELECT'),

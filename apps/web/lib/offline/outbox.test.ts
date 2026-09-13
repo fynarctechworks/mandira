@@ -27,11 +27,14 @@ function succeeding() {
 }
 
 describe("the schema version", () => {
-  it("is 2, which is what adds pending_actions", async () => {
-    // A browser holding version 1 must UPGRADE rather than meet a schema it has never
-    // seen — which is why both versions are declared and the database is not renamed.
-    expect(SNAPSHOT_VERSION).toBe(2);
-    expect((await db()).verno).toBe(2);
+  it("is 3, and still carries the pending_actions queue version 2 added", async () => {
+    // A browser holding an older version must UPGRADE rather than meet a schema it has never
+    // seen — which is why every version is declared and the database is not renamed. Version
+    // 3 added the phrase pack (D-175); an upgrade must never drop the outbox.
+    expect(SNAPSHOT_VERSION).toBe(3);
+    const database = await db();
+    expect(database.verno).toBe(3);
+    expect(database.tables.map((table) => table.name)).toContain("pending_actions");
   });
 });
 

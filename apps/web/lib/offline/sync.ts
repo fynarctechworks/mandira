@@ -9,6 +9,7 @@ import {
   writeMeta,
   type OfflineEntity,
 } from "./db";
+import { replacePhrases } from "./phrases-local";
 import type { JourneySnapshot } from "./snapshot";
 
 /**
@@ -84,6 +85,7 @@ async function writeSnapshot(journeyId: string, snapshot: JourneySnapshot): Prom
       database.journey_items,
       database.knowledge_entities,
       database.prepare_tasks,
+      database.phrases,
       database.meta,
     ],
     async () => {
@@ -125,6 +127,15 @@ async function writeSnapshot(journeyId: string, snapshot: JourneySnapshot): Prom
       await database.prepare_tasks.bulkPut(
         snapshot.prepareTasks.map((task) => ({ ...task, journey_id: journeyId })),
       );
+
+      /*
+       * The destination's phrase pack (PRD-OFFL-001). Keyed by destination, not journey, so
+       * two journeys to the same place share one pack. A null pack means the server could
+       * not read it, and what the device already holds is worth more than nothing.
+       */
+      if (snapshot.journey.destinationId && Array.isArray(snapshot.phrases)) {
+        await replacePhrases(database, snapshot.journey.destinationId, snapshot.phrases);
+      }
 
       // The engine's input, stored whole and separately from the presentational entities.
       // Keyed under the journey so two journeys in different destinations cannot blend.

@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserSupabase } from "@mandhira/db/client/browser";
-import { Button } from "@mandhira/ui";
+import { Button, focalObjectPosition, focalPointOf } from "@mandhira/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,6 +16,9 @@ export type MediaRow = {
   licence: string | null;
   width: number | null;
   height: number | null;
+  /** 0–1 each; every crop preset keeps this point in frame (migration 0036). */
+  focal_x: number;
+  focal_y: number;
   usage: MediaUse[];
 };
 
@@ -172,6 +175,7 @@ export function MediaLibrary({
                     src={`${publicBaseUrl}/${item.storage_path}`}
                     alt={item.caption_i18n["en"] ?? "Uploaded media"}
                     className="aspect-square w-full rounded-[8px] object-cover"
+                    style={{ objectPosition: focalObjectPosition(focalPointOf(item)) }}
                   />
                 ) : (
                   <p className="text-body-sm">{item.media_type}</p>
@@ -183,6 +187,14 @@ export function MediaLibrary({
                     <span className="text-status-tight">○ No licence</span>
                   )}
                 </p>
+                {item.media_type === "image" ? (
+                  <Link
+                    href={`/media/${item.id}`}
+                    className="focus-ring inline-flex min-h-11 items-center text-body-sm underline"
+                  >
+                    Framing and crops
+                  </Link>
+                ) : null}
                 {item.usage.length === 0 ? (
                   <p className="text-caption text-text-tertiary">Not used anywhere yet</p>
                 ) : (

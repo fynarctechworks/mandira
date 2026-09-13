@@ -9,11 +9,11 @@ type Coordinates = { latitude: number | null; longitude: number | null };
 /**
  * Coordinate picker: search by name via the GeocodingProvider, or type coordinates.
  *
- * The map itself (MapLibre) is deliberately NOT rendered here yet. It needs a tile source,
- * and `NEXT_PUBLIC_MAPTILER_KEY` is not yet provisioned (OPEN_ITEMS ACCT-03). Rather than
- * ship a map component that cannot be run — and therefore cannot be tested — this gives
- * operators a working way to set a pin now, and the map lands in B-020 alongside the rest
- * of the mapping work, where it can be verified against real tiles.
+ * With `NEXT_PUBLIC_MAPTILER_KEY` set (ACCT-03), the chosen point is shown on a MapTiler static
+ * map (MAPS-02), so an operator can see that a pin sits on the temple and not in the car park
+ * across the road before it reaches a traveler. A static image rather than an interactive map:
+ * it needs no map library (the Ops bundle stays as it is) and the coordinates stay the thing
+ * that is edited. Without the key the picker works exactly as before.
  *
  * Coordinates are shown as plain numbers on purpose: an operator pasting from a source
  * usually has decimal degrees to hand.
@@ -150,10 +150,55 @@ export function LocationPicker({
         </label>
       </div>
 
-      <p className="text-caption text-text-tertiary">
-        Map confirmation arrives with the mapping work (B-020). Coordinates set here are already
-        used by the engine.
-      </p>
+      <MapPreview latitude={value.latitude} longitude={value.longitude} />
     </fieldset>
+  );
+}
+
+const MAPTILER_KEY = process.env["NEXT_PUBLIC_MAPTILER_KEY"];
+
+function MapPreview({ latitude, longitude }: Coordinates) {
+  const valid =
+    latitude !== null &&
+    longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180;
+
+  if (!MAPTILER_KEY) {
+    return (
+      <p className="text-caption text-text-tertiary">
+        A map preview appears here once a MapTiler key is configured. Coordinates set here are
+        already used by the engine.
+      </p>
+    );
+  }
+  if (!valid) {
+    return <p className="text-caption text-text-tertiary">Set a point to see it on the map.</p>;
+  }
+
+  const position = `${longitude.toFixed(6)},${latitude.toFixed(6)}`;
+  const src =
+    `https://api.maptiler.com/maps/streets-v2/static/${position},16/560x280@2x.png` +
+    `?key=${encodeURIComponent(MAPTILER_KEY)}&markers=${position},%23FF660E`;
+
+  return (
+    <figure className="flex flex-col gap-1">
+      {/* A static tile from an allowlisted host (CSP img-src); next/image adds nothing here. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        width={560}
+        height={280}
+        loading="lazy"
+        alt={`Map centred on ${latitude.toFixed(5)}, ${longitude.toFixed(5)}, with the chosen point marked`}
+        className="w-full max-w-[560px] rounded-card border border-border-subtle"
+      />
+      <figcaption className="text-caption text-text-tertiary">
+        Check the marker sits on the place itself before saving. Map © MapTiler © OpenStreetMap
+        contributors.
+      </figcaption>
+    </figure>
   );
 }

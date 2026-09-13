@@ -1808,10 +1808,13 @@ export type Database = {
           created_at: string
           credit: string | null
           deleted_at: string | null
+          focal_x: number
+          focal_y: number
           height: number | null
           id: string
           licence: string | null
           media_type: string
+          storage_bucket: string
           storage_path: string
           updated_at: string
           uploaded_by: string | null
@@ -1822,10 +1825,13 @@ export type Database = {
           created_at?: string
           credit?: string | null
           deleted_at?: string | null
+          focal_x?: number
+          focal_y?: number
           height?: number | null
           id?: string
           licence?: string | null
           media_type: string
+          storage_bucket?: string
           storage_path: string
           updated_at?: string
           uploaded_by?: string | null
@@ -1836,10 +1842,13 @@ export type Database = {
           created_at?: string
           credit?: string | null
           deleted_at?: string | null
+          focal_x?: number
+          focal_y?: number
           height?: number | null
           id?: string
           licence?: string | null
           media_type?: string
+          storage_bucket?: string
           storage_path?: string
           updated_at?: string
           uploaded_by?: string | null
@@ -3434,6 +3443,7 @@ export type Database = {
       v_published_phrases: {
         Row: {
           audio_media_id: string | null
+          audio_path: string | null
           context_tag: string | null
           destination_id: string | null
           id: string | null
@@ -3446,6 +3456,7 @@ export type Database = {
         }
         Insert: {
           audio_media_id?: string | null
+          audio_path?: never
           context_tag?: string | null
           destination_id?: string | null
           id?: string | null
@@ -3458,6 +3469,7 @@ export type Database = {
         }
         Update: {
           audio_media_id?: string | null
+          audio_path?: never
           context_tag?: string | null
           destination_id?: string | null
           id?: string | null
@@ -3826,6 +3838,7 @@ export type Database = {
         Returns: number
       }
       audit_ip_hash: { Args: never; Returns: string }
+      audit_redact: { Args: { p_row: Json; p_table: string }; Returns: Json }
       cancel_account_deletion: { Args: never; Returns: undefined }
       cancel_scheduled_publish: {
         Args: { p_schedule_id: string }
@@ -3894,6 +3907,7 @@ export type Database = {
         Args: { p_valid_until: string; p_verified_at: string }
         Returns: Database["public"]["Enums"]["freshness_enum"]
       }
+      dispatch_app_cron: { Args: { p_name: string }; Returns: Json }
       entity_is_published: {
         Args: { p_entity_id: string; p_entity_table: string }
         Returns: boolean
@@ -3984,6 +3998,10 @@ export type Database = {
         Returns: Json
       }
       normalise_claim_text: { Args: { p_text: string }; Returns: string }
+      notify_report_resolution: {
+        Args: { p_report_id: string }
+        Returns: boolean
+      }
       open_change_candidate: {
         Args: {
           p_capture_id: string

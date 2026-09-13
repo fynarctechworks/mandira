@@ -1,9 +1,9 @@
 "use server";
 
-import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { opsAction } from "@/lib/action";
+import { reportServerError } from "@/lib/report";
 
 /**
  * Resolving a report (PRD F14, PRD-REPT-002/003, PRD-OPS-WF-005).
@@ -49,7 +49,8 @@ export const resolveReport = opsAction({
         resolved_at: new Date().toISOString(),
       })
       .eq("id", input.id)
-      .select("id, user_id, notified_user")
+      // Never `user_id`: who filed a report is not Ops' to know (PRD §10, D-174).
+      .select("id")
       .maybeSingle();
 
     if (error || !data) throw new Error("That report could not be updated.");
@@ -59,60 +60,21 @@ export const resolveReport = opsAction({
      * hears what came of it — Updated, Confirmed as correct, or Couldn't verify. A report
      * that vanishes into a queue is the last report that person files.
      *
-     * Only when there IS a traveler to tell: a guest report carries a reporter hash and no
-     * account, which is the trade guest reporting makes.
+     * The database queues the notice (0039): it reads the reporter inside a role-checked
+     * function and tells this action only whether there was anyone to notify, so the id never
+     * leaves Postgres. A notice that could not be queued does not undo the resolution.
      */
-    if (data.user_id && !data.notified_user) {
-      await notifyReporter(data.user_id, input.status);
-
-      await supabase.from("user_reports").update({ notified_user: true }).eq("id", input.id);
+    const { error: noticeError } = await supabase.rpc("notify_report_resolution", {
+      p_report_id: input.id,
+    });
+    if (noticeError) {
+      reportServerError({ route: "resolveReport notice", error: noticeError, app: "ops" });
     }
 
     revalidatePath("/reports");
     return { id: data.id };
   },
 });
-
-/**
- * Queue the traveler's notification.
- *
- * Service-role, for the same reason the journey scheduler is (D-125): `notifications`
- * grants no INSERT to any client role, because scheduling is the product's decision. An
- * operator resolving a report is not the notification's recipient, so nothing else would
- * be able to write this row.
- */
-async function notifyReporter(userId: string, status: string): Promise<void> {
-  const outcome =
-    status === "resolved_updated"
-      ? "updated"
-      : status === "resolved_confirmed_correct"
-        ? "confirmed"
-        : "unverified";
-
-  const row = {
-    user_id: userId,
-    notification_type: "report_resolved" as const,
-    status: "scheduled",
-    scheduled_for: new Date().toISOString(),
-    // Keys and params, never a sentence — the traveler's language is decided at send
-    // time, not at the moment an operator happened to click.
-    title_i18n: { key: "notify.report_resolved.title" },
-    body_i18n: { key: "notify.report_resolved.body" },
-    payload: { outcome },
-  };
-
-  /*
-   * In the app always; by email only if the traveler opted in. Ops learns neither which nor
-   * the address: the email row is queued unconditionally, and the sender checks consent and
-   * looks the address up at send time, cancelling the row when either is missing (D-171).
-   */
-  await createServiceRoleSupabase()
-    .from("notifications")
-    .insert([
-      { ...row, channel: "inapp" },
-      { ...row, channel: "email" },
-    ]);
-}
 
 export const triageReport = opsAction({
   roles: ["admin", "editor", "verifier", "support"],

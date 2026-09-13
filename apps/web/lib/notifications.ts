@@ -8,6 +8,9 @@ import {
   type NotificationType,
 } from "@mandhira/journey-engine";
 import type { Database, Json } from "@mandhira/db/types";
+import { reportError } from "@mandhira/db/reporting";
+import { isLocale } from "@mandhira/i18n";
+import { createTranslator, type AbstractIntlMessages } from "next-intl";
 
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 
@@ -15,6 +18,9 @@ import { mustList, mustMaybe, mustWrite } from "./data-error";
 import { getJourney, toEngineJourney } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
+import en from "../messages/en.json";
+import hi from "../messages/hi.json";
+import te from "../messages/te.json";
 
 /**
  * Notifications (PRD F15, NOTF-01..04).
@@ -64,14 +70,16 @@ export async function syncJourneyNotifications(
   supabase: Client,
   journeyId: string,
   userId: string,
-  locale: string,
-): Promise<{ scheduled: number }> {
-  const detail = await getJourney(supabase, journeyId, locale);
-  if (!detail) return { scheduled: 0 };
+  locale?: string,
+): Promise<{ scheduled: number; cancelled: number }> {
+  // Names in the traveler's own language when the caller does not say which.
+  const language = locale ?? (await profileLocale(supabase, userId));
+  const detail = await getJourney(supabase, journeyId, language);
+  if (!detail) return { scheduled: 0, cancelled: 0 };
 
-  const { journey, items } = detail;
+  const { journey, items, labels } = detail;
   const knowledge = journey.destinationId
-    ? await getKnowledgeBundle(journey.destinationId, locale)
+    ? await getKnowledgeBundle(journey.destinationId, language)
     : EMPTY_BUNDLE;
 
   const prefs = await readPreferences(supabase, userId);
@@ -87,6 +95,14 @@ export async function syncJourneyNotifications(
    */
   const prepareTasks = generatePrepareTasks({ journey: engineJourney, items, knowledge });
 
+  /*
+   * A leave-by only for what is still ahead: done, skipped or already under way, a reminder to
+   * set off for it is noise. Each names where the traveler is heading, so the push reads
+   * "About 15 minutes to reach Hill Temple" rather than "your next stop".
+   */
+  const ahead = new Map(
+    items.filter((item) => item.status === "planned").map((item) => [item.id, item]),
+  );
   const drafts = scheduleNotifications({
     journey: engineJourney,
     items,
@@ -94,6 +110,14 @@ export async function syncJourneyNotifications(
     prefs,
     // The engine has no clock (D-005), so the caller says what "now" is.
     now: new Date().toISOString(),
+  }).flatMap((draft): NotificationDraft[] => {
+    if (draft.type !== "leave_by") return [draft];
+    const item = draft.itemId ? ahead.get(draft.itemId) : undefined;
+    if (!item) return [];
+    const place =
+      (item.place_id ? labels.get(item.place_id) : undefined) ??
+      (item.experience_id ? labels.get(item.experience_id) : undefined);
+    return [place ? { ...draft, params: { ...draft.params, place } } : draft];
   });
 
   /*
@@ -102,29 +126,107 @@ export async function syncJourneyNotifications(
    * suppressed rows is a queue somebody eventually "fixes" by sending them.
    */
   const capped = applyWeeklyCap(drafts, await lastNonJourneySend(supabase, userId));
-  if (capped.length === 0) return { scheduled: 0 };
+  const wanted = new Map(capped.map((draft) => [draft.dedupeKey, draft]));
 
-  const existing = await existingKeys(supabase, userId, journeyId);
-  const fresh = capped.filter((draft) => !existing.has(draft.dedupeKey));
-  if (fresh.length === 0) return { scheduled: 0 };
-
-  // The only privileged write in this file, and it writes for exactly the user id the
-  // caller authenticated — never one taken from a request body.
-  const inserted = await createServiceRoleSupabase()
-    .from("notifications")
-    .insert(fresh.map((draft) => toRow(draft, userId, journeyId)));
+  // Service-role for the queue itself; the journey was read as the traveler above, so RLS has
+  // already established it is theirs, and every statement below is pinned to their user id.
+  const service = createServiceRoleSupabase();
+  const existing = await existingRows(service, userId, journeyId);
 
   /*
-   * THROWS rather than reporting zero. This line returned `{ scheduled: 0 }` on failure
-   * for the whole of B-027, and `service_role` had no grant on any table (0025), so it
-   * failed every single time — silently, while the traveler was told their reminders were
-   * set. A privileged write that cannot say it failed is worse than one that is missing.
-   *
-   * The caller is inside `withApi`, which turns a throw into an honest error response.
+   * PRD-NOTF-002: a plan that changed must not keep its old reminders. A scheduled reminder
+   * this journey no longer implies — or implies at another time, or for another place — is
+   * cancelled and the current one queued in its place. Sent ones are history and stay; so
+   * does anything this function did not derive (a Change Card, a reply to a report).
    */
-  mustWrite(inserted, "notifications insert");
+  const stale = existing.filter(
+    (row) =>
+      row.status === "scheduled" && DERIVED.test(row.key) && !matches(row, wanted.get(row.key)),
+  );
+  if (stale.length > 0) {
+    mustWrite(
+      await service
+        .from("notifications")
+        .update({ status: "cancelled" })
+        .in(
+          "id",
+          stale.map((row) => row.id),
+        )
+        .eq("user_id", userId)
+        .eq("status", "scheduled"),
+      "notifications cancel",
+    );
+  }
 
-  return { scheduled: fresh.length };
+  // Delivered, failed, or still correctly queued: never queued a second time.
+  const staleIds = new Set(stale.map((row) => row.id));
+  const taken = new Set(
+    existing
+      .filter((row) => row.status !== "cancelled" && !staleIds.has(row.id))
+      .map((row) => row.key),
+  );
+  const fresh = capped.filter((draft) => !taken.has(draft.dedupeKey));
+
+  if (fresh.length > 0) {
+    /*
+     * THROWS rather than reporting zero. This returned `{ scheduled: 0 }` on failure for the
+     * whole of B-027 while `service_role` had no grant (0025), so it failed every time —
+     * silently, while the traveler was told their reminders were set.
+     */
+    mustWrite(
+      await service
+        .from("notifications")
+        .insert(fresh.map((draft) => toRow(draft, userId, journeyId))),
+      "notifications insert",
+    );
+  }
+
+  return { scheduled: fresh.length, cancelled: stale.length };
+}
+
+/**
+ * Re-derive a journey's reminders after its plan changed, without ever failing that change:
+ * the traveler's edit stands, and a reminder that could not be rescheduled is reported.
+ */
+export async function resyncNotifications(
+  supabase: Client,
+  journeyId: string,
+  userId: string,
+  route: string,
+): Promise<void> {
+  try {
+    await syncJourneyNotifications(supabase, journeyId, userId);
+  } catch (error) {
+    reportError({ route, error, app: "web" });
+  }
+}
+
+/** The keys `syncJourneyNotifications` derives, and therefore owns. */
+const DERIVED = /^(prepare|tomorrow|leaveby):/;
+
+type ExistingRow = {
+  id: string;
+  key: string;
+  status: string;
+  scheduledFor: string | null;
+  place: string | null;
+};
+
+function matches(row: ExistingRow, draft: NotificationDraft | undefined): boolean {
+  if (!draft || row.scheduledFor === null) return false;
+  const place = draft.params?.["place"];
+  return (
+    Date.parse(row.scheduledFor) === Date.parse(draft.scheduledFor) &&
+    row.place === (place === undefined ? null : String(place))
+  );
+}
+
+async function profileLocale(supabase: Client, userId: string): Promise<string> {
+  const data = mustMaybe(
+    await supabase.from("profiles").select("locale").eq("id", userId).maybeSingle(),
+    "profiles",
+  );
+  return data?.locale && isLocale(data.locale) ? data.locale : "en";
 }
 
 function toRow(
@@ -154,26 +256,38 @@ function toRow(
   };
 }
 
-/** Dedupe keys already queued for this journey. */
-async function existingKeys(
-  supabase: Client,
+/** Every notification already derived for this journey, with what makes one stale. */
+async function existingRows(
+  service: ReturnType<typeof createServiceRoleSupabase>,
   userId: string,
   journeyId: string,
-): Promise<Set<string>> {
+): Promise<ExistingRow[]> {
   const data = mustList(
-    await supabase
+    await service
       .from("notifications")
-      .select("payload")
+      .select("id, payload, status, scheduled_for")
       .eq("user_id", userId)
       .eq("journey_id", journeyId),
     "notifications",
   );
 
-  return new Set(
-    data
-      .map((row) => (row.payload as { dedupeKey?: string } | null)?.dedupeKey)
-      .filter((key): key is string => !!key),
-  );
+  return data.flatMap((row) => {
+    const payload = (row.payload ?? {}) as {
+      dedupeKey?: string;
+      params?: Record<string, unknown>;
+    };
+    if (!payload.dedupeKey) return [];
+    const place = payload.params?.["place"];
+    return [
+      {
+        id: row.id,
+        key: payload.dedupeKey,
+        status: row.status,
+        scheduledFor: row.scheduled_for,
+        place: place === undefined ? null : String(place),
+      },
+    ];
+  });
 }
 
 /**
@@ -285,46 +399,56 @@ export async function markRead(supabase: Client, id: string): Promise<void> {
 }
 
 /**
- * The engine's keys, rendered.
+ * The engine's keys, rendered in the traveler's language (PRD F15, PRD-LANG-001).
  *
- * Beside the reader rather than in the engine, exactly like health causes and change
- * options — the engine states which notification applies, never how to say it. PRD §12.7's
- * voice throughout: no alarm words, no exclamation marks, and every one says what to do
- * rather than only what happened.
+ * From the same message catalogs as every screen, so a traveler reading Telugu gets their
+ * reminder in Telugu and a missing translation falls back to English rather than a key. The
+ * locale is the traveler's own at SEND time, never the one they happened to use when the row
+ * was queued. PRD §12.7's voice throughout: no alarm words, and every one says what to do.
  */
+const CATALOGS = { en, te, hi } as unknown as Record<string, AbstractIntlMessages>;
+
 export function render(
   key: string | undefined,
   params: Record<string, string | number>,
   locale: string,
 ): string {
-  void locale;
-  const minutes = String(params["minutes"] ?? "15");
-  const place = String(params["place"] ?? "your next stop");
-  const days = String(params["days"] ?? "");
-  const time = String(params["time"] ?? "");
+  if (!key?.startsWith("notify.")) return "";
 
-  return (
-    {
-      "notify.prepare_deadline.title": "Something needs booking",
-      "notify.prepare_deadline.body": days
-        ? `Booking opens ${days} days before, and that is coming up.`
-        : "A booking on your list is coming up.",
-      "notify.journey_tomorrow.title": "Your journey starts tomorrow",
-      "notify.journey_tomorrow.body": time
-        ? `The first thing is at ${time}. Everything is saved for offline.`
-        : "Everything is saved for offline.",
-      "notify.leave_by.title": "Time to head off",
-      "notify.leave_by.body": `About ${minutes} minutes to reach ${place}.`,
-      "notify.journey_change.title": "Something in your day changed",
-      "notify.journey_change.body": "There are a couple of ways through it when you're ready.",
-      "notify.report_resolved.title": "Thanks — we checked that",
-      "notify.report_resolved.body": "What you told us about has been looked at.",
-      "notify.advisory.title": "Worth knowing before you go",
-      "notify.advisory.body": "There's an advisory for somewhere on your journey.",
-      "notify.suggestion.title": "Something you might like",
-      "notify.suggestion.body": "Based on where you're going.",
-    }[key ?? ""] ?? ""
-  );
+  const has = (name: string) => params[name] !== undefined && String(params[name]) !== "";
+  const variant =
+    key === "notify.prepare_deadline.body" && has("days")
+      ? `${key}_days`
+      : key === "notify.journey_tomorrow.body" && has("time")
+        ? `${key}_time`
+        : key;
+
+  const chosen = lookup(CATALOGS[locale], variant) ? locale : "en";
+  const messages = CATALOGS[chosen]!;
+  if (!lookup(messages, variant)) return "";
+
+  const translate = createTranslator({ locale: chosen, messages }) as unknown as (
+    key: string,
+    values: Record<string, string>,
+  ) => string;
+
+  return translate(variant, {
+    minutes: String(params["minutes"] ?? "15"),
+    place: has("place")
+      ? String(params["place"])
+      : String(lookup(messages, "notify.defaults.next_stop") ?? ""),
+    days: String(params["days"] ?? ""),
+    time: String(params["time"] ?? ""),
+  });
+}
+
+function lookup(messages: AbstractIntlMessages | undefined, path: string): unknown {
+  let node: unknown = messages;
+  for (const part of path.split(".")) {
+    if (!node || typeof node !== "object") return undefined;
+    node = (node as Record<string, unknown>)[part];
+  }
+  return typeof node === "string" && node !== "" ? node : undefined;
 }
 
 const EMPTY_BUNDLE = {

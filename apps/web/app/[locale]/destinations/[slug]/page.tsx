@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SourcesFooter } from "@mandhira/ui";
 
 import { ExperienceCard } from "../../../../components/experience-card";
+import { PhrasesLink } from "../../../../components/phrases-link";
 import { PlaceCard } from "../../../../components/place-card";
 import { getDestinationPage } from "../../../../lib/knowledge";
 import { formatDate } from "../../../../lib/present";
@@ -142,6 +143,8 @@ export default async function DestinationPage({
           </ul>
         </section>
       ) : null}
+
+      <PhrasesLink locale={locale} destinationSlug={slug} />
 
       {/*
        * PRD F9: the oldest verification on the page, not the newest. The footer is a claim

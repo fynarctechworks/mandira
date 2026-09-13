@@ -206,6 +206,22 @@ session ends. There is no stuck lock to clear by hand.
 
 ---
 
+## Notifications or live feeds stopped
+
+They are dispatched by pg_cron, not Vercel (D-173). Check in this order:
+
+1. The Ops dashboard job panel: `send_notifications` / `refresh_live_feeds`.
+2. `select job_name, status, detail, started_at from job_runs where job_name in ('send_notifications','refresh_live_feeds') order by started_at desc limit 10;`
+   - `not_configured` — the Vault secrets are missing: see `docs/LAUNCH_KEYS.md` §4.
+   - `http_status: 401` — the Vault `mandhira_cron_secret` differs from the app's `CRON_SECRET`. Update one to match (Rotating a key, below).
+   - `http_status: 404` — `CRON_SECRET` is not set in the web project, or the URL in Vault is wrong.
+   - `timed_out` — the route took over 55 s; check Vercel's function logs for that minute.
+3. The route itself answers with a summary: `curl -H "Authorization: Bearer $CRON_SECRET" https://app.<domain>/api/cron/notifications` returns `sent`, `failed`, `cancelled` and `notConfigured` (which channels have no keys).
+
+## A server refuses to start
+
+In production both apps validate their configuration at start (`instrumentation.ts`) and refuse on anything `docs/LAUNCH_KEYS.md` marks required. The Vercel log names every problem on lines beginning `[env] BLOCK`. Fix the variable, redeploy. Running `node scripts/preflight.mjs --env production` with the same values shows the same list before deploying.
+
 ## What is still unproven
 
 Being honest about this is more useful than a longer runbook.

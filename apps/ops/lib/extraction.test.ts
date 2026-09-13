@@ -55,7 +55,21 @@ function providerWith(extractKnowledge: AiProvider["extractKnowledge"]): AiProvi
   } as unknown as AiProvider;
 }
 
-const base = { captureId: "c1", sourceId: "s1", sourceName: "Temple trust", captureText: "..." };
+/** Every call in these tests is inside the daily allowance unless a test says otherwise. */
+const allow = async () => ({
+  allowed: true,
+  remaining: 59,
+  resetAt: new Date(),
+  retryAfterSeconds: 0,
+});
+
+const base = {
+  captureId: "c1",
+  sourceId: "s1",
+  sourceName: "Temple trust",
+  captureText: "...",
+  limit: allow,
+};
 
 describe("extractFromCapture", () => {
   it("does nothing when no model is configured", async () => {
@@ -173,5 +187,30 @@ describe("extractFromCapture", () => {
       status: "unavailable",
       code: "timeout",
     });
+  });
+});
+
+describe("extractFromCapture's daily allowance (TRD §6.2 ops_ai_extract)", () => {
+  it("asks no model once the allowance is spent, and keys it on who started the run", async () => {
+    const { client } = fakeClient({ trust_records: trust }, { data: null, error: null });
+    const extractKnowledge = vi.fn();
+    const limit = vi.fn(async () => ({
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date(),
+      retryAfterSeconds: 3600,
+    }));
+
+    const outcome = await extractFromCapture({
+      ...base,
+      supabase: client,
+      provider: providerWith(extractKnowledge),
+      actor: "op-1",
+      limit,
+    });
+
+    expect(outcome).toEqual({ status: "unavailable", code: "rate_limited" });
+    expect(extractKnowledge).not.toHaveBeenCalled();
+    expect(limit).toHaveBeenCalledWith(client, "ops_ai_extract", "operator:op-1");
   });
 });

@@ -151,9 +151,7 @@ export const POST = withApi({
      * a saved journey into a failed request; the next edit re-runs it idempotently.
      */
     if (auth.user) {
-      await syncJourneyNotifications(supabase, journeyId, auth.user.id, "en").catch(
-        () => undefined,
-      );
+      await syncJourneyNotifications(supabase, journeyId, auth.user.id).catch(() => undefined);
     }
 
     return { journeyId, health: built.health };

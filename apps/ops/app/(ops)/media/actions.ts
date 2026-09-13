@@ -65,6 +65,46 @@ export const updateMedia = opsAction({
   },
 });
 
+/**
+ * Where the subject of an image is (PRD-OPS-CNT-003, migration 0036).
+ *
+ * The crop presets (hero 3:2, card 4:3) are ratios over the one original (D-055); this
+ * point is what each of them keeps in frame. A separate action from `updateMedia` so that
+ * framing an image never re-submits — or needs the form for — its licence and captions.
+ * Versioned and audited by the 0029 triggers like every other change to the row.
+ */
+export const setMediaFocalPoint = opsAction({
+  roles: ["media", "editor", "admin"],
+  input: z.object({
+    id: uuid,
+    focal_x: z.number().min(0).max(1),
+    focal_y: z.number().min(0).max(1),
+  }),
+  handler: async ({ input, supabase }) => {
+    // The column is numeric(4,3); rounding here means what is saved is what was previewed.
+    const focal_x = Math.round(input.focal_x * 1000) / 1000;
+    const focal_y = Math.round(input.focal_y * 1000) / 1000;
+
+    const { data, error } = await supabase
+      .from("media_assets")
+      .update({ focal_x, focal_y })
+      .eq("id", input.id)
+      .is("deleted_at", null)
+      .select("id, focal_x, focal_y")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      throw Object.assign(new Error("media asset not found"), {
+        userMessage: "That image isn't in the library any more. It may have been archived.",
+      });
+    }
+
+    revalidatePath("/media");
+    revalidatePath(`/media/${input.id}`);
+    return { id: data.id, focal_x: Number(data.focal_x), focal_y: Number(data.focal_y) };
+  },
+});
+
 /** Attaches an asset to an entity in a given role (hero, gallery, map, audio). */
 export const attachMedia = opsAction({
   roles: ["media", "editor", "admin"],

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { withApi } from "../../../../../../../lib/api";
 import { getJourney } from "../../../../../../../lib/journeys";
+import { resyncNotifications } from "../../../../../../../lib/notifications";
 
 /**
  * The three Live Journey actions (PRD-LIVE-002): Done, Running late, Stay longer.
@@ -38,7 +39,7 @@ export const PATCH = withApi({
   schema,
   requireAuth: true,
   rateLimit: "journeys_write",
-  handler: async ({ input, request, supabase }) => {
+  handler: async ({ input, request, supabase, user }) => {
     const { journeyId, itemId } = idsFrom(request);
 
     // RLS means another traveler's item is not visible at all, so a mismatch is a 404
@@ -96,6 +97,13 @@ export const PATCH = withApi({
 
     // Fresh items AND fresh health, for the same reason every other mutation returns both:
     // a screen showing yesterday's verdict on today's plan is the failure this guards.
+    // A done or skipped item needs no leave-by; one running late moves what follows.
+    await resyncNotifications(
+      supabase,
+      journeyId,
+      user!.id,
+      "PATCH /api/journeys/:id/items/:itemId/status",
+    );
     const updated = await getJourney(supabase, journeyId, "en");
     return { items: updated?.items ?? [], health: updated?.health ?? null };
   },

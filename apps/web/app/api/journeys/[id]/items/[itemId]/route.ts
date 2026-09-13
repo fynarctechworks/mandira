@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { withApi } from "../../../../../../lib/api";
 import { getJourney } from "../../../../../../lib/journeys";
+import { resyncNotifications } from "../../../../../../lib/notifications";
 
 /**
  * Item mutations (TRD §5.2, PRD-PLAN-003).
@@ -53,7 +54,7 @@ export const PATCH = withApi({
   schema: patchSchema,
   requireAuth: true,
   rateLimit: "journeys_write",
-  handler: async ({ input, request, supabase }) => {
+  handler: async ({ input, request, supabase, user }) => {
     const { journeyId, itemId } = idsFrom(request);
     const detail = await getJourney(supabase, journeyId, "en");
     if (!detail) throw new ApiError("not_found");
@@ -90,6 +91,7 @@ export const PATCH = withApi({
 
     // Fresh items AND fresh health. Returning one without the other lets a screen show
     // yesterday's verdict on today's plan.
+    await resyncNotifications(supabase, journeyId, user!.id, "journey item change");
     const updated = await getJourney(supabase, journeyId, "en");
     return { items: updated?.items ?? [], health: updated?.health ?? null };
   },
@@ -104,7 +106,7 @@ export const DELETE = withApi({
   schema: z.object({ confirmed: z.literal("true").optional() }),
   requireAuth: true,
   rateLimit: "journeys_write",
-  handler: async ({ input, request, supabase }) => {
+  handler: async ({ input, request, supabase, user }) => {
     const { journeyId, itemId } = idsFrom(request);
     const detail = await getJourney(supabase, journeyId, "en");
     if (!detail) throw new ApiError("not_found");
@@ -128,6 +130,7 @@ export const DELETE = withApi({
 
     if (error) throw error;
 
+    await resyncNotifications(supabase, journeyId, user!.id, "journey item change");
     const updated = await getJourney(supabase, journeyId, "en");
     return { items: updated?.items ?? [], health: updated?.health ?? null };
   },

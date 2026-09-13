@@ -11,9 +11,9 @@ type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message
  * Magic link, and no password field — passwords are not an auth method for Mandhira, and
  * offering one would imply otherwise.
  *
- * The one substantive difference from the Ops form: `shouldCreateUser` is TRUE here. An
- * Ops account is created by an admin; a traveler arriving to keep a journey they have just
- * built should not meet a wall telling them to sign up first.
+ * The link is requested through `POST /api/auth/magic-link`, so TRD §6.2's limit of five an
+ * hour holds per device and per address (TRD-SEC-001). An account is created on first sign-in:
+ * a traveler arriving to keep a journey they have just built should not meet a sign-up wall.
  *
  * Copy follows PRD §12.7 — no "error"/"failed", and each state says what to do next.
  */
@@ -21,37 +21,24 @@ export function SignInForm({ next }: { next: string }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
-  const redirectTo =
-    typeof window === "undefined"
-      ? undefined
-      : `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-
   async function sendMagicLink(event: React.FormEvent) {
     event.preventDefault();
     setStatus({ kind: "sending" });
 
-    /*
-     * Imported here rather than at module scope (B-024's perf budget).
-     *
-     * `@supabase/ssr` pulls in supabase-js, and statically importing it put ~70 kB of
-     * client JS on this route — for a form with one text field, on the screen a traveler
-     * reaches when they are already committed and least patient. It is needed only once
-     * they actually tap send, so it loads then.
-     */
-    const { createBrowserSupabase } = await import("@mandhira/db/client/browser");
-    const supabase = createBrowserSupabase();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
-        shouldCreateUser: true,
-      },
-    });
+    const response = await fetch("/api/auth/magic-link", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, next }),
+    }).catch(() => null);
+    const payload = response ? await response.json().catch(() => null) : null;
 
-    if (error) {
+    if (!payload?.ok) {
       setStatus({
         kind: "problem",
-        message: "We couldn't send that link just now. Please try again in a moment.",
+        message:
+          payload?.error?.code === "rate_limited"
+            ? "That's a few links in a short time. Please wait a little and try again."
+            : "We couldn't send that link just now. Please try again in a moment.",
       });
       return;
     }

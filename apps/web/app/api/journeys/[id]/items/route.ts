@@ -106,7 +106,7 @@ export const POST = withApi({
     const updated = await rescheduleDays(supabase, journeyId, [input.dayIndex]);
 
     // A reminder that failed to queue must not turn a saved item into a failed request.
-    await syncJourneyNotifications(supabase, journeyId, user!.id, "en").catch(() => undefined);
+    await syncJourneyNotifications(supabase, journeyId, user!.id).catch(() => undefined);
 
     return {
       itemId: inserted?.id ?? null,

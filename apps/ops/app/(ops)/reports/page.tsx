@@ -1,4 +1,8 @@
+import { getOpsRoles } from "@mandhira/db/client/roles";
+import { createServiceRoleSupabase } from "@mandhira/db/client/server";
+
 import { ReportsQueue, type ReportRow } from "@/components/reports-queue";
+import { mayViewReportPhotos, signReportPhotos } from "@/lib/report-photos";
 import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Reports · Mandhira Ops" };
@@ -21,7 +25,9 @@ export default async function ReportsPage() {
   const { data, error } = await supabase
     .from("user_reports")
     .select(
-      "id, report_type, entity_table, entity_id, field_name, description, status, locale, created_at, resolved_at, resolution_note, notified_user, user_id",
+      // No `user_id`: 0030 withholds it from every client role by column (PRD §10), so
+      // asking for it refuses the whole read.
+      "id, report_type, entity_table, entity_id, field_name, description, status, locale, created_at, resolved_at, resolution_note, notified_user, media_id",
     )
     // Oldest unresolved first: a queue sorted newest-first is a queue where the oldest
     // report is never reached.
@@ -29,7 +35,23 @@ export default async function ReportsPage() {
     .order("created_at", { ascending: true })
     .limit(200);
 
-  const rows = (data ?? []) as ReportRow[];
+  const read = (data ?? []) as Omit<ReportRow, "photoUrl">[];
+
+  /*
+   * Report photos (PRD F14, D-016). Signed here, for 15 minutes, and only for reports the
+   * operator just read through RLS — the ids come from that read, never from the request.
+   * The role check repeats PRD §10's list rather than relying on the read being empty.
+   */
+  const photoIds = read.flatMap((row) => (row.media_id ? [row.media_id] : []));
+  const signed =
+    photoIds.length > 0 && mayViewReportPhotos(await getOpsRoles(supabase))
+      ? await signReportPhotos(createServiceRoleSupabase(), photoIds)
+      : null;
+
+  const rows: ReportRow[] = read.map((row) => ({
+    ...row,
+    photoUrl: row.media_id ? (signed?.get(row.media_id) ?? null) : null,
+  }));
   const open = rows.filter((row) => row.status === "new" || row.status === "triaged");
 
   return (

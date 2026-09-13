@@ -37,7 +37,7 @@ function largeJourney(): { journey: Journey; items: JourneyItem[]; knowledge: Kn
       day_index: day,
       sort_order: n,
       item_type: "experience",
-      tier: (["protected", "important", "optional"] as const)[n % 3],
+      tier: (["protected", "important", "optional"] as const)[n % 3]!,
       experience_id: `e${n}`,
       place_id: `p${n}`,
       duration_likely_minutes: 45 + (n % 4) * 15,

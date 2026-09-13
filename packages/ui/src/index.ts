@@ -66,3 +66,14 @@ export type { OpsDataTableProps } from "./components/ops-data-table";
 export { Input } from "./components/input";
 export { Label } from "./components/label";
 export { Alert, AlertDescription, AlertTitle } from "./components/alert";
+
+/* Crop presets and focal points for media (PRD-OPS-CNT-003, migration 0036). */
+export {
+  CENTRE_FOCAL_POINT,
+  MEDIA_CROP_PRESETS,
+  clampFocal,
+  focalObjectPosition,
+  focalPointOf,
+  nudgeFocal,
+} from "./lib/media-crop";
+export type { FocalPoint, MediaCropPreset } from "./lib/media-crop";

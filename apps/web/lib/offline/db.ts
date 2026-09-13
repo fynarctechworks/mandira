@@ -106,8 +106,13 @@ export type MandhiraDb = Dexie & {
  * Version 2 adds `pending_actions` (B-033). Dexie creates a new store on upgrade without
  * touching the existing ones, so a traveler mid-journey keeps their snapshot — which is the
  * point of bumping deliberately rather than renaming the database.
+ *
+ * Version 3 marks the first time `phrases` is written (PRD-LANG-004): the snapshot now
+ * carries the destination's phrase pack, and `v_published_phrases` gained `audio_path`
+ * (0035). No store's keys or indexes change, so the upgrade touches nothing already stored.
+ * Universal phrases are stored under `destination_id = "*"` (see `phrases-local.ts`).
  */
-export const SNAPSHOT_VERSION = 2;
+export const SNAPSHOT_VERSION = 3;
 
 let instance: MandhiraDb | undefined;
 let opening: Promise<MandhiraDb> | undefined;
@@ -154,6 +159,8 @@ export async function db(): Promise<MandhiraDb> {
      */
     dexie.version(1).stores(stores);
     dexie.version(2).stores({ ...stores, pending_actions: "id, created_at" });
+    // Same stores: version 3 changes what `phrases` holds, not how it is keyed.
+    dexie.version(3).stores({ ...stores, pending_actions: "id, created_at" });
 
     instance = dexie;
     return dexie;

@@ -28,12 +28,13 @@ describe("editorPath", () => {
   it("links detail editors by id and list editors by screen", () => {
     expect(editorPath("places", "p1")).toBe("/places/p1");
     expect(editorPath("advisories", "a1")).toBe("/advisories/a1");
+    expect(editorPath("phrases", "ph1")).toBe("/phrases/ph1");
+    expect(editorPath("phrases", null)).toBe("/phrases");
     expect(editorPath("transport_connections", "t1")).toBe("/transport");
     expect(editorPath("guidance_blocks", "g1")).toBe("/guidance");
   });
 
   it("returns null for entities with no screen", () => {
-    expect(editorPath("phrases", "x")).toBeNull();
     expect(editorPath("availability_rules", "x")).toBeNull();
   });
 });

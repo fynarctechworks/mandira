@@ -1,7 +1,10 @@
 "use client";
 
 import { BottomSheet, Button } from "@mandhira/ui";
-import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+
+import { prepareReportPhoto, type PreparedReportPhoto } from "../lib/report-photo";
 
 /**
  * "Report a change" (PRD F14, PRD-REPT-001).
@@ -45,6 +48,52 @@ export function ReportAChange({
   const [description, setDescription] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "problem">("idle");
 
+  /*
+   * One optional photo (PRD F14, D-016). It is redrawn through a canvas on the device
+   * before anything leaves it, which removes EXIF — including where it was taken — and
+   * shrinks it for a 4G connection (lib/report-photo). The server checks it again.
+   */
+  const t = useTranslations("reportPhoto");
+  const [photo, setPhoto] = useState<PreparedReportPhoto | null>(null);
+  const [photoState, setPhotoState] = useState<"none" | "preparing" | "ready" | "unusable">("none");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [photoInputKey, setPhotoInputKey] = useState(0);
+  const [photoAttached, setPhotoAttached] = useState(true);
+
+  // The preview is an object URL: released when it is replaced, and when the sheet goes.
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
+
+  function clearPhoto(next: "none" | "unusable") {
+    setPhoto(null);
+    setPreviewUrl(null);
+    setPhotoState(next);
+    // A fresh input, so choosing the same file again still counts as a change.
+    setPhotoInputKey((key) => key + 1);
+  }
+
+  async function pickPhoto(file: File | undefined) {
+    if (!file) {
+      clearPhoto("none");
+      return;
+    }
+
+    setPhotoState("preparing");
+    const prepared = await prepareReportPhoto(file);
+    if (!prepared) {
+      clearPhoto("unusable");
+      return;
+    }
+
+    setPhoto(prepared);
+    setPreviewUrl(URL.createObjectURL(prepared.blob));
+    setPhotoState("ready");
+  }
+
   async function send() {
     setState("sending");
 
@@ -58,6 +107,7 @@ export function ReportAChange({
         locale,
         ...(fieldName ? { fieldName } : {}),
         ...(description.trim() ? { description: description.trim() } : {}),
+        ...(photo ? { photo: photo.base64 } : {}),
         /*
          * No journeyId. PRD F14 attaches journey context WITH CONSENT, and nobody has been
          * asked here — so it is left off rather than quietly included because it would be
@@ -67,7 +117,17 @@ export function ReportAChange({
     });
 
     const payload = await response.json().catch(() => ({ ok: false }));
-    setState(payload.ok ? "sent" : "problem");
+
+    if (payload.ok) {
+      setPhotoAttached(!photo || payload.data?.photoAttached === true);
+      setState("sent");
+    } else if (payload.error?.fieldErrors?.photo) {
+      // Only the photo was refused; nothing was filed, and the rest of the form is kept.
+      clearPhoto("unusable");
+      setState("idle");
+    } else {
+      setState("problem");
+    }
   }
 
   return (
@@ -85,6 +145,9 @@ export function ReportAChange({
           <div className="flex flex-col gap-3">
             {/* PRD F14's exact promise. Not "fixed", not "updated" — verified. */}
             <p className="text-body">Thanks — our team will verify this.</p>
+            {photoAttached ? null : (
+              <p className="text-body-sm text-text-secondary">{t("notAttached")}</p>
+            )}
             <p className="text-body-sm text-text-secondary">
               Nothing changes on the page until someone has checked it against a source. If enough
               people report the same thing, we&apos;ll mark it as worth checking locally in the
@@ -131,13 +194,65 @@ export function ReportAChange({
               </p>
             </div>
 
+            <div className="flex flex-col gap-2">
+              {photo && previewUrl ? (
+                <>
+                  <p className="text-body-sm font-medium">{t("label")}</p>
+                  <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL; next/image cannot optimise it */}
+                    <img
+                      src={previewUrl}
+                      alt={t("previewAlt")}
+                      className="size-20 rounded-lg border border-border object-cover"
+                    />
+                    <Button variant="secondary" onClick={() => clearPhoto("none")}>
+                      {t("remove")}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="report-photo" className="text-body-sm font-medium">
+                    {t("label")}
+                  </label>
+                  <input
+                    key={photoInputKey}
+                    id="report-photo"
+                    type="file"
+                    accept="image/*"
+                    aria-describedby="report-photo-hint"
+                    disabled={photoState === "preparing"}
+                    onChange={(event) => void pickPhoto(event.target.files?.[0])}
+                    className="focus-ring min-h-11 rounded-lg border border-border bg-bg-surface p-2 text-body-sm"
+                  />
+                </>
+              )}
+              <p id="report-photo-hint" className="text-caption text-text-secondary">
+                {t("hint")} {t("visibility")}
+              </p>
+              {photoState === "preparing" ? (
+                <p role="status" className="text-caption text-text-secondary">
+                  {t("preparing")}
+                </p>
+              ) : null}
+              {photoState === "unusable" ? (
+                <p role="alert" className="text-body-sm text-status-tight">
+                  {t("unusable")}
+                </p>
+              ) : null}
+            </div>
+
             {state === "problem" ? (
               <p role="alert" className="text-body-sm text-status-broken">
                 That didn&apos;t send. Please try again.
               </p>
             ) : null}
 
-            <Button onClick={() => void send()} disabled={state === "sending"} fullWidth>
+            <Button
+              onClick={() => void send()}
+              disabled={state === "sending" || photoState === "preparing"}
+              fullWidth
+            >
               {state === "sending" ? "Sending…" : "Send"}
             </Button>
           </div>

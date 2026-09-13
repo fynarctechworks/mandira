@@ -59,6 +59,7 @@ export function editorPath(table: string, id: string | null): string | null {
     case "experiences":
     case "routes":
     case "advisories":
+    case "phrases":
     case "sources":
       return id ? `/${table}/${id}` : `/${table}`;
     case "transport_connections":

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { withApi } from "../../../../../lib/api";
 import { mustWrite } from "../../../../../lib/data-error";
 import { getJourney } from "../../../../../lib/journeys";
+import { resyncNotifications } from "../../../../../lib/notifications";
 import { rescheduleDays } from "../../../../../lib/replan";
 
 /**
@@ -23,7 +24,7 @@ export const POST = withApi({
   schema,
   requireAuth: true,
   rateLimit: "journeys_write",
-  handler: async ({ input, request, supabase }) => {
+  handler: async ({ input, request, supabase, user }) => {
     const journeyId = new URL(request.url).pathname.split("/").filter(Boolean).at(-2) ?? "";
 
     const detail = await getJourney(supabase, journeyId, "en");
@@ -50,6 +51,8 @@ export const POST = withApi({
     mustWrite({ error }, "reorder_journey_items");
 
     const updated = await rescheduleDays(supabase, journeyId, [input.dayIndex]);
+    // After rescheduling, so the reminders follow the new times.
+    await resyncNotifications(supabase, journeyId, user!.id, "POST /api/journeys/:id/reorder");
     return { items: updated?.items ?? [], health: updated?.health ?? null };
   },
 });

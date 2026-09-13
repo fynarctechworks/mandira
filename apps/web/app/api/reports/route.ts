@@ -1,7 +1,17 @@
 import { ApiError } from "@mandhira/db/api";
+import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { z } from "zod";
 
 import { DEVICE_COOKIE, withApi } from "../../../lib/api";
+import { reportServerError } from "../../../lib/report";
+import {
+  REPORT_PHOTO_BASE64_MAX,
+  base64ToBytes,
+  sanitizeReportPhoto,
+} from "../../../lib/report-photo";
+import { storeReportPhoto } from "../../../lib/report-photo-store";
+
+const PHOTO_UNUSABLE = "That photo can't be used. Try another one, or send the report without it.";
 
 /**
  * A traveler telling us something is wrong (PRD F14, PRD-REPT-001/002).
@@ -53,6 +63,17 @@ const schema = z.object({
    */
   journeyId: z.string().uuid().optional(),
   locale: z.string().max(8).optional(),
+  /**
+   * PRD F14's optional photo (M4, D-016): one JPEG, base64, already re-encoded on the
+   * device. Only the bytes are accepted — no name, path, bucket or content type, because
+   * the server decides all of those (lib/report-photo). The ceiling keeps the whole
+   * request comfortably inside a serverless body limit.
+   */
+  photo: z
+    .string()
+    .max(REPORT_PHOTO_BASE64_MAX, PHOTO_UNUSABLE)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, PHOTO_UNUSABLE)
+    .optional(),
 });
 
 export const POST = withApi({
@@ -61,6 +82,18 @@ export const POST = withApi({
   rateLimit: "reports_create",
   handler: async ({ input, request, supabase, user }) => {
     /*
+     * The photo is checked before anything is written, so an unusable one costs the
+     * traveler a retry rather than a half-filed report. The device already stripped EXIF;
+     * this strips it again, because the device is not the one we trust.
+     */
+    const photo = input.photo
+      ? sanitizeReportPhoto(base64ToBytes(input.photo) ?? new Uint8Array())
+      : null;
+    if (input.photo && !photo) {
+      throw new ApiError("invalid", PHOTO_UNUSABLE, { photo: [PHOTO_UNUSABLE] });
+    }
+
+    /*
      * The reporter hash tells three separate people apart from one person reporting three
      * times — the distinction PRD-REPT-004's downgrade rule turns on. Derived from the
      * device cookie, never from an IP: TRD §6.2 keys on sessions and DPDP treats an IP as
@@ -68,24 +101,46 @@ export const POST = withApi({
      */
     const reporterHash = await hashOf(deviceIdFrom(request));
 
-    const { error } = await supabase.from("user_reports").insert({
-      user_id: user!.id,
-      reporter_hash: reporterHash,
-      report_type: input.reportType,
-      entity_table: input.entityTable,
-      entity_id: input.entityId,
-      field_name: input.fieldName ?? null,
-      description: input.description ?? null,
-      journey_id: input.journeyId ?? null,
-      locale: input.locale ?? null,
-      client_created_at: new Date().toISOString(),
-    });
+    const { data, error } = await supabase
+      .from("user_reports")
+      .insert({
+        user_id: user!.id,
+        reporter_hash: reporterHash,
+        report_type: input.reportType,
+        entity_table: input.entityTable,
+        entity_id: input.entityId,
+        field_name: input.fieldName ?? null,
+        description: input.description ?? null,
+        journey_id: input.journeyId ?? null,
+        locale: input.locale ?? null,
+        client_created_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
 
-    if (error) throw new ApiError("failed");
+    if (error || !data) throw new ApiError("failed");
+
+    /*
+     * The report is filed; the photo is added to it. If the photo cannot be stored the
+     * report still stands — what the traveler saw matters more than the picture of it —
+     * and the response says the photo did not arrive rather than letting them assume.
+     */
+    let photoAttached = false;
+    if (photo) {
+      const stored = await storeReportPhoto(createServiceRoleSupabase(), data.id, photo);
+      photoAttached = stored.ok;
+      if (!stored.ok) {
+        reportServerError({
+          route: "POST /api/reports",
+          error: stored.cause ?? new Error(`report photo not stored at ${stored.stage}`),
+          app: "web",
+        });
+      }
+    }
 
     // PRD F14's own words, and the whole promise: somebody will look, and it will not be
     // published until they have.
-    return { received: true, message: "Thanks — our team will verify this." };
+    return { received: true, photoAttached, message: "Thanks — our team will verify this." };
   },
 });
 

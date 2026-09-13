@@ -64,6 +64,10 @@ export function contentSecurityPolicy({ supabaseUrl, isDev = false } = {}) {
     // but will need it the day ACCT-03 arrives.
     "img-src": ["'self'", "data:", "blob:", supabase, "https://*.maptiler.com"],
 
+    // Phrase audio (PRD F12, A17), streamed from the Supabase media bucket. Without this,
+    // `default-src 'self'` silently refuses every recording.
+    "media-src": ["'self'", supabase],
+
     "connect-src": [
       "'self'",
       supabase,

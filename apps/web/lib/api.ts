@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { createWithApi } from "@mandhira/db/api";
 import { getOpsRoles } from "@mandhira/db/client/roles";
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
-import { reportError } from "@mandhira/db/reporting";
 
+import { reportServerError } from "./report";
 import { webSupabase } from "./supabase";
 
 /**
@@ -22,7 +22,7 @@ export const withApi = createWithApi({
    * seam, not Sentry itself — see `packages/db/src/reporting.ts` for why, and for what is
    * deliberately never included in a report.
    */
-  onUnexpected: (error, context) => reportError({ route: context.route, error, app: "web" }),
+  onUnexpected: (error, context) => reportServerError({ route: context.route, error, app: "web" }),
 });
 
 /** The cookie B-019's guest draft sets; named here so both halves agree on it. */

@@ -218,6 +218,7 @@ export async function runIngestionForSource(
     sourceId,
     sourceName: source.name,
     captureText: capture.text,
+    actor: triggeredBy,
   }).catch((cause: unknown) => {
     console.error("[ingestion] extraction not recorded", cause);
     return { status: "unavailable", code: "record_failed" };

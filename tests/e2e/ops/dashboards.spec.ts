@@ -67,8 +67,12 @@ test.describe("O22 — Product signals", () => {
     await page.goto("/signals");
     await expect(page.getByRole("heading", { name: "Product signals" })).toBeVisible();
 
-    await page.getByRole("link", { name: "Last 7 days" }).click();
-    await expect(page).toHaveURL(/days=7/);
+    // A click that lands while the page is still hydrating can be dropped (see admin.spec O20),
+    // so the step is retried until the window it asked for is in the URL.
+    await expect(async () => {
+      await page.getByRole("link", { name: "Last 7 days" }).click();
+      await expect(page).toHaveURL(/days=7/, { timeout: 3_000 });
+    }).toPass({ timeout: 20_000 });
     await expect(page.getByRole("link", { name: "Last 7 days" })).toHaveAttribute(
       "aria-current",
       "page",

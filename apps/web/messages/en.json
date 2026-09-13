@@ -370,5 +370,79 @@
     "add_closest": "Add {name}",
     "added_closest": "Added to what you would like to do",
     "no_closest": "Nothing published is close to this yet."
+  },
+  "notify": {
+    "defaults": {
+      "next_stop": "your next stop"
+    },
+    "prepare_deadline": {
+      "title": "Something needs booking",
+      "body": "A booking on your list is coming up.",
+      "body_days": "Booking opens {days} days before, and that is coming up."
+    },
+    "journey_tomorrow": {
+      "title": "Your journey starts tomorrow",
+      "body": "Everything is saved for offline.",
+      "body_time": "The first thing is at {time}. Everything is saved for offline."
+    },
+    "leave_by": {
+      "title": "Time to head off",
+      "body": "About {minutes} minutes to reach {place}."
+    },
+    "journey_change": {
+      "title": "Something in your day changed",
+      "body": "There are a couple of ways through it when you're ready."
+    },
+    "report_resolved": {
+      "title": "Thanks — we checked that",
+      "body": "What you told us about has been looked at."
+    },
+    "advisory": {
+      "title": "Worth knowing before you go",
+      "body": "There's an advisory for somewhere on your journey."
+    },
+    "suggestion": {
+      "title": "Something you might like",
+      "body": "Based on where you're going."
+    }
+  },
+  "reportPhoto": {
+    "label": "Add a photo (optional)",
+    "hint": "One photo. It is made smaller, and hidden details such as where it was taken are removed before it is sent.",
+    "visibility": "Only the team checking reports sees it.",
+    "preparing": "Getting the photo ready…",
+    "previewAlt": "The photo you are adding to this report",
+    "remove": "Remove photo",
+    "unusable": "That photo can't be used. Try another one, or send the report without it.",
+    "notAttached": "Your report was sent without the photo, because the photo couldn't be stored. Our team will still check it."
+  },
+  "phrases": {
+    "title": "Phrases",
+    "intro": "Short phrases for {destination}, by situation. Play one, or show it to someone.",
+    "back": "Back to {destination}",
+    "link": "Phrases to show or play",
+    "open": "Phrases",
+    "sheet_title": "Phrases",
+    "sheet_description": "Kept on this device, so they work without a signal.",
+    "loading": "Opening your phrases",
+    "empty": "No phrases have been published for this destination yet.",
+    "empty_offline": "No phrases are kept on this device for this destination yet. They are saved the next time your journey opens with a signal.",
+    "contexts_label": "Situations",
+    "context_directions": "Directions",
+    "context_queue": "Queue",
+    "context_facilities": "Facilities",
+    "context_medical": "Medical",
+    "context_dietary": "Food",
+    "context_greeting": "Greetings",
+    "context_help": "Help",
+    "say_in": "In {language}",
+    "means": "Means",
+    "not_in_language": "Not yet available in your language",
+    "play": "Play",
+    "play_label": "Play the phrase: {phrase}",
+    "show": "Show to someone",
+    "show_label": "Show to someone: {phrase}",
+    "show_done": "Done",
+    "audio_unavailable": "The recording can't play right now, because it needs a signal. The words are all here."
   }
 }

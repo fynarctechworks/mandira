@@ -26,7 +26,12 @@ export type ReportRow = {
   resolved_at: string | null;
   resolution_note: string | null;
   notified_user: boolean;
-  user_id: string | null;
+  media_id: string | null;
+  /**
+   * A 15-minute signed URL made on the server (lib/report-photos). Null when there is no
+   * photo, or when there is one that could not be signed — `media_id` tells them apart.
+   */
+  photoUrl: string | null;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -99,14 +104,44 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
                 <p className="text-body-sm text-text-tertiary">No description given.</p>
               )}
 
+              {row.media_id ? (
+                row.photoUrl ? (
+                  <figure className="flex flex-col gap-1">
+                    <a
+                      href={row.photoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-ring self-start"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL from a private bucket; next/image would cache it */}
+                      <img
+                        src={row.photoUrl}
+                        alt="Photo sent with this report"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        className="max-h-64 w-auto max-w-full rounded-lg border border-border object-contain"
+                      />
+                    </a>
+                    <figcaption className="text-caption text-text-secondary">
+                      Photo from the reporter. Select it to open full size. The link lasts 15
+                      minutes — refresh the page for a new one.
+                    </figcaption>
+                  </figure>
+                ) : (
+                  <p className="text-body-sm text-status-tight">
+                    This report has a photo, but it didn&apos;t load. Refresh the page to try again.
+                  </p>
+                )
+              ) : null}
+
               {resolved ? (
                 <p className="text-body-sm text-text-secondary">
                   {row.resolution_note ? `“${row.resolution_note}” · ` : ""}
-                  {row.user_id
-                    ? row.notified_user
-                      ? "The reporter has been told."
-                      : "The reporter has not been told yet."
-                    : "Reported by a guest — nobody to notify."}
+                  {/* Whether the reporter has an account is not readable by Ops (0030 withholds
+                      user_id), so this says only what is known. */}
+                  {row.notified_user
+                    ? "The reporter has been told."
+                    : "The reporter has not been told."}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">

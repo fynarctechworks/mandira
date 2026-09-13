@@ -67,6 +67,17 @@ export async function GET(request: Request): Promise<Response> {
     .lte("scheduled_for", new Date().toISOString())
     .limit(BATCH);
 
+  /*
+   * Each traveler's own language, read at send time (PRD-LANG-001): a reminder queued while
+   * they used English still arrives in Telugu if that is what they use now.
+   */
+  const userIds = [...new Set((due ?? []).map((row) => row.user_id))];
+  const { data: profiles } =
+    userIds.length > 0
+      ? await supabase.from("profiles").select("id, locale").in("id", userIds)
+      : { data: [] };
+  const localeOf = new Map((profiles ?? []).map((profile) => [profile.id, profile.locale]));
+
   let sent = 0;
   let failed = 0;
   let cancelled = 0;
@@ -85,6 +96,7 @@ export async function GET(request: Request): Promise<Response> {
     if (row.channel === "email") {
       const outcome = await deliverEmail(row, {
         provider: email,
+        locale: localeOf.get(row.user_id) ?? "en",
         prefsOf: async (userId) => {
           const { data } = await supabase
             .from("profiles")
@@ -135,10 +147,11 @@ export async function GET(request: Request): Promise<Response> {
 
     const params =
       ((row.payload ?? {}) as { params?: Record<string, string | number> }).params ?? {};
+    const locale = localeOf.get(row.user_id) ?? "en";
     const message = {
-      title: render((row.title_i18n as { key?: string } | null)?.key, params, "en"),
-      body: render((row.body_i18n as { key?: string } | null)?.key, params, "en"),
-      ...(row.journey_id ? { url: `/en/journeys/${row.journey_id}` } : {}),
+      title: render((row.title_i18n as { key?: string } | null)?.key, params, locale),
+      body: render((row.body_i18n as { key?: string } | null)?.key, params, locale),
+      ...(row.journey_id ? { url: `/${locale}/journeys/${row.journey_id}` } : {}),
       // Collapses a superseded reminder rather than stacking two leave-bys for one leg.
       tag: `${row.notification_type}:${row.journey_id ?? "none"}`,
     };

@@ -95,7 +95,7 @@ export const PATCH = withApi({
 
     if (movesTheClock) {
       // A reminder that failed to queue must not undo a saved edit; the next edit re-runs it.
-      await syncJourneyNotifications(supabase, journeyId, user!.id, "en").catch(() => undefined);
+      await syncJourneyNotifications(supabase, journeyId, user!.id).catch(() => undefined);
     }
 
     return { journey: updated?.journey ?? null, health: updated?.health ?? null };

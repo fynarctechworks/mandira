@@ -4,6 +4,7 @@ import { getOpsRoles } from "@mandhira/db/client/roles";
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { rateLimit } from "@mandhira/db/rate-limit";
 import { opsSupabase } from "./supabase";
+import { reportServerError } from "@/lib/report";
 
 /**
  * Server Action wrapper — the Ops equivalent of the `withApi` route wrapper described in
@@ -119,7 +120,7 @@ export function opsAction<TSchema extends z.ZodType, TResult>(config: {
         };
       }
       // Never surface a stack trace or driver message to the client (TRD-API-001).
-      console.error("[opsAction]", cause);
+      reportServerError({ route: "ops server action", error: cause, app: "ops" });
       return {
         ok: false,
         error: { code: "failed", message: "That didn't save. Please try again." },

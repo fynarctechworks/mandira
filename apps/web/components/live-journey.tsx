@@ -17,6 +17,7 @@ import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
 import { OfflineNotice } from "./offline-notice";
 import { OpenInMaps } from "./open-in-maps";
+import { PhraseShortcut } from "./phrase-shortcut";
 
 /**
  * Live Journey — NOW / NEXT / LATER (PRD F8, LIVE-01..04).
@@ -436,6 +437,11 @@ export function LiveJourney({
         >
           Actually, not done yet
         </button>
+      ) : null}
+
+      {/* PRD-LIVE-002's phrase shortcut — beside the NOW card, never one of its three actions. */}
+      {view.destinationId ? (
+        <PhraseShortcut destinationId={view.destinationId} locale={locale} />
       ) : null}
 
       {/* ── NEXT ────────────────────────────────────────────────────────────── */}

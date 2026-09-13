@@ -70,6 +70,7 @@ function snapshot(over: Partial<JourneySnapshot> = {}): JourneySnapshot {
       },
     ],
     prepareTasks: [{ id: "task-1", payload: { id: "task-1", engine_key: "booking:item-1" } }],
+    phrases: [],
     syncedAt: "2026-08-26T10:00:00.000Z",
     ...over,
   };

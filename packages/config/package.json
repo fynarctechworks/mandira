@@ -11,7 +11,8 @@
     "./eslint/next": "./eslint/next.js",
     "./tailwind/preset.css": "./tailwind/preset.css",
     "./tailwind/shadcn-bridge.css": "./tailwind/shadcn-bridge.css",
-    "./security-headers": "./security-headers.mjs"
+    "./security-headers": "./security-headers.mjs",
+    "./env-rules": "./env-rules.mjs"
   },
   "dependencies": {
     "@eslint/js": "^9.34.0",

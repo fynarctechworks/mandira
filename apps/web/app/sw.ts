@@ -103,4 +103,63 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// ── Push (PRD F15) ──────────────────────────────────────────────────────────────────────
+/*
+ * Without these two listeners a push reached the device and was never shown: the cron sent
+ * it, the push service delivered it, and the traveler saw nothing.
+ */
+type PushPayload = { title?: unknown; body?: unknown; url?: unknown; tag?: unknown };
+
+/** Only a path on this origin may be opened from a notification, never another site. */
+function safePath(value: unknown): string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
+    ? value
+    : "/";
+}
+
+self.addEventListener("push", (event) => {
+  let payload: PushPayload = {};
+  try {
+    payload = (event.data?.json() ?? {}) as PushPayload;
+  } catch {
+    // A payload that is not JSON still deserves a notification rather than silence.
+    payload = { body: event.data?.text() ?? "" };
+  }
+
+  const title = typeof payload.title === "string" && payload.title ? payload.title : "Mandhira";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: typeof payload.body === "string" ? payload.body : "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: safePath(payload.url) },
+      // The same tag replaces an older reminder for the same journey instead of stacking.
+      ...(typeof payload.tag === "string" ? { tag: payload.tag } : {}),
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = safePath((event.notification.data as { url?: unknown } | null)?.url);
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+
+      if (open) {
+        // A tap is the traveler asking to go there, so moving an open window is not the
+        // unprompted reload TRD-DEPL-002 forbids.
+        const here = new URL(open.url);
+        if (here.pathname + here.search !== url) await open.navigate(url);
+        await open.focus();
+        return;
+      }
+
+      await self.clients.openWindow(url);
+    })(),
+  );
+});
+
 serwist.addEventListeners();

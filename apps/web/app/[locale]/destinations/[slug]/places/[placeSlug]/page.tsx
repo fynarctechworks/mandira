@@ -7,6 +7,7 @@ import { AccessibilityIcons } from "../../../../../../components/accessibility-i
 import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
 import { OpenInMaps } from "../../../../../../components/open-in-maps";
+import { PhrasesLink } from "../../../../../../components/phrases-link";
 import { ReportAChange } from "../../../../../../components/report-a-change";
 import { SavePlaceToggle } from "../../../../../../components/save-place-toggle";
 import { getPlaceDetail } from "../../../../../../lib/knowledge";
@@ -198,6 +199,8 @@ export default async function PlaceDetailPage({
           </ul>
         </section>
       ) : null}
+
+      <PhrasesLink locale={locale} destinationSlug={slug} />
 
       {/*
         PRD F14, and the other half of the trust model. Every critical fact on this page

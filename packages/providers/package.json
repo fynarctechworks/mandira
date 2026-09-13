@@ -5,7 +5,8 @@
   "type": "module",
   "description": "AI, routing, weather, email, push, geocoding provider abstractions",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./errors": "./src/errors/index.ts"
   },
   "scripts": {
     "lint": "eslint .",

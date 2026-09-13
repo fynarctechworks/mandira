@@ -2,6 +2,8 @@ import type { KnowledgeBundle } from "@mandhira/journey-engine";
 
 import { getJourney, type StoredItem, type StoredJourney } from "../journeys";
 import { getKnowledgeBundle } from "../knowledge";
+import { phrasePackQuery, toPhraseRows } from "../phrase-pack";
+import type { PhraseRow } from "../phrases";
 import type { webSupabase } from "../supabase";
 
 /**
@@ -32,6 +34,12 @@ export type JourneySnapshot = {
   /** Names, pins, guidance — what a screen renders and the engine ignores. */
   entities: SnapshotEntity[];
   prepareTasks: { id: string; payload: Record<string, unknown> }[];
+  /**
+   * The destination's phrase pack, universal phrases included (PRD-OFFL-001, PRD F12) — or
+   * null when it could not be read, which leaves what the device already holds in place
+   * rather than wiping a pack someone may need on the next hillside.
+   */
+  phrases: PhraseRow[] | null;
   /** When this was assembled, which is the "as of" a traveler is shown. */
   syncedAt: string;
 };
@@ -50,9 +58,10 @@ export async function buildSnapshot(
     ? await getKnowledgeBundle(journey.destinationId, locale)
     : EMPTY_BUNDLE;
 
-  const [entities, prepareTasks] = await Promise.all([
+  const [entities, prepareTasks, phrases] = await Promise.all([
     entitiesFor(supabase, journey, items, locale),
     prepareTasksFor(supabase, journeyId),
+    phrasesFor(supabase, journey.destinationId),
   ]);
 
   return {
@@ -61,8 +70,23 @@ export async function buildSnapshot(
     bundle,
     entities,
     prepareTasks,
+    phrases,
     syncedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Every language in the pack is kept, not only the traveler's: the phrase to SAY is in the
+ * language of the person being asked, and a traveler who switches language offline should
+ * not lose the pack (the same reasoning as `body_i18n` in `guidanceFor`).
+ */
+async function phrasesFor(
+  supabase: Client,
+  destinationId: string | null,
+): Promise<PhraseRow[] | null> {
+  if (!destinationId) return [];
+  const { data, error } = await phrasePackQuery(supabase, destinationId);
+  return error ? null : toPhraseRows(data ?? []);
 }
 
 /**

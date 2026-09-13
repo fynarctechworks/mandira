@@ -11,7 +11,9 @@ export default async function MediaPage() {
 
   const { data, error } = await supabase
     .from("media_assets")
-    .select("id, storage_path, media_type, caption_i18n, credit, licence, width, height")
+    .select(
+      "id, storage_path, media_type, caption_i18n, credit, licence, width, height, focal_x, focal_y",
+    )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 

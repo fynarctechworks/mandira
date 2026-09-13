@@ -1,5 +1,6 @@
 import { criticalFieldsFor } from "@mandhira/db";
 import { createAiCacheStore, createAiCallLog } from "@mandhira/db/ai-store";
+import { rateLimit } from "@mandhira/db/rate-limit";
 import type { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import {
   AiUnavailableError,
@@ -39,12 +40,28 @@ export async function extractFromCapture(input: {
   captureText: string;
   provider?: AiProvider;
   env?: NodeJS.ProcessEnv;
+  /** The operator who started the run; scheduled runs share one budget. */
+  actor?: string | null;
+  limit?: typeof rateLimit;
 }): Promise<ExtractionOutcome> {
   const env = input.env ?? process.env;
   if (!input.provider && !isAiConfigured(env)) return { status: "not_configured" };
 
   const targets = await targetsForSource(input.supabase, input.sourceId);
   if (targets.length === 0) return { status: "no_targets" };
+
+  /*
+   * TRD §6.2 `ops_ai_extract`: at most 60 extractions a day per operator, and one shared budget
+   * for scheduled runs, so a source that changes on every fetch cannot run up the model bill.
+   * Counted only once there is something to ask about. A refusal reads like the model being
+   * unavailable: the capture is already stored, and review proceeds without suggestions.
+   */
+  const allowance = await (input.limit ?? rateLimit)(
+    input.supabase,
+    "ops_ai_extract",
+    input.actor ? `operator:${input.actor}` : "scheduled",
+  );
+  if (!allowance.allowed) return { status: "unavailable", code: "rate_limited" };
 
   const provider =
     input.provider ??

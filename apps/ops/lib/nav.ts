@@ -86,6 +86,15 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/locales",
     keywords: ["language", "script", "activate"],
   },
+  // O18 is "Locales & phrase packs" in PRD §5; split like O05/O05b because they are separate
+  // screens in practice.
+  {
+    id: "O18b",
+    label: "Phrase packs",
+    section: "entities",
+    href: "/phrases",
+    keywords: ["phrase", "audio", "transliteration", "show to someone"],
+  },
 
   // ── Sources ─────────────────────────────────────────────────────────────────
   {
