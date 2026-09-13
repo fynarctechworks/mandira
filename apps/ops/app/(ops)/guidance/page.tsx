@@ -3,7 +3,8 @@ import {
   type GuidanceRow,
   type GuidanceTarget,
 } from "@/components/guidance-editor";
-import { labelOf } from "@/lib/destinations";
+import { LoadProblem } from "@/components/load-problem";
+import { labelOf } from "@/lib/entities";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
 
@@ -60,11 +61,15 @@ export default async function GuidancePage() {
         </p>
       </header>
 
-      <GuidanceEditor
-        locales={locales}
-        targets={targets}
-        blocks={(blocks.data ?? []) as GuidanceRow[]}
-      />
+      {blocks.error || destinations.error || places.error || experiences.error ? (
+        <LoadProblem />
+      ) : (
+        <GuidanceEditor
+          locales={locales}
+          targets={targets}
+          blocks={(blocks.data ?? []) as GuidanceRow[]}
+        />
+      )}
     </div>
   );
 }

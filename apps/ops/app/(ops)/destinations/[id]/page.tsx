@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { HistoryLink } from "@/components/history-link";
 import { DestinationForm, type DestinationDraft } from "@/components/destination-form";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
@@ -42,9 +43,12 @@ export default async function EditDestinationPage({ params }: { params: Promise<
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
-        <p className="mt-1 text-body text-text-secondary">Editing a draft destination.</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
+          <p className="mt-1 text-body text-text-secondary">Editing a draft destination.</p>
+        </div>
+        <HistoryLink table="destinations" id={data.id} />
       </header>
       <DestinationForm locales={locales} initial={initial} />
     </div>

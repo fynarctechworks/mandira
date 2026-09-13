@@ -5,7 +5,6 @@ import { getOpsRoles } from "@mandhira/db/client/roles";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { asRow, opsAction } from "@/lib/action";
-import { opsSupabase } from "@/lib/supabase";
 
 /**
  * Trust records on critical fields (OPS-EDIT-09, PRD-KNOW-002).
@@ -115,17 +114,3 @@ export const saveTrustRecord = opsAction({
     };
   },
 });
-
-/** Trust records already attached to one entity, keyed by field name (or "entity"). */
-export async function trustForEntity(entityTable: string, entityId: string) {
-  const supabase = await opsSupabase();
-  const { data } = await supabase
-    .from("trust_records")
-    .select(
-      "id, field_name, source_id, verification_status, verified_at, valid_until, evidence_url, evidence_excerpt, conflict_flag, freshness, confidence",
-    )
-    .eq("entity_table", entityTable)
-    .eq("entity_id", entityId);
-
-  return Object.fromEntries((data ?? []).map((row) => [row.field_name ?? "entity", row]));
-}

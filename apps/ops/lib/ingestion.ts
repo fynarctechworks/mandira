@@ -8,6 +8,8 @@ import {
   type EvidenceRecord,
 } from "@mandhira/providers";
 
+import { extractFromCapture, type ExtractionOutcome } from "./extraction";
+
 /**
  * The ingestion runner (PRD F17, PRD-OPS-SRC-002/004).
  *
@@ -33,6 +35,8 @@ export type RunOutcome = {
   /** Null when the fetch failed or the page was byte-identical to the last capture. */
   captureId: string | null;
   unchanged: boolean;
+  /** Present when the page changed and extraction was attempted. */
+  extraction?: ExtractionOutcome;
   candidatesOpened: number;
   fieldsChecked: number;
   fieldsSkipped: number;
@@ -203,6 +207,23 @@ export async function runIngestionForSource(
     if (!error) opened++;
   }
 
+  /*
+   * AI extraction (PRD F17), after deterministic detection. It needs a model key and says so
+   * when there is none; a failure here is logged and never fails a capture that was fetched
+   * and stored, because the evidence is already safe and review can proceed without it.
+   */
+  const extraction: ExtractionOutcome = await extractFromCapture({
+    supabase,
+    captureId,
+    sourceId,
+    sourceName: source.name,
+    captureText: capture.text,
+  }).catch((cause: unknown) => {
+    console.error("[ingestion] extraction not recorded", cause);
+    return { status: "unavailable", code: "record_failed" };
+  });
+  if (extraction.status === "recorded") opened += extraction.candidates;
+
   await supabase
     .from("ingestion_jobs")
     .update({ status: "succeeded", finished_at: new Date().toISOString() })
@@ -213,6 +234,7 @@ export async function runIngestionForSource(
     status: "succeeded",
     captureId,
     unchanged: false,
+    extraction,
     candidatesOpened: opened,
     fieldsChecked: detection.changes.length + detection.skipped.length,
     fieldsSkipped: detection.skipped.length,

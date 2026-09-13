@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { OpsDataTable } from "@mandhira/ui";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { labelOf } from "@/lib/entities";
 import { PublishStatusTag } from "./publish-status-tag";
 
 export type EntityRow = {
@@ -50,7 +51,7 @@ export function EntityTable({
             href={`${basePath}/${row.original.id}`}
             className="focus-ring font-medium text-brand-primary-text hover:underline"
           >
-            {displayName(row.original.name_i18n, row.original.slug)}
+            {labelOf(row.original.name_i18n, row.original.slug)}
           </Link>
         ),
       },
@@ -83,16 +84,4 @@ export function EntityTable({
       }
     />
   );
-}
-
-/** English name with a visible fallback — PRD-KNOW-005 forbids a silent blank. */
-function displayName(value: unknown, slug: string): string {
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    for (const key of ["en", ...Object.keys(record)]) {
-      const candidate = record[key];
-      if (typeof candidate === "string" && candidate.trim() !== "") return candidate;
-    }
-  }
-  return slug;
 }

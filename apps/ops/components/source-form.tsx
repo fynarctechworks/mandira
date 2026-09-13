@@ -233,8 +233,10 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
       </label>
 
       <p className="text-caption text-text-secondary">
-        Collection is manual for now. Automatic monitoring of a source&apos;s page arrives with the
-        ingestion pipeline.
+        A source set to watch its page is fetched on its re-check cadence (daily if none is set).
+        Each capture is compared with the last, and a change candidate goes to the Review queue when
+        the wording a field was verified against disappears. A source checked by hand is never
+        fetched.
       </p>
 
       {formError ? (

@@ -1,5 +1,5 @@
 import type { RouteDraft } from "@/components/route-form";
-import { labelOf } from "./destinations";
+import { labelOf } from "./entities";
 import { opsSupabase } from "./supabase";
 
 /** Blank route draft. Lives outside the client module so server pages can call it. */
@@ -21,11 +21,12 @@ export function emptyRoute(destinationId: string): RouteDraft {
 /** Places available as route stops or transport endpoints. */
 export async function placeOptions(): Promise<{ id: string; label: string }[]> {
   const supabase = await opsSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("places")
     .select("id, slug, name_i18n")
     .is("deleted_at", null)
     .order("slug");
 
-  return (data ?? []).map((p) => ({ id: p.id, label: labelOf(p.name_i18n, p.slug) }));
+  if (error) throw error;
+  return data.map((p) => ({ id: p.id, label: labelOf(p.name_i18n, p.slug) }));
 }

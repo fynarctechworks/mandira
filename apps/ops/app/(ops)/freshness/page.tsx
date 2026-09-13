@@ -54,13 +54,13 @@ export default async function FreshnessPage({
       <header className="flex flex-col gap-1">
         <h1 className="text-h1">Freshness</h1>
         <p className="text-body text-text-secondary">
-          Published critical fields, worst first. Every row is something a traveler is being
-          shown right now, with the date somebody last checked it against a source.
+          Published critical fields, worst first. Every row is something a traveler is being shown
+          right now, with the date somebody last checked it against a source.
         </p>
         {stale > 0 ? (
           <p className="text-body-sm text-text-secondary">
-            {stale} {stale === 1 ? "field is" : "fields are"} stale — verified more than six
-            months ago, or past the date their source vouched for.
+            {stale} {stale === 1 ? "field is" : "fields are"} stale — verified more than six months
+            ago, or past the date their source vouched for.
           </p>
         ) : null}
       </header>

@@ -1,5 +1,5 @@
 import type { AnchorOption } from "@/components/experience-form";
-import { labelOf } from "./destinations";
+import { labelOf } from "./entities";
 import { opsSupabase } from "./supabase";
 
 /**
@@ -15,6 +15,9 @@ export async function anchorOptions(): Promise<AnchorOption[]> {
     supabase.from("places").select("id, slug, name_i18n").is("deleted_at", null).order("slug"),
     supabase.from("routes").select("id, slug, name_i18n").is("deleted_at", null).order("slug"),
   ]);
+
+  if (places.error) throw places.error;
+  if (routes.error) throw routes.error;
 
   return [
     ...(places.data ?? []).map((p) => ({

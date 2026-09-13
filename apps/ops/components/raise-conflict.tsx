@@ -108,7 +108,10 @@ export function RaiseConflict({
 
           {rows.map((row, index) => (
             <div key={`${ids}-${index}`} className="flex flex-col gap-1">
-              <label htmlFor={`${ids}-source-${index}`} className="text-caption text-text-secondary">
+              <label
+                htmlFor={`${ids}-source-${index}`}
+                className="text-caption text-text-secondary"
+              >
                 Source {index + 1}
               </label>
               <select

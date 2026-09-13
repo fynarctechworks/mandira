@@ -1,6 +1,8 @@
 import type { Enums } from "@mandhira/db";
 import type { z } from "zod";
 import { getOpsRoles } from "@mandhira/db/client/roles";
+import { createServiceRoleSupabase } from "@mandhira/db/client/server";
+import { rateLimit } from "@mandhira/db/rate-limit";
 import { opsSupabase } from "./supabase";
 
 /**
@@ -22,7 +24,7 @@ export type ActionResult<T> =
   | {
       ok: false;
       error: {
-        code: "unauthenticated" | "forbidden" | "invalid" | "conflict" | "failed";
+        code: "unauthenticated" | "forbidden" | "invalid" | "conflict" | "rate_limited" | "failed";
         message: string;
         /** Field-level messages, keyed by form field path, for inline display. */
         fieldErrors?: Record<string, string[]>;
@@ -58,6 +60,19 @@ export function opsAction<TSchema extends z.ZodType, TResult>(config: {
       return {
         ok: false,
         error: { code: "forbidden", message: "This account can't make that change." },
+      };
+    }
+
+    // D-151. After the role check, so a refused caller spends nothing. The limiter's RPC is
+    // service-role only, so one operator cannot spend another's budget.
+    const limit = await rateLimit(createServiceRoleSupabase(), "ops_action", user.id);
+    if (!limit.allowed) {
+      return {
+        ok: false,
+        error: {
+          code: "rate_limited",
+          message: `That's a lot of changes in a short time. Try again in ${limit.retryAfterSeconds} seconds.`,
+        },
       };
     }
 

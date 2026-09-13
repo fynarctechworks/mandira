@@ -34,6 +34,16 @@ describe("Ops nav model", () => {
     }
   });
 
+  /*
+   * Every PRD screen is built. O06 is the one entry without a route of its own, because it
+   * is delivered as panels on Places and Routes (D-046) — anything else unrouted is a
+   * screen that quietly went missing.
+   */
+  it("routes every screen except the one delivered as panels", () => {
+    const unrouted = NAV_ITEMS.filter((item) => item.href === null).map((item) => item.id);
+    expect(unrouted).toEqual(["O06"]);
+  });
+
   it("gives every available screen an absolute route", () => {
     for (const item of availableNavItems()) {
       expect(item.href.startsWith("/"), `${item.id} href must be absolute`).toBe(true);

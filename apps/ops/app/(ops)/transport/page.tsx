@@ -1,3 +1,4 @@
+import { LoadProblem } from "@/components/load-problem";
 import { TransportEditor, type TransportRow } from "@/components/transport-editor";
 import { destinationOptions } from "@/lib/destinations";
 import { activeLocales } from "@/lib/locales";
@@ -36,12 +37,16 @@ export default async function TransportPage() {
         </p>
       </header>
 
-      <TransportEditor
-        locales={locales}
-        destinations={destinations}
-        places={places}
-        connections={(connections.data ?? []) as TransportRow[]}
-      />
+      {connections.error ? (
+        <LoadProblem />
+      ) : (
+        <TransportEditor
+          locales={locales}
+          destinations={destinations}
+          places={places}
+          connections={(connections.data ?? []) as TransportRow[]}
+        />
+      )}
     </div>
   );
 }

@@ -50,18 +50,16 @@ test.describe("Ops shell", () => {
     await expect(input).toBeVisible();
 
     /*
-     * An UNBUILT screen, deliberately. This test is about the palette being honest when it
-     * finds one — and the example has to be replaced whenever the named screen ships.
-     * "Conflicts" was it until B-030 built the queue; Advisories is the M4 stand-in now.
+     * A screen with no route of its own, deliberately. Every PRD screen is built; O06 is
+     * delivered as panels on Places and Routes (D-046), and the palette must say where it
+     * lives rather than returning nothing as though it did not exist.
      */
-    await input.fill("advis");
+    await input.fill("facilit");
     // Scope to the dialog: the sidebar lists these screens too, so an unscoped text match
     // would resolve to two elements and fail on strict mode rather than on behaviour.
     const palette = page.getByRole("dialog");
-    // Searching for an unbuilt screen finds it and says when it lands, rather than
-    // returning nothing as though it did not exist.
-    await expect(palette.getByText("Advisories", { exact: true })).toBeVisible();
-    await expect(palette.getByText("M4", { exact: true }).first()).toBeVisible();
+    await expect(palette.getByText("Facilities & accessibility", { exact: true })).toBeVisible();
+    await expect(palette.getByText("In Places & Routes", { exact: true }).first()).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(input).not.toBeVisible();

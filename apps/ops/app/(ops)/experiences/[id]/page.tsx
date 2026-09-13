@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
+import { HistoryLink } from "@/components/history-link";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
 import { PublishPanel } from "@/components/publish-panel";
 import { journeyImpact } from "@/lib/impact";
-import { validationProblems } from "@/app/(ops)/publish/actions";
+import { trustForEntity, validationProblems } from "@/lib/entity-review";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
-import { trustForEntity } from "@/app/(ops)/trust/actions";
 import { anchorOptions } from "@/lib/anchors";
 import { activeSources } from "@/lib/sources";
 import { destinationOptions } from "@/lib/destinations";
@@ -68,9 +68,12 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
-        <p className="mt-1 text-body text-text-secondary">Editing a draft experience.</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
+          <p className="mt-1 text-body text-text-secondary">Editing a draft experience.</p>
+        </div>
+        <HistoryLink table="experiences" id={data.id} />
       </header>
 
       {/* Trust first, then availability: these are the two things most likely to be

@@ -2,6 +2,7 @@
 
 import { createBrowserSupabase } from "@mandhira/db/client/browser";
 import { Button } from "@mandhira/ui";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { archiveMedia, registerMedia } from "@/app/(ops)/media/actions";
@@ -15,7 +16,10 @@ export type MediaRow = {
   licence: string | null;
   width: number | null;
   height: number | null;
+  usage: MediaUse[];
 };
+
+export type MediaUse = { label: string; href: string | null; role: string };
 
 /**
  * Media library (O16, OPS-MEDIA-01).
@@ -179,6 +183,24 @@ export function MediaLibrary({
                     <span className="text-status-tight">○ No licence</span>
                   )}
                 </p>
+                {item.usage.length === 0 ? (
+                  <p className="text-caption text-text-tertiary">Not used anywhere yet</p>
+                ) : (
+                  <ul className="flex flex-col gap-0.5 text-caption" aria-label="Used in">
+                    {item.usage.map((use) => (
+                      <li key={`${use.label}:${use.role}`} className="truncate">
+                        {use.href ? (
+                          <Link href={use.href} className="focus-ring underline">
+                            {use.label}
+                          </Link>
+                        ) : (
+                          use.label
+                        )}{" "}
+                        <span className="text-text-tertiary">({use.role})</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <Button
                   type="button"
                   variant="tertiary"

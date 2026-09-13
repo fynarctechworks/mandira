@@ -100,9 +100,9 @@ export default async function IngestionPage() {
         <h2 className="text-h3">AI extraction</h2>
         <p className="text-body-sm text-text-secondary">
           Not available yet — it needs an AI provider key. When it arrives it will propose a value
-          for each change candidate from the capture, always marked{" "}
-          <strong>AI extracted</strong>, always landing in the Review queue, and never able to
-          publish. Until then a candidate says what disappeared, not what replaced it.
+          for each change candidate from the capture, always marked <strong>AI extracted</strong>,
+          always landing in the Review queue, and never able to publish. Until then a candidate says
+          what disappeared, not what replaced it.
         </p>
       </section>
     </div>

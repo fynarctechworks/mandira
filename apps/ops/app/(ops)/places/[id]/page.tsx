@@ -1,12 +1,12 @@
 import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
+import { HistoryLink } from "@/components/history-link";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
 import { PublishPanel } from "@/components/publish-panel";
 import { journeyImpact } from "@/lib/impact";
-import { validationProblems } from "@/app/(ops)/publish/actions";
+import { trustForEntity, validationProblems } from "@/lib/entity-review";
 import { TrustSection } from "@/components/trust-section";
 import type { TrustRecord } from "@/components/trust-panel";
-import { trustForEntity } from "@/app/(ops)/trust/actions";
 import { activeSources } from "@/lib/sources";
 import { PlaceForm, type PlaceDraft } from "@/components/place-form";
 import { destinationOptions } from "@/lib/destinations";
@@ -77,9 +77,12 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
-        <p className="mt-1 text-body text-text-secondary">Editing a draft place.</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
+          <p className="mt-1 text-body text-text-secondary">Editing a draft place.</p>
+        </div>
+        <HistoryLink table="places" id={data.id} />
       </header>
       <div className="max-w-2xl">
         <PublishPanel

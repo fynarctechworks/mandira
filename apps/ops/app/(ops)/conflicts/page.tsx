@@ -59,9 +59,8 @@ export default async function ConflictsPage() {
       <header className="flex flex-col gap-1">
         <h1 className="text-h1">Conflicts</h1>
         <p className="text-body text-text-secondary">
-          Fields two sources disagree about. While one is open, travelers are shown that field
-          as low confidence — so settling it is what turns it back into something they can plan
-          around.
+          Fields two sources disagree about. While one is open, travelers are shown that field as
+          low confidence — so settling it is what turns it back into something they can plan around.
         </p>
         <p className="text-body-sm text-text-secondary">
           Recording a decision here does not change the value. Correcting the fact is a separate
@@ -83,9 +82,8 @@ export default async function ConflictsPage() {
             No source disagreements recorded. That is the healthy state, not an empty one.
           </p>
           <p className="text-body-sm text-text-secondary">
-            Conflicts are raised from a field&apos;s trust panel when you read two sources that
-            do not match. Automatic detection needs AI extraction, which is waiting on a
-            provider key.
+            Conflicts are raised from a field&apos;s trust panel when you read two sources that do
+            not match. Automatic detection needs AI extraction, which is waiting on a provider key.
           </p>
         </div>
       ) : (

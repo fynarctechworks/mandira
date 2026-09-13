@@ -1,7 +1,8 @@
 import { Button } from "@mandhira/ui";
 import Link from "next/link";
-import { PlacesTable, type PlaceRow } from "@/components/places-table";
-import { labelOf } from "@/lib/destinations";
+import { EntityTable, type EntityRow } from "@/components/entity-table";
+import { LoadProblem } from "@/components/load-problem";
+import { labelOf } from "@/lib/entities";
 import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Places · Mandhira Ops" };
@@ -17,16 +18,20 @@ export default async function PlacesPage() {
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  const rows: PlaceRow[] = (data ?? []).map((place) => {
+  const rows: EntityRow[] = (data ?? []).map((place) => {
     const destination = place.destinations as { slug: string; name_i18n: unknown } | null;
     return {
       id: place.id,
       slug: place.slug,
       name_i18n: place.name_i18n,
-      place_type: place.place_type,
       status: place.status,
-      destination_label: destination ? labelOf(destination.name_i18n, destination.slug) : "—",
-      has_schedule: place.opening_schedule != null,
+      columns: {
+        Destination: destination ? labelOf(destination.name_i18n, destination.slug) : "—",
+        Type: place.place_type.replace(/_/g, " "),
+        // Opening hours gate publication, so their absence belongs in the list rather than
+        // being discovered at approval time.
+        Hours: place.opening_schedule != null ? "● Recorded" : "○ Missing",
+      },
     };
   });
 
@@ -45,11 +50,16 @@ export default async function PlacesPage() {
       </header>
 
       {error ? (
-        <p role="alert" className="text-body text-status-tight">
-          That list didn&apos;t load. Please refresh to try again.
-        </p>
+        <LoadProblem />
       ) : (
-        <PlacesTable rows={rows} />
+        <EntityTable
+          caption="Places"
+          basePath="/places"
+          rows={rows}
+          columnOrder={["Destination", "Type", "Hours"]}
+          emptyTitle="No places yet"
+          emptyBody="Add the temples, ghats and facilities travelers will visit."
+        />
       )}
     </div>
   );

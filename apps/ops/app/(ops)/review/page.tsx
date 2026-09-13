@@ -46,7 +46,10 @@ export default async function ReviewPage() {
   const sourceIds = [...new Set(candidates.map((row) => row.source_id).filter(Boolean))];
 
   const { data: sources } = sourceIds.length
-    ? await supabase.from("sources").select("id, name, tier").in("id", sourceIds as string[])
+    ? await supabase
+        .from("sources")
+        .select("id, name, tier")
+        .in("id", sourceIds as string[])
     : { data: [] };
 
   const sourceById = new Map((sources ?? []).map((source) => [source.id, source]));
@@ -84,9 +87,7 @@ export default async function ReviewPage() {
           the publish gate, so nothing a source does can reach a traveler on its own.
         </p>
         {open.length > 0 ? (
-          <p className="text-body-sm text-text-secondary">
-            {open.length} waiting, oldest first.
-          </p>
+          <p className="text-body-sm text-text-secondary">{open.length} waiting, oldest first.</p>
         ) : null}
       </header>
 
