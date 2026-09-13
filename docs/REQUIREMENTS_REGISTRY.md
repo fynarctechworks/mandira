@@ -41,10 +41,10 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-INT — Intent Capture (F3)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-INT-001 | NL input → Journey Brief | Single text box; extract destination/dates/travelers/must-do/fixed/preferences per F3 table | P0 | KNOW-003 |
+| PRD-INT-001 ✅ | NL input → Journey Brief | Single text box; extract destination/dates/travelers/must-do/fixed/preferences per F3 table | P0 | KNOW-003 |
 | PRD-INT-002 | Structured form alternative | ≤5 screens; skip allowed except destination+dates | P0 | — |
-| PRD-INT-003 | Suggested-value confirmation | Inferred values labelled Suggested; tap to confirm; never auto-must-do | P0 | INT-001 |
-| PRD-INT-004 | Clarifying questions | Ambiguities surfaced as questions in the brief | P0 | INT-001 |
+| PRD-INT-003 ✅ | Suggested-value confirmation | Inferred values labelled Suggested; tap to confirm; never auto-must-do | P0 | INT-001 |
+| PRD-INT-004 ✅ | Clarifying questions | Ambiguities surfaced as questions in the brief | P0 | INT-001 |
 | PRD-INT-005 | ID grounding | Named-but-unknown experiences → "no verified information yet" + closest matches; zero invented entries | P0 | TRD-AI-002 |
 | PRD-INT-006 | Extraction quality | ≥85% field accuracy per launch language on test set; 100% hallucination block | P0 | INT-001 |
 

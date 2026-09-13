@@ -69,8 +69,7 @@ export function PlanSimilar({ journeyId, locale }: { journeyId: string; locale: 
         {pending ? "Setting it up…" : "Plan a similar journey"}
       </Button>
       <p className="text-caption text-text-secondary">
-        Opens the same brief with what you said mattered already ticked. You choose the
-        dates.
+        Opens the same brief with what you said mattered already ticked. You choose the dates.
       </p>
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">

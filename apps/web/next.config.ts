@@ -48,6 +48,15 @@ const nextConfig: NextConfig = {
    */
   distDir: process.env["NEXT_DIST_DIR"] ?? ".next",
   transpilePackages: ["@mandhira/ui", "@mandhira/db", "@mandhira/i18n"],
+  experimental: {
+    /*
+     * `@mandhira/ui`'s root is a barrel, and a client component importing only `cn` from it
+     * shipped the legacy Radix dialog and checkbox on every route that did — 44 kB gzipped,
+     * enough to put five traveler routes over TRD-PERF-001. This rewrites barrel imports to
+     * the modules actually named, so a route carries only the components it uses.
+     */
+    optimizePackageImports: ["@mandhira/ui"],
+  },
   images: {
     // Supabase Storage serves media, and resizes it on delivery (D-055).
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],

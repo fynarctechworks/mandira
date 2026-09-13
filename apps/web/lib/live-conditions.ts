@@ -1,3 +1,4 @@
+import { mustList } from "./data-error";
 import type { webSupabase } from "./supabase";
 
 /**
@@ -46,12 +47,15 @@ export async function getLiveConditions(
   destinationId: string,
   locale: string,
 ): Promise<LiveCondition[]> {
-  const { data } = await supabase
-    .from("v_published_live_conditions")
-    .select("feed_kind, provider, read_at, status, payload, is_stale")
-    .eq("destination_id", destinationId);
+  const data = mustList(
+    await supabase
+      .from("v_published_live_conditions")
+      .select("feed_kind, provider, read_at, status, payload, is_stale")
+      .eq("destination_id", destinationId),
+    "v_published_live_conditions",
+  );
 
-  return (data ?? []).map((row) => {
+  return data.map((row) => {
     const payload = (row.payload ?? {}) as {
       hours?: WeatherHour[];
       disruptive?: WeatherHour[];

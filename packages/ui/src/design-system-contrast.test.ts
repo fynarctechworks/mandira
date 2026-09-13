@@ -113,5 +113,27 @@ describe("design system contrast", () => {
         contrast(destructive, over(destructive, destructiveTint, background)),
       ).toBeGreaterThanOrEqual(4.5);
     });
+
+    // A destructive badge in a table sits on a card, not the page — the Ops job list (D-172).
+    it("reads a destructive badge on a card", () => {
+      const destructive = linear(token(selector, "destructive"));
+      const card = linear(token(selector, "card"));
+      expect(
+        contrast(destructive, over(destructive, destructiveTint, card)),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
+  it("gives a dark system setting exactly the .dark palette", () => {
+    // Two copies exist only because CSS cannot share one block across a media query (D-172).
+    const tokens = (selector: string) =>
+      Object.fromEntries(
+        [...block(selector).matchAll(/--([\w-]+):\s*([^;]+);/g)].map((match) => [
+          match[1],
+          match[2]!.trim(),
+        ]),
+      );
+
+    expect(tokens(":root:not(.light)")).toEqual(tokens(".dark"));
   });
 });

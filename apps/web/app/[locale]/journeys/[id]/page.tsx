@@ -1,12 +1,15 @@
 import { ArrowLeft, BookOpen, ListChecks, Play, Share2 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { HealthPill, TierChip } from "@mandhira/ui";
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 
+import { DayHealthSheet } from "../../../../components/day-health-sheet";
 import { ItemActions } from "../../../../components/item-actions";
+import { JourneyDetailsSheet } from "../../../../components/journey-details-sheet";
 import { KnowledgeWatch } from "../../../../components/knowledge-watch";
+import { ReorderButtons } from "../../../../components/reorder-buttons";
 import { causeText, JourneyHealth, trustText } from "../../../../components/journey-health";
 import { getJourney, toEngineJourney } from "../../../../lib/journeys";
 import { durationLabel } from "../../../../lib/present";
@@ -54,10 +57,17 @@ export default async function JourneyPage({
   const detail = await getJourney(supabase, id, locale);
   if (!detail) notFound();
 
+  const t = await getTranslations();
   const { journey, items, health, labels } = detail;
   const engineJourney = toEngineJourney(journey);
   const dayCount = Math.max(1, new Set(items.map((i) => i.day_index)).size);
   const dayIndexes = [...new Set(items.map((i) => i.day_index))].sort((a, b) => a - b);
+  const itemNames = Object.fromEntries(
+    items.map((item) => [
+      item.id,
+      item.experience_id ? (labels.get(item.experience_id) ?? "Something you added") : "Free time",
+    ]),
+  );
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -69,8 +79,19 @@ export default async function JourneyPage({
         Your journeys
       </Link>
 
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-3">
         <h1 className="text-display">{journey.title ?? "Your journey"}</h1>
+        <JourneyDetailsSheet
+          journeyId={journey.id}
+          initial={{
+            title: journey.title,
+            startDate: journey.startDate,
+            endDate: journey.endDate,
+            dayStartTime: journey.dayStartTime,
+            dayEndTime: journey.dayEndTime,
+            pace: journey.pace,
+          }}
+        />
       </header>
 
       <JourneyHealth report={health} />
@@ -118,7 +139,7 @@ export default async function JourneyPage({
           <Share2 className="size-4" aria-hidden />
           Summary
         </Link>
-      
+
         {/*
           PRD F16. Reachable throughout rather than only once the last day has passed — a
           traveler mid-journey wants to see what they have done, and a screen that appears
@@ -136,8 +157,17 @@ export default async function JourneyPage({
       {dayIndexes.map((dayIndex) => {
         const day = health.days.find((d) => d.dayIndex === dayIndex);
         const date = dateForDay(engineJourney.start_date, dayIndex);
-        const causes = [...new Set((day?.causes ?? []).map(causeText).filter(Boolean))];
-        const trust = [...new Set((day?.trustExposure ?? []).map(trustText).filter(Boolean))];
+        const dayLabel = new Intl.DateTimeFormat(locale, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        }).format(new Date(`${date}T00:00:00Z`));
+        const causes = [
+          ...new Set((day?.causes ?? []).map((c) => causeText(t, c)).filter(Boolean)),
+        ];
+        const trust = [
+          ...new Set((day?.trustExposure ?? []).map((c) => trustText(t, c)).filter(Boolean)),
+        ];
 
         return (
           <section
@@ -147,13 +177,21 @@ export default async function JourneyPage({
           >
             <div className="flex items-center justify-between gap-3">
               <h2 id={`day-${dayIndex}`} className="text-h2">
-                {new Intl.DateTimeFormat(locale, {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                }).format(new Date(`${date}T00:00:00Z`))}
+                {dayLabel}
               </h2>
-              {day ? <HealthPill state={day.state} /> : null}
+              {day ? (
+                <div className="flex items-center gap-1">
+                  <HealthPill state={day.state} />
+                  <DayHealthSheet
+                    journeyId={journey.id}
+                    dayIndex={dayIndex}
+                    dayLabel={dayLabel}
+                    day={day}
+                    itemNames={itemNames}
+                    timeZone={engineJourney.timezone}
+                  />
+                </div>
+              ) : null}
             </div>
 
             {causes.length > 0 || trust.length > 0 ? (
@@ -175,7 +213,7 @@ export default async function JourneyPage({
               {items
                 .filter((i) => i.day_index === dayIndex)
                 .sort((a, b) => a.sort_order - b.sort_order)
-                .map((item) => {
+                .map((item, index, dayItems) => {
                   const label = item.experience_id
                     ? (labels.get(item.experience_id) ?? "Something you added")
                     : "Free time";
@@ -205,6 +243,16 @@ export default async function JourneyPage({
                          */}
                         <TierChip tier={TIER_CHIP[item.tier]} readOnly />
                       </div>
+
+                      {dayItems.length > 1 ? (
+                        <ReorderButtons
+                          journeyId={journey.id}
+                          dayIndex={item.day_index}
+                          orderedIds={dayItems.map((entry) => entry.id)}
+                          index={index}
+                          name={label}
+                        />
+                      ) : null}
 
                       <ItemActions
                         journeyId={journey.id}

@@ -164,7 +164,7 @@ begin
 
   -- ── Availability ──────────────────────────────────────────────────────────
   insert into availability_rules (experience_id, kind, daily_times, priority) values
-    (v_dawn,    'daily_fixed_times', '[{"start":"05:00","end":"06:30"}]'::jsonb, 1),
+    (v_dawn,    'daily_fixed_times', '[{"start":"05:00","end":"08:00"}]'::jsonb, 1),
     (v_evening, 'daily_fixed_times', '[{"start":"18:30","end":"19:30"}]'::jsonb, 1);
 
   insert into availability_rules (experience_id, kind, priority) values

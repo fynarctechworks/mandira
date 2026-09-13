@@ -63,3 +63,4 @@ export {
   type SuggestTranslationInput,
 } from "./translation";
 export { createVercelAiProvider } from "./vercel";
+export { isAiConfigured } from "./availability";

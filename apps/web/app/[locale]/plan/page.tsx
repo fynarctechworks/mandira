@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { getDestinationCards, getDestinationPage } from "../../../lib/knowledge";
 
@@ -49,6 +50,7 @@ export default async function PlanPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations("intent");
   const query = await searchParams;
   const destinationSlug = query.destination;
   const destinations = await getDestinationCards(locale, 20);
@@ -87,6 +89,13 @@ export default async function PlanPage({
           Tell Mandhira what the journey has to include. It works out whether the days hold together
           — and tells you when they do not.
         </p>
+        {/* PRD F3's first path, for anyone who would rather just say it (A07). */}
+        <Link
+          href={`/${locale}/plan/describe`}
+          className="flex min-h-11 items-center text-body-sm font-medium text-primary-text underline"
+        >
+          {t("entry_link")}
+        </Link>
       </header>
 
       {/*

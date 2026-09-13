@@ -5,6 +5,8 @@ import { useState } from "react";
 
 import type { NotificationPrefs } from "@mandhira/journey-engine";
 
+import type { TravelerNotificationPrefs } from "../lib/notifications";
+
 /**
  * The seven switches (PRD-NOTF-001).
  *
@@ -53,11 +55,11 @@ const TYPES: { key: keyof NotificationPrefs; label: string; when: string }[] = [
   },
 ];
 
-export function NotificationPreferences({ initial }: { initial: NotificationPrefs }) {
-  const [prefs, setPrefs] = useState<NotificationPrefs>(initial);
+export function NotificationPreferences({ initial }: { initial: TravelerNotificationPrefs }) {
+  const [prefs, setPrefs] = useState<TravelerNotificationPrefs>(initial);
   const [problem, setProblem] = useState<string | null>(null);
 
-  async function toggle(key: keyof NotificationPrefs, next: boolean) {
+  async function toggle(key: keyof TravelerNotificationPrefs, next: boolean) {
     // Optimistic: a switch that waits for a round trip gets tapped twice.
     setPrefs((current) => ({ ...current, [key]: next }));
     setProblem(null);
@@ -100,6 +102,20 @@ export function NotificationPreferences({ initial }: { initial: NotificationPref
             whyLabel="When?"
           />
         ))}
+      </div>
+
+      {/*
+       * Email is a separate yes (D-171): the switches above decide WHAT, this decides whether
+       * any of it also arrives by email. Off until the traveler turns it on.
+       */}
+      <div className="rounded-lg border border-border bg-bg-surface px-4">
+        <ChecklistRow
+          label="Also by email"
+          checked={prefs.email ?? false}
+          onCheckedChange={(value) => void toggle("email", value)}
+          why="The same messages the switches above allow, sent to the address you sign in with. Off unless you turn it on."
+          whyLabel="What is sent?"
+        />
       </div>
 
       <p className="text-caption text-text-secondary">

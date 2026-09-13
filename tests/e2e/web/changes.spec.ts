@@ -265,7 +265,13 @@ async function itemTimes(page: Page, journeyId: string): Promise<string> {
 
   return JSON.stringify(
     items
-      .map((item) => [item.id, item.day_index, item.sort_order, item.planned_start_at, item.planned_end_at])
+      .map((item) => [
+        item.id,
+        item.day_index,
+        item.sort_order,
+        item.planned_start_at,
+        item.planned_end_at,
+      ])
       .sort(),
   );
 }

@@ -13,6 +13,7 @@ import { DayPlan } from "../../../../components/day-plan";
 import { SaveJourney } from "../../../../components/save-journey";
 import { JourneyHealth } from "../../../../components/journey-health";
 import { getDestinationPage, getKnowledgeBundle } from "../../../../lib/knowledge";
+import { planWithTravel } from "../../../../lib/travel";
 
 /**
  * The journey Mandhira proposes from a brief (PRD F4).
@@ -73,10 +74,13 @@ export default async function PreviewPage({
   };
 
   const travelers = travelersFrom(query.mobility);
-  const { journey, items, health, warnings } = buildInitialJourney({
-    brief,
+  const destinationId = page.destination.id;
+  const {
+    result: { journey, items, health, warnings },
+  } = await planWithTravel({
     knowledge,
-    travelers,
+    load: () => getKnowledgeBundle(destinationId, locale),
+    plan: (bundle) => buildInitialJourney({ brief, knowledge: bundle, travelers }),
   });
 
   const nameOf = new Map(page.experiences.map((e) => [e.id, e.name.text]));

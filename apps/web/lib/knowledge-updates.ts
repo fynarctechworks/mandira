@@ -1,4 +1,5 @@
 import { evaluateTrigger, type ChangeEvent } from "./changes";
+import { mustList, mustWrite } from "./data-error";
 import type { StoredItem } from "./journey-types";
 import { getJourney } from "./journeys";
 import type { webSupabase } from "./supabase";
@@ -56,14 +57,17 @@ export async function checkKnowledgeUpdates(
     return null;
   }
 
-  const { data: updates } = await supabase
-    .from("knowledge_updates")
-    .select("entity_table, entity_id, changed_fields, published_at")
-    .gt("published_at", since)
-    .order("published_at", { ascending: false })
-    .limit(100);
+  const updates = mustList(
+    await supabase
+      .from("knowledge_updates")
+      .select("entity_table, entity_id, changed_fields, published_at")
+      .gt("published_at", since)
+      .order("published_at", { ascending: false })
+      .limit(100),
+    "knowledge_updates",
+  );
 
-  if (!updates || updates.length === 0) {
+  if (updates.length === 0) {
     await markChecked(supabase, journeyId);
     return null;
   }
@@ -95,10 +99,7 @@ export async function checkKnowledgeUpdates(
 }
 
 /** Whether this update is about something the journey actually contains. */
-function matches(
-  item: StoredItem,
-  update: { entity_table: string; entity_id: string },
-): boolean {
+function matches(item: StoredItem, update: { entity_table: string; entity_id: string }): boolean {
   switch (update.entity_table) {
     case "experiences":
       return item.experience_id === update.entity_id;
@@ -126,10 +127,13 @@ function isPast(item: StoredItem, timezone: string): boolean {
 }
 
 async function markChecked(supabase: Client, journeyId: string): Promise<void> {
-  await supabase
-    .from("journeys")
-    .update({ knowledge_checked_at: new Date().toISOString() })
-    .eq("id", journeyId);
+  mustWrite(
+    await supabase
+      .from("journeys")
+      .update({ knowledge_checked_at: new Date().toISOString() })
+      .eq("id", journeyId),
+    "journeys update",
+  );
 }
 
 /** Today's date in the journey's timezone, so day boundaries fall where the traveler is. */

@@ -86,10 +86,9 @@ async function itemsOf(page: Page, journeyId: string): Promise<{ id: string; tie
 
 /** Marks one item done through the same route the Done tap uses. */
 async function markDone(page: Page, journeyId: string, itemId: string) {
-  const response = await page.request.patch(
-    `/api/journeys/${journeyId}/items/${itemId}/status`,
-    { data: { action: "done" } },
-  );
+  const response = await page.request.patch(`/api/journeys/${journeyId}/items/${itemId}/status`, {
+    data: { action: "done" },
+  });
   expect(response.status()).toBe(200);
 }
 

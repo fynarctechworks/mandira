@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { mustList, mustMaybe } from "./data-error";
 import type { webSupabase } from "./supabase";
 
 /**
@@ -90,17 +91,22 @@ export async function createShare(
   const token = mintToken();
   const expiresAt = new Date(Date.now() + DEFAULT_TTL_DAYS * 86_400_000).toISOString();
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from("journey_shares")
     .insert({ journey_id: journeyId, token, expires_at: expiresAt, created_by: userId })
     .select("token, expires_at")
     .maybeSingle();
 
-  // RLS refuses an insert for a journey the caller does not own; that arrives as an error
-  // or as no row, and both mean the same thing to the caller.
-  if (error || !data?.token) return null;
+  // RLS refuses an insert for a journey the caller does not own; that arrives as 42501 or
+  // as no row, and both mean the same thing to the caller. Anything else is an outage.
+  if (result.error?.code === RLS_REFUSED) return null;
+  const data = mustMaybe(result, "journey_shares insert");
+
+  if (!data?.token) return null;
   return { token: data.token, expiresAt: data.expires_at ?? expiresAt };
 }
+
+const RLS_REFUSED = "42501";
 
 /**
  * Revocation is a hard delete, not a flag.
@@ -110,14 +116,12 @@ export async function createShare(
  * safer behaviour.
  */
 export async function revokeShares(supabase: Client, journeyId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from("journey_shares")
-    .delete()
-    .eq("journey_id", journeyId)
-    .select("id");
+  const data = mustList(
+    await supabase.from("journey_shares").delete().eq("journey_id", journeyId).select("id"),
+    "journey_shares delete",
+  );
 
-  if (error) throw error;
-  return (data ?? []).length;
+  return data.length;
 }
 
 /** The live tokens for a journey, so the screen can show whether one is out there. */
@@ -125,13 +129,16 @@ export async function listShares(
   supabase: Client,
   journeyId: string,
 ): Promise<{ token: string; expiresAt: string | null }[]> {
-  const { data } = await supabase
-    .from("journey_shares")
-    .select("token, expires_at")
-    .eq("journey_id", journeyId)
-    .order("created_at", { ascending: false });
+  const data = mustList(
+    await supabase
+      .from("journey_shares")
+      .select("token, expires_at")
+      .eq("journey_id", journeyId)
+      .order("created_at", { ascending: false }),
+    "journey_shares",
+  );
 
-  return (data ?? [])
+  return data
     .filter((row) => !row.expires_at || Date.parse(row.expires_at) > Date.now())
     .map((row) => ({ token: row.token, expiresAt: row.expires_at }));
 }
@@ -147,12 +154,12 @@ export async function readShared(
   token: string,
   locale: string,
 ): Promise<SharedSummary | null> {
-  const { data, error } = await supabase.rpc("share_summary", {
-    p_token: token,
-    p_locale: locale,
-  });
+  const data = mustMaybe(
+    await supabase.rpc("share_summary", { p_token: token, p_locale: locale }),
+    "share_summary",
+  );
 
-  if (error || !data) return null;
+  if (!data) return null;
   return parseSummary(data);
 }
 
@@ -168,12 +175,12 @@ export async function readOwnSummary(
   journeyId: string,
   locale: string,
 ): Promise<SharedSummary | null> {
-  const { data, error } = await supabase.rpc("my_journey_summary", {
-    p_journey_id: journeyId,
-    p_locale: locale,
-  });
+  const data = mustMaybe(
+    await supabase.rpc("my_journey_summary", { p_journey_id: journeyId, p_locale: locale }),
+    "my_journey_summary",
+  );
 
-  if (error || !data) return null;
+  if (!data) return null;
   return parseSummary(data);
 }
 

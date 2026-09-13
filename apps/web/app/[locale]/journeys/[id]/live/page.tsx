@@ -7,6 +7,7 @@ import { StartToday } from "../../../../../components/start-today";
 import { LiveConditions } from "../../../../../components/live-conditions";
 import { getLiveConditions } from "../../../../../lib/live-conditions";
 import { getLiveView } from "../../../../../lib/live";
+import { readPreferences } from "../../../../../lib/notifications";
 import { webSupabase } from "../../../../../lib/supabase";
 
 /**
@@ -32,6 +33,12 @@ export default async function LivePage({
 
   const supabase = await webSupabase();
   const view = await getLiveView(supabase, id, locale, new Date().toISOString());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const leaveByReminders = user
+    ? ((await readPreferences(supabase, user.id)).leave_by ?? false)
+    : false;
 
   /*
    * Live conditions (PRD F10). Read server-side and rendered above the plan, because a
@@ -82,7 +89,7 @@ export default async function LivePage({
 
       <LiveConditions conditions={conditions} />
 
-      <LiveJourney view={view} locale={locale} />
+      <LiveJourney view={view} locale={locale} leaveByReminders={leaveByReminders} />
     </main>
   );
 }

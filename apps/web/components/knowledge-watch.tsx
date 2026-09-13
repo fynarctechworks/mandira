@@ -1,9 +1,16 @@
 "use client";
 
 import type { ChangeCard } from "@mandhira/journey-engine";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 
-import { ChangeSheet } from "./change-sheet";
+/*
+ * A card here is rare — most visits find nothing changed — so its sheet loads only when one
+ * arrives, not with every journey page (TRD-PERF-001).
+ */
+const ChangeSheet = dynamic(() => import("./change-sheet").then((module) => module.ChangeSheet), {
+  ssr: false,
+});
 
 /**
  * Noticing that published knowledge moved under this journey (PRD-OPS-WF-007).

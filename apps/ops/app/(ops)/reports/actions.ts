@@ -89,20 +89,29 @@ async function notifyReporter(userId: string, status: string): Promise<void> {
         ? "confirmed"
         : "unverified";
 
+  const row = {
+    user_id: userId,
+    notification_type: "report_resolved" as const,
+    status: "scheduled",
+    scheduled_for: new Date().toISOString(),
+    // Keys and params, never a sentence — the traveler's language is decided at send
+    // time, not at the moment an operator happened to click.
+    title_i18n: { key: "notify.report_resolved.title" },
+    body_i18n: { key: "notify.report_resolved.body" },
+    payload: { outcome },
+  };
+
+  /*
+   * In the app always; by email only if the traveler opted in. Ops learns neither which nor
+   * the address: the email row is queued unconditionally, and the sender checks consent and
+   * looks the address up at send time, cancelling the row when either is missing (D-171).
+   */
   await createServiceRoleSupabase()
     .from("notifications")
-    .insert({
-      user_id: userId,
-      notification_type: "report_resolved",
-      channel: "inapp",
-      status: "scheduled",
-      scheduled_for: new Date().toISOString(),
-      // Keys and params, never a sentence — the traveler's language is decided at send
-      // time, not at the moment an operator happened to click.
-      title_i18n: { key: "notify.report_resolved.title" },
-      body_i18n: { key: "notify.report_resolved.body" },
-      payload: { outcome },
-    });
+    .insert([
+      { ...row, channel: "inapp" },
+      { ...row, channel: "email" },
+    ]);
 }
 
 export const triageReport = opsAction({

@@ -273,10 +273,7 @@ function Dashboard({ health }: { health: KnowledgeHealth }) {
           </TableHeader>
           <TableBody>
             {health.jobs.map((job) => (
-              <TableRow
-                key={job.job_name}
-                className={job.needs_attention ? "bg-destructive/5" : undefined}
-              >
+              <TableRow key={job.job_name}>
                 <TableCell className="font-mono">{job.job_name}</TableCell>
                 <TableCell>{everyLabel(job.interval_seconds)}</TableCell>
                 <TableCell>

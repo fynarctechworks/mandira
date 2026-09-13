@@ -72,9 +72,7 @@ export function Feedback() {
         <Alert variant="destructive">
           <TriangleAlertIcon />
           <AlertTitle>Day 4 cannot work as planned</AlertTitle>
-          <AlertDescription>
-            The drive is 7 hours and the last entry is at 4 pm.
-          </AlertDescription>
+          <AlertDescription>The drive is 7 hours and the last entry is at 4 pm.</AlertDescription>
         </Alert>
       </Specimen>
 
@@ -179,7 +177,11 @@ export function Feedback() {
 
       <Specimen name="Combobox" className="block">
         <Combobox items={PLACES}>
-          <ComboboxInput placeholder="Search a destination" className="w-72" aria-label="Search a destination" />
+          <ComboboxInput
+            placeholder="Search a destination"
+            className="w-72"
+            aria-label="Search a destination"
+          />
           <ComboboxContent>
             <ComboboxEmpty>Nothing found.</ComboboxEmpty>
             <ComboboxList>
@@ -193,7 +195,11 @@ export function Feedback() {
         </Combobox>
       </Specimen>
 
-      <Specimen name="Questionnaire" note="Drives the intake that sets priority tiers" className="block">
+      <Specimen
+        name="Questionnaire"
+        note="Drives the intake that sets priority tiers"
+        className="block"
+      >
         <Questionnaire items={[{ name: "pace" }]}>
           <QuestionnaireProgress />
           <QuestionnaireItem name="pace">

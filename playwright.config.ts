@@ -19,6 +19,7 @@ const WEB_STORAGE_STATE = "tests/e2e/.auth/traveler.json";
  * traveler's hourly budget — see the note in web/auth.setup.ts. The limit is untouched.
  */
 const WEB_STORAGE_STATE_B = "tests/e2e/.auth/traveler-b.json";
+const WEB_STORAGE_STATE_C = "tests/e2e/.auth/traveler-c.json";
 
 /*
  * The E2E suite builds and serves from its own directory, so a run never clobbers a dev
@@ -49,7 +50,8 @@ export default defineConfig({
       name: "web-mobile",
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
-      testIgnore: /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record)\.spec\.ts/,
+      testIgnore:
+        /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record|add-to-journey|profile|saved-places|reorder|health-sheet)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -70,7 +72,21 @@ export default defineConfig({
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE,
       },
-      testMatch: /web[\\/](journey-builder|prepare|live|offline|notifications)\.spec\.ts/,
+      testMatch:
+        /web[\\/](journey-builder|prepare|live|offline|notifications|saved-places|health-sheet)\.spec\.ts/,
+      dependencies: ["web-setup"],
+    },
+
+    // The third traveler (TEST-01): the account, add-to-journey and reorder specs write
+    // enough on their own to push the first account past `journeys_write`.
+    {
+      name: "web-traveler-c",
+      use: {
+        ...devices["Pixel 5"],
+        baseURL: `http://localhost:${WEB_PORT}`,
+        storageState: WEB_STORAGE_STATE_C,
+      },
+      testMatch: /web[\\/](add-to-journey|profile|reorder)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 

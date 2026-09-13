@@ -2,7 +2,7 @@ import { LOCALES, isLocale } from "@mandhira/i18n";
 import { fontVariables } from "@mandhira/ui/fonts";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BottomNav } from "@/components/bottom-nav";
@@ -46,15 +46,24 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale) || !isLocale(locale)) notFound();
 
   setRequestLocale(locale);
+  const t = await getTranslations("skip");
 
   return (
     <html lang={locale} className={fontVariables}>
       <body className="antialiased">
         <NextIntlClientProvider>
+          <a
+            href="#content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:flex focus:min-h-11 focus:items-center focus:bg-background focus:px-4 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring"
+          >
+            {t("to_content")}
+          </a>
           <ConnectionBanner />
           {/* Bottom padding leaves room for the fixed nav so content is never hidden
               behind it — including at 200% text scale, where the nav grows. */}
-          <div className="min-h-dvh pb-20">{children}</div>
+          <div id="content" tabIndex={-1} className="min-h-dvh pb-20 outline-none">
+            {children}
+          </div>
           <BottomNav />
           <InstallPrompt />
           <UpdateToast />

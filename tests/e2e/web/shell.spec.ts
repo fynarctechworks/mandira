@@ -56,12 +56,14 @@ test.describe("Traveler shell", () => {
     expect(source).toContain("SKIP_WAITING");
   });
 
-  test("falls back to English for an untranslated locale rather than showing keys", async ({
-    page,
-  }) => {
-    // te/hi are scaffolds until M4. A traveler must see English, not `home.title`.
+  test("renders a translated locale in its own script, never as keys", async ({ page }) => {
+    // te and hi carry authored catalogs now (R6; native review pending under OPEN-004), so the
+    // English heading is no longer the right expectation. What must never reach a traveler is
+    // a key such as `home.title`.
     await page.goto("/te");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Plan around what matters");
+    const heading = page.getByRole("heading", { level: 1 });
+    await expect(heading).toHaveText(/[\u0C00-\u0C7F]/);
+    await expect(heading).not.toHaveText(/^[a-z]+(\.[a-z_]+)+$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "te");
   });
 

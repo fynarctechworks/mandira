@@ -22,6 +22,8 @@ const schema = z.object({
   report_resolved: z.boolean().optional(),
   advisory: z.boolean().optional(),
   suggestion: z.boolean().optional(),
+  // Consent to email: beside the seven rather than one of them, and off by default (D-171).
+  email: z.boolean().optional(),
 });
 
 export const PATCH = withApi({

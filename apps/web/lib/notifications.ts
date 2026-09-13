@@ -11,6 +11,7 @@ import type { Database, Json } from "@mandhira/db/types";
 
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 
+import { mustList, mustMaybe, mustWrite } from "./data-error";
 import { getJourney, toEngineJourney } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
@@ -109,7 +110,7 @@ export async function syncJourneyNotifications(
 
   // The only privileged write in this file, and it writes for exactly the user id the
   // caller authenticated — never one taken from a request body.
-  const { error } = await createServiceRoleSupabase()
+  const inserted = await createServiceRoleSupabase()
     .from("notifications")
     .insert(fresh.map((draft) => toRow(draft, userId, journeyId)));
 
@@ -121,9 +122,7 @@ export async function syncJourneyNotifications(
    *
    * The caller is inside `withApi`, which turns a throw into an honest error response.
    */
-  if (error) {
-    throw new Error(`Could not schedule notifications: ${error.message}`);
-  }
+  mustWrite(inserted, "notifications insert");
 
   return { scheduled: fresh.length };
 }
@@ -161,14 +160,17 @@ async function existingKeys(
   userId: string,
   journeyId: string,
 ): Promise<Set<string>> {
-  const { data } = await supabase
-    .from("notifications")
-    .select("payload")
-    .eq("user_id", userId)
-    .eq("journey_id", journeyId);
+  const data = mustList(
+    await supabase
+      .from("notifications")
+      .select("payload")
+      .eq("user_id", userId)
+      .eq("journey_id", journeyId),
+    "notifications",
+  );
 
   return new Set(
-    (data ?? [])
+    data
       .map((row) => (row.payload as { dedupeKey?: string } | null)?.dedupeKey)
       .filter((key): key is string => !!key),
   );
@@ -182,45 +184,56 @@ async function existingKeys(
  * would mean the cap silenced the one notification nobody would want silenced.
  */
 async function lastNonJourneySend(supabase: Client, userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("notifications")
-    .select("sent_at")
-    .eq("user_id", userId)
-    .in("notification_type", ["suggestion", "advisory"])
-    .not("sent_at", "is", null)
-    .order("sent_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const data = mustMaybe(
+    await supabase
+      .from("notifications")
+      .select("sent_at")
+      .eq("user_id", userId)
+      .in("notification_type", ["suggestion", "advisory"])
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    "notifications",
+  );
 
   return data?.sent_at ?? null;
 }
+
+/**
+ * The seven switches plus the email opt-in (D-171). Email is consent, not a notification
+ * type, so it sits beside them and defaults off: nobody is mailed because they signed in.
+ */
+export type TravelerNotificationPrefs = NotificationPrefs & { email?: boolean };
 
 /** The traveler's per-type switches, over PRD F15's defaults. */
 export async function readPreferences(
   supabase: Client,
   userId: string,
-): Promise<NotificationPrefs> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("notification_prefs")
-    .eq("id", userId)
-    .maybeSingle();
+): Promise<TravelerNotificationPrefs> {
+  const data = mustMaybe(
+    await supabase.from("profiles").select("notification_prefs").eq("id", userId).maybeSingle(),
+    "profiles",
+  );
 
   const stored = (data?.notification_prefs ?? {}) as Record<string, boolean>;
-  return { ...NOTIFICATION_DEFAULTS, ...stored };
+  return { ...NOTIFICATION_DEFAULTS, email: false, ...stored };
 }
 
 export async function writePreferences(
   supabase: Client,
   userId: string,
-  prefs: NotificationPrefs,
+  prefs: TravelerNotificationPrefs,
 ): Promise<void> {
   const current = await readPreferences(supabase, userId);
 
-  await supabase
-    .from("profiles")
-    .update({ notification_prefs: { ...current, ...prefs } as unknown as Json })
-    .eq("id", userId);
+  mustWrite(
+    await supabase
+      .from("profiles")
+      .update({ notification_prefs: { ...current, ...prefs } as unknown as Json })
+      .eq("id", userId),
+    "profiles update",
+  );
 }
 
 /**
@@ -234,16 +247,20 @@ export async function listNotifications(
   supabase: Client,
   locale: string,
 ): Promise<StoredNotification[]> {
-  const { data } = await supabase
-    .from("notifications")
-    .select(
-      "id, notification_type, title_i18n, body_i18n, journey_id, scheduled_for, sent_at, read_at, payload",
-    )
-    .not("sent_at", "is", null)
-    .order("sent_at", { ascending: false })
-    .limit(50);
+  const data = mustList(
+    await supabase
+      .from("notifications")
+      .select(
+        "id, notification_type, title_i18n, body_i18n, journey_id, scheduled_for, sent_at, read_at, payload",
+      )
+      .not("sent_at", "is", null)
+      .neq("channel", "email")
+      .order("sent_at", { ascending: false })
+      .limit(50),
+    "notifications",
+  );
 
-  return (data ?? []).map((row) => {
+  return data.map((row) => {
     const payload = (row.payload ?? {}) as { params?: Record<string, string | number> };
     const params = payload.params ?? {};
 
@@ -261,7 +278,10 @@ export async function listNotifications(
 }
 
 export async function markRead(supabase: Client, id: string): Promise<void> {
-  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  mustWrite(
+    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id),
+    "notifications update",
+  );
 }
 
 /**

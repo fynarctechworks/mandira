@@ -1,6 +1,7 @@
 import type { Json } from "@mandhira/db/types";
 import type { PriorityTier } from "@mandhira/journey-engine";
 
+import { mustList, mustMaybe, mustWrite } from "./data-error";
 import { getJourney } from "./journeys";
 import type { ReflectionAnswers } from "./reflection";
 import type { webSupabase } from "./supabase";
@@ -63,23 +64,27 @@ export async function getJourneyRecord(
 
   const { journey, items, labels } = detail;
 
-  const { data: record } = await supabase
-    .from("journey_records")
-    .select("reflection_answers, summary")
-    .eq("journey_id", journeyId)
-    .maybeSingle();
-
-  const { data: notes } = await supabase
-    .from("journey_item_notes")
-    .select("item_id, body")
-    .in(
-      "item_id",
-      items.map((item) => item.id),
-    );
-
-  const noteFor = new Map(
-    (notes ?? []).map((row) => [row.item_id as string, row.body as string]),
+  const record = mustMaybe(
+    await supabase
+      .from("journey_records")
+      .select("reflection_answers, summary")
+      .eq("journey_id", journeyId)
+      .maybeSingle(),
+    "journey_records",
   );
+
+  const notes = mustList(
+    await supabase
+      .from("journey_item_notes")
+      .select("item_id, body")
+      .in(
+        "item_id",
+        items.map((item) => item.id),
+      ),
+    "journey_item_notes",
+  );
+
+  const noteFor = new Map(notes.map((row) => [row.item_id as string, row.body as string]));
 
   const rows: RecordItem[] = items.map((item) => ({
     itemId: item.id,
@@ -96,9 +101,7 @@ export async function getJourneyRecord(
 
   const dayIndexes = [...new Set(items.map((item) => item.day_index))].sort((a, b) => a - b);
 
-  const protectedRows = rows.filter(
-    (row) => row.tier === "protected" || row.tier === "fixed",
-  );
+  const protectedRows = rows.filter((row) => row.tier === "protected" || row.tier === "fixed");
 
   /*
    * Once the traveler has tapped Complete the counts come from the frozen snapshot rather
@@ -133,12 +136,15 @@ export async function saveReflection(
   journeyId: string,
   answers: ReflectionAnswers,
 ): Promise<void> {
-  await supabase.from("journey_records").upsert(
-    {
-      journey_id: journeyId,
-      reflection_answers: answers as unknown as Json,
-    },
-    { onConflict: "journey_id" },
+  mustWrite(
+    await supabase.from("journey_records").upsert(
+      {
+        journey_id: journeyId,
+        reflection_answers: answers as unknown as Json,
+      },
+      { onConflict: "journey_id" },
+    ),
+    "journey_records upsert",
   );
 }
 
@@ -169,10 +175,13 @@ export async function similarBrief(
 
   const { journey, items } = detail;
 
-  const { data: travelers } = await supabase
-    .from("journey_travelers")
-    .select("traveler_profiles(mobility, age_band)")
-    .eq("journey_id", journeyId);
+  const travelers = mustList(
+    await supabase
+      .from("journey_travelers")
+      .select("traveler_profiles(mobility, age_band)")
+      .eq("journey_id", journeyId),
+    "journey_travelers",
+  );
 
   const experienceOf = (tiers: PriorityTier[]) =>
     items
@@ -187,7 +196,7 @@ export async function similarBrief(
     // FIXED collapses into must-do: a booked slot in a NEW journey is not booked yet.
     mustDo: experienceOf(["protected", "fixed"]),
     wouldLike: experienceOf(["important", "optional"]),
-    travelers: (travelers ?? [])
+    travelers: travelers
       .map((row) => row.traveler_profiles as { mobility: string; age_band: string } | null)
       .filter((profile): profile is { mobility: string; age_band: string } => !!profile)
       .map((profile) => ({ mobility: profile.mobility, ageBand: profile.age_band })),
@@ -245,13 +254,21 @@ export async function completeJourney(
 
   const summary = summaryOf(record);
 
-  await supabase.from("journey_records").upsert(
-    { journey_id: journeyId, summary: summary as unknown as Json },
-    { onConflict: "journey_id" },
+  mustWrite(
+    await supabase
+      .from("journey_records")
+      .upsert(
+        { journey_id: journeyId, summary: summary as unknown as Json },
+        { onConflict: "journey_id" },
+      ),
+    "journey_records upsert",
   );
 
   // RLS decides whether this lands at all; `owns_journey` is the same gate as the read.
-  await supabase.from("journeys").update({ status: "completed" }).eq("id", journeyId);
+  mustWrite(
+    await supabase.from("journeys").update({ status: "completed" }).eq("id", journeyId),
+    "journeys update",
+  );
 
   return { summary };
 }

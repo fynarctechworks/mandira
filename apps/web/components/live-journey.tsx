@@ -2,10 +2,12 @@
 
 import { HealthPill, NowCard, TierChip } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { ChangeCard } from "@mandhira/journey-engine";
 
+import { useLeaveByReminder } from "../lib/leave-by-reminder";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import { ChangeSheet } from "./change-sheet";
 import { readLiveViewLocally } from "../lib/offline/live-local";
@@ -39,9 +41,12 @@ const TIER_CHIP = {
 export function LiveJourney({
   view: serverView,
   locale,
+  leaveByReminders = false,
 }: {
   view: LiveView | null;
   locale: string;
+  /** The traveler's leave-by switch (PRD F15); off unless the page knows it is on. */
+  leaveByReminders?: boolean;
 }) {
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
@@ -106,6 +111,36 @@ export function LiveJourney({
     const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(tick);
   }, []);
+
+  const t = useTranslations("live");
+  const leaveByAt = view?.projection.leaveByAt ?? null;
+  const leaveByClock = leaveByAt ? clock(leaveByAt, locale) : null;
+
+  useLeaveByReminder({
+    enabled: leaveByReminders && !!view?.next,
+    leaveByAt,
+    tag: `leave-by:${journeyId}`,
+    title: t("leave_by_title"),
+    body: leaveByClock
+      ? t("leave_by_body", { time: leaveByClock, label: view?.next?.label ?? "" })
+      : "",
+  });
+
+  /*
+   * What a screen reader hears. Built from the clock floored to the minute, so it changes when
+   * a minute turns or NOW and NEXT move on, and never once a second.
+   */
+  const minute = Math.floor(now / 60_000) * 60_000;
+  const announcement = view
+    ? [
+        t("announce_now", { label: view.now.label, detail: nowDetail(view, minute) }),
+        view.next && leaveByClock
+          ? t("announce_next", { label: view.next.label, time: leaveByClock })
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : "";
 
   /*
    * Nothing from the server and nothing stored: a first visit with no network. Said
@@ -306,6 +341,10 @@ export function LiveJourney({
         ) : null}
       </div>
 
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </p>
+
       {/*
         PRD-OFFL-003 allows exactly one card about what changed while the traveler was
         away, and forbids a sync-error dialog entirely. This is that card.
@@ -343,6 +382,11 @@ export function LiveJourney({
           open
           offline={change.offline}
           pending={pending}
+          itemName={(id) =>
+            [view.now, view.next, view.tomorrowFirst, ...view.later].find(
+              (entry) => entry?.itemId === id,
+            )?.label
+          }
           onDecide={(optionId) => void decide(optionId)}
           onOpenChange={(next) => {
             // Closing without choosing is not a decision. The card stays unanswered in

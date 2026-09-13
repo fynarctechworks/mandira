@@ -40,8 +40,11 @@
   --muted-foreground: oklch(0.52 0.021 213.5);
   --accent: oklch(0.963 0.002 197.1);
   --accent-foreground: oklch(0.218 0.008 223.9);
-  /* Darker than the preset's 0.577, which read 3.98:1 as text on its own 10% tint. */
-  --destructive: oklch(0.53 0.23 27.325);
+  /*
+   * Darker than the preset's 0.577, which read 3.98:1 as text on its own 10% tint. 0.51 rather
+   * than 0.53 because a badge on a tinted table row read 4.35:1 in the Ops job list (D-172).
+   */
+  --destructive: oklch(0.51 0.23 27.325);
 
   /*
    * The brand orange as TEXT. #FF660E is a fill (2.93:1 as text on white); links and
@@ -94,7 +97,8 @@
   --muted-foreground: oklch(0.723 0.014 214.4);
   --accent: oklch(0.275 0.011 216.9);
   --accent-foreground: oklch(0.987 0.002 197.1);
-  --destructive: oklch(0.704 0.191 22.216);
+  /* Lighter than the preset's 0.704, which read 4.50:1 as a badge on a card (D-172). */
+  --destructive: oklch(0.72 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.696 0.203 42.743);
@@ -116,6 +120,53 @@
   --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.696 0.203 42.743);
+}
+
+/*
+ * The same dark palette when the SYSTEM asks for dark and nothing has chosen light.
+ *
+ * `tokens.css` has always followed `prefers-color-scheme` (D-025), and the routes not yet
+ * migrated read its text colours. The preset followed only the `.dark` class, so under a dark
+ * system setting a page got light-theme surfaces from here and dark-theme text from there —
+ * light grey on white, failing contrast on the traveler home (D-172). A copy rather than a
+ * shared rule because CSS cannot give one block two selectors across a media query;
+ * `design-system-contrast.test.ts` fails if the two ever differ.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: oklch(0.148 0.004 228.8);
+    --foreground: oklch(0.987 0.002 197.1);
+    --card: oklch(0.218 0.008 223.9);
+    --card-foreground: oklch(0.987 0.002 197.1);
+    --popover: oklch(0.218 0.008 223.9);
+    --popover-foreground: oklch(0.987 0.002 197.1);
+    --primary: oklch(0.696 0.203 42.743);
+    --primary-foreground: oklch(0.216 0.032 42.743);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.275 0.011 216.9);
+    --muted-foreground: oklch(0.723 0.014 214.4);
+    --accent: oklch(0.275 0.011 216.9);
+    --accent-foreground: oklch(0.987 0.002 197.1);
+    --destructive: oklch(0.72 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.696 0.203 42.743);
+    --primary-text: oklch(0.696 0.203 42.743);
+    --chart-1: oklch(0.837 0.128 42.743);
+    --chart-2: oklch(0.78 0.165 42.743);
+    --chart-3: oklch(0.696 0.203 42.743);
+    --chart-4: oklch(0.59 0.18 42.743);
+    --chart-5: oklch(0.47 0.157 42.743);
+    --sidebar: oklch(0.218 0.008 223.9);
+    --sidebar-foreground: oklch(0.987 0.002 197.1);
+    --sidebar-primary: oklch(0.696 0.203 42.743);
+    --sidebar-primary-foreground: oklch(0.216 0.032 42.743);
+    --sidebar-accent: oklch(0.275 0.011 216.9);
+    --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.696 0.203 42.743);
+  }
 }
 
 @theme inline {

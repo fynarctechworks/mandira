@@ -1,5 +1,5 @@
 import { getOpsRoles, hasAnyRole } from "@mandhira/db/client/roles";
-import { Button } from "@mandhira/ui/components/ui/button";
+import { buttonVariants } from "@mandhira/ui/components/ui/button";
 import {
   Table,
   TableBody,
@@ -64,20 +64,17 @@ export default async function SignalsPage({
 
       <nav aria-label="Time window" className="flex gap-1">
         {DAY_OPTIONS.map((option) => (
-          <Button
+          <Link
             key={option}
-            size="sm"
-            variant={option === days ? "default" : "outline"}
-            nativeButton={false}
-            render={
-              <Link
-                href={`/signals?days=${option}`}
-                aria-current={option === days ? "page" : undefined}
-              />
-            }
+            href={`/signals?days=${option}`}
+            aria-current={option === days ? "page" : undefined}
+            className={buttonVariants({
+              size: "sm",
+              variant: option === days ? "default" : "outline",
+            })}
           >
             Last {option} days
-          </Button>
+          </Link>
         ))}
       </nav>
 

@@ -16,7 +16,7 @@ import { Link, usePathname } from "@/i18n/routing";
  */
 const ITEMS = [
   { href: "/", key: "home", icon: Compass },
-  { href: "/journey", key: "journey", icon: Route },
+  { href: "/journeys", key: "journey", icon: Route },
   { href: "/prepare", key: "prepare", icon: ListChecks },
   { href: "/profile", key: "profile", icon: CircleUser },
 ] as const;

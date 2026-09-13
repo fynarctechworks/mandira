@@ -25,8 +25,11 @@ test.describe("O11 — Verify queue", () => {
   }) => {
     await page.goto("/verify");
 
+    // The queue streams in after the heading, so wait for either state before choosing a branch.
     const check = page.getByRole("button", { name: "Check" }).first();
-    if ((await check.count()) === 0) {
+    const healthy = page.getByText(/healthy state, not an empty one/);
+    await expect(check.or(healthy).first()).toBeVisible();
+    if (!(await check.isVisible())) {
       await expect(page.getByText(/healthy state, not an empty one/)).toBeVisible();
       return;
     }

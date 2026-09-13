@@ -31,10 +31,13 @@ export function RestoreVersion({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   function restore() {
+    // Closed at once: the outcome is announced on the page, which a modal left open would hide.
+    setOpen(false);
     setMessage(null);
     setProblem(null);
     startTransition(async () => {
@@ -58,7 +61,7 @@ export function RestoreVersion({
 
   return (
     <div className="flex flex-col gap-2">
-      <AlertDialog>
+      <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger render={<Button variant="outline" disabled={pending} />}>
           <HistoryIcon aria-hidden="true" />
           Restore this version

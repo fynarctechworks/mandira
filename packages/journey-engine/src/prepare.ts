@@ -20,6 +20,15 @@ export type PrepareTask = {
 };
 
 /**
+ * Entry requirements that ask for proof of identity, in the launch languages (D-014).
+ *
+ * The text is already in the traveler's locale when it reaches the engine, so the English
+ * words alone would miss a Telugu or Hindi requirement that asks for exactly the same thing.
+ */
+const IDENTITY_PROOF =
+  /\b(?:id|ids|identity|identification|aadhaar|aadhar|passport|voter|driving licen[cs]e|pan card)\b|पहचान|आधार|గుర్తింపు|ఆధార్/i;
+
+/**
  * The Prepare checklist (PRD F7, TRD §5.1 `generatePrepareTasks`).
  *
  * Everything here is DERIVED from what the journey already contains — nothing is invented
@@ -65,6 +74,24 @@ export function generatePrepareTasks(input: {
     });
   }
 
+  // ── Documents ───────────────────────────────────────────────────────────────
+  // A booking is only as good as the confirmation shown at the counter, so every journey
+  // that needs one says so once, not once per booking.
+  const booked = tasks.filter((task) => task.group === "bookings");
+  if (booked.length > 0) {
+    const first = booked[0]!;
+    tasks.push({
+      id: "documents:booking-confirmation",
+      group: "documents",
+      titleKey: "prepare.documents.booking_confirmation",
+      params: { count: booked.length },
+      ...(first.sourceItemId ? { sourceItemId: first.sourceItemId } : {}),
+      ...(first.trustRef ? { trustRef: first.trustRef } : {}),
+    });
+  }
+
+  let identityRaised = false;
+
   // ── What to carry, and what to know ─────────────────────────────────────────
   const seenCarry = new Set<string>();
   const seenKnow = new Set<string>();
@@ -80,6 +107,22 @@ export function generatePrepareTasks(input: {
         group: "know",
         titleKey: "prepare.know.dress_code",
         body: place.dress_code,
+        sourceItemId: item.id,
+        trustRef: { entityId: place.id, field: "entry_requirements_i18n" },
+      });
+    }
+
+    if (
+      !identityRaised &&
+      place.entry_requirements &&
+      IDENTITY_PROOF.test(place.entry_requirements)
+    ) {
+      identityRaised = true;
+      tasks.push({
+        id: "documents:identity",
+        group: "documents",
+        titleKey: "prepare.documents.identity_proof",
+        body: place.entry_requirements,
         sourceItemId: item.id,
         trustRef: { entityId: place.id, field: "entry_requirements_i18n" },
       });

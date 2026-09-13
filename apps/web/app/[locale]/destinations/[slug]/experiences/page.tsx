@@ -1,0 +1,65 @@
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+
+import { ExperienceCard } from "../../../../../components/experience-card";
+import { PageLinks } from "../../../../../components/page-links";
+import { getDestinationExperiencesPage } from "../../../../../lib/knowledge";
+
+/**
+ * Every experience at a destination, twenty at a time (PRD F2 "See all").
+ *
+ * Pages, not an endless scroll: PRD F2 rules out infinite feeds, and a page number is
+ * something a traveler can come back to.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function DestinationExperiencesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  const { page } = await searchParams;
+  const section = await getDestinationExperiencesPage(slug, Number(page ?? 1), locale);
+  if (!section || section.page > section.pageCount) notFound();
+
+  const t = await getTranslations("discovery");
+  const basePath = `/${locale}/destinations/${slug}/experiences`;
+
+  return (
+    <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      <Link
+        href={`/${locale}/destinations/${slug}`}
+        className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {t("back", { name: section.destination.name.text })}
+      </Link>
+
+      <h1 className="text-display">{t("experiences_title")}</h1>
+
+      {section.cards.length === 0 ? (
+        <p className="text-body-sm text-text-secondary">{t("empty")}</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {section.cards.map((experience) => (
+            <ExperienceCard
+              key={experience.id}
+              experience={experience}
+              locale={locale}
+              destinationSlug={slug}
+            />
+          ))}
+        </div>
+      )}
+
+      <PageLinks basePath={basePath} page={section.page} pageCount={section.pageCount} />
+    </main>
+  );
+}

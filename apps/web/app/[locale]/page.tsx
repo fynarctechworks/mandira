@@ -2,7 +2,9 @@ import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { LanguageSwitcher } from "../../components/language-switcher";
 import { getDestinationCards } from "../../lib/knowledge";
+import { webSupabase } from "../../lib/supabase";
 
 /**
  * Traveler home (A02).
@@ -18,15 +20,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, destinations] = await Promise.all([
+  const [t, destinations, supabase] = await Promise.all([
     getTranslations("home"),
     getDestinationCards(locale),
+    webSupabase(),
   ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-2">
-        <p className="text-body-sm font-medium text-text-secondary">Mandhira</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-body-sm font-medium text-text-secondary">Mandhira</p>
+          <LanguageSwitcher compact saveToProfile={!!user} />
+        </div>
         <h1 className="text-display">{t("title")}</h1>
         <p className="text-body text-text-secondary">{t("intro")}</p>
       </header>

@@ -1,6 +1,7 @@
 import { AlertTriangle, Info } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SourcesFooter } from "@mandhira/ui";
 
 import { ExperienceCard } from "../../../../components/experience-card";
@@ -31,6 +32,7 @@ export default async function DestinationPage({
 
   const page = await getDestinationPage(slug, locale);
   if (!page) notFound();
+  const t = await getTranslations("discovery");
 
   const { destination, experiences, places, guidance, advisories } = page;
   const oldestVerified = formatDate(page.oldestVerifiedAt, locale);
@@ -86,6 +88,14 @@ export default async function DestinationPage({
         title="What people come here for"
         empty="Nothing here has been published yet."
         count={experiences.length}
+        seeAll={
+          page.experienceTotal > experiences.length
+            ? {
+                href: `/${locale}/destinations/${slug}/experiences`,
+                label: t("see_all", { count: page.experienceTotal }),
+              }
+            : null
+        }
       >
         {experiences.map((experience) => (
           <ExperienceCard
@@ -101,6 +111,14 @@ export default async function DestinationPage({
         title="Important places"
         empty="No places have been published yet."
         count={places.length}
+        seeAll={
+          page.placeTotal > places.length
+            ? {
+                href: `/${locale}/destinations/${slug}/places`,
+                label: t("see_all", { count: page.placeTotal }),
+              }
+            : null
+        }
       >
         {places.map((place) => (
           <PlaceCard key={place.id} place={place} locale={locale} destinationSlug={slug} />
@@ -141,11 +159,14 @@ function Section({
   title,
   empty,
   count,
+  seeAll,
   children,
 }: {
   title: string;
   empty: string;
   count: number;
+  /** PRD F2: twenty cards, then "See all". */
+  seeAll: { href: string; label: string } | null;
   children: React.ReactNode;
 }) {
   const id = title.toLowerCase().replace(/[^a-z]+/g, "-");
@@ -160,6 +181,14 @@ function Section({
       ) : (
         <div className="flex flex-col gap-3">{children}</div>
       )}
+      {seeAll ? (
+        <Link
+          href={seeAll.href}
+          className="focus-ring flex min-h-11 items-center self-start text-body-sm font-medium text-brand-primary-text"
+        >
+          {seeAll.label}
+        </Link>
+      ) : null}
     </section>
   );
 }

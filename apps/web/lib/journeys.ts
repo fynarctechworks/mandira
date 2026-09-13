@@ -1,6 +1,7 @@
 import { computeHealth, type HealthReport, type JourneyItem } from "@mandhira/journey-engine";
 
-import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
+import { mustList, mustMaybe } from "./data-error";
+import { dayCountOf, toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
 
@@ -41,14 +42,59 @@ const JOURNEY_COLUMNS =
 const ITEM_COLUMNS =
   "id, day_index, sort_order, item_type, tier, experience_id, place_id, route_id, transport_connection_id, fixed_start_at, fixed_end_at, preferred_window_start, preferred_window_end, planned_start_at, planned_end_at, duration_likely_minutes, duration_max_minutes, travel_mode, buffer_minutes, note, status, actual_start_at, actual_end_at";
 
-export async function listJourneys(supabase: Client): Promise<StoredJourney[]> {
-  const { data } = await supabase
-    .from("journeys")
-    .select(JOURNEY_COLUMNS)
-    .is("deleted_at", null)
-    .order("start_date", { ascending: true });
+export type JourneyAtDestination = StoredJourney & { dayCount: number };
 
-  return (data ?? []).map(toJourney);
+/** The traveler's journeys still ahead at one destination: where "Add to journey" can put something. */
+export async function listJourneysAt(
+  supabase: Client,
+  destinationId: string,
+): Promise<JourneyAtDestination[]> {
+  const links = mustList(
+    await supabase
+      .from("journey_destinations")
+      .select("journey_id")
+      .eq("destination_id", destinationId),
+    "journey_destinations",
+  );
+  const ids = [...new Set(links.map((link) => link.journey_id))];
+  if (ids.length === 0) return [];
+
+  const [journeysResult, itemsResult] = await Promise.all([
+    supabase
+      .from("journeys")
+      .select(JOURNEY_COLUMNS)
+      .in("id", ids)
+      .is("deleted_at", null)
+      .in("status", ["draft", "upcoming", "active"])
+      .order("start_date", { ascending: true }),
+    supabase
+      .from("journey_items")
+      .select("journey_id, day_index")
+      .in("journey_id", ids)
+      .is("deleted_at", null),
+  ]);
+
+  const rows = mustList(journeysResult, "journeys");
+  const items = mustList(itemsResult, "journey_items");
+
+  return rows.map((row) => {
+    const journey = { ...toJourney(row), destinationId };
+    const own = items.filter((item) => item.journey_id === journey.id);
+    return { ...journey, dayCount: dayCountOf(journey, own) };
+  });
+}
+
+export async function listJourneys(supabase: Client): Promise<StoredJourney[]> {
+  const data = mustList(
+    await supabase
+      .from("journeys")
+      .select(JOURNEY_COLUMNS)
+      .is("deleted_at", null)
+      .order("start_date", { ascending: true }),
+    "journeys",
+  );
+
+  return data.map(toJourney);
 }
 
 /** One journey with its items and a freshly computed health report. */
@@ -57,21 +103,26 @@ export async function getJourney(
   journeyId: string,
   locale: string,
 ): Promise<JourneyDetail | null> {
-  const { data: row } = await supabase
-    .from("journeys")
-    .select(JOURNEY_COLUMNS)
-    .eq("id", journeyId)
-    .is("deleted_at", null)
-    .maybeSingle();
+  const row = mustMaybe(
+    await supabase
+      .from("journeys")
+      .select(JOURNEY_COLUMNS)
+      .eq("id", journeyId)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    "journeys",
+  );
 
   if (!row?.id) return null;
 
-  const [{ data: destinationRow }, { data: itemRows }] = await Promise.all([
+  const [destinationResult, itemsResult] = await Promise.all([
     supabase
       .from("journey_destinations")
       .select("destination_id")
       .eq("journey_id", journeyId)
       .order("sort_order")
+      // A journey may hold several destinations; the first is the one planned against.
+      .limit(1)
       .maybeSingle(),
     supabase
       .from("journey_items")
@@ -82,8 +133,11 @@ export async function getJourney(
       .order("sort_order"),
   ]);
 
+  const destinationRow = mustMaybe(destinationResult, "journey_destinations");
+  const itemRows = mustList(itemsResult, "journey_items");
+
   const journey = { ...toJourney(row), destinationId: destinationRow?.destination_id ?? null };
-  const items = (itemRows ?? []).map(toItem);
+  const items = itemRows.map(toItem);
 
   const knowledge = journey.destinationId
     ? await getKnowledgeBundle(journey.destinationId, locale)
@@ -177,23 +231,26 @@ async function labelsFor(
   const labels = new Map<string, string>();
 
   if (experienceIds.length > 0) {
-    const { data } = await supabase
-      .from("v_published_experiences")
-      .select("id, name_i18n")
-      .in("id", experienceIds);
+    const data = mustList(
+      await supabase
+        .from("v_published_experiences")
+        .select("id, name_i18n")
+        .in("id", experienceIds),
+      "v_published_experiences",
+    );
 
-    for (const row of data ?? []) {
+    for (const row of data) {
       if (row.id) labels.set(row.id, pickLocale(row.name_i18n, locale));
     }
   }
 
   if (placeIds.length > 0) {
-    const { data } = await supabase
-      .from("v_published_places")
-      .select("id, name_i18n")
-      .in("id", placeIds);
+    const data = mustList(
+      await supabase.from("v_published_places").select("id, name_i18n").in("id", placeIds),
+      "v_published_places",
+    );
 
-    for (const row of data ?? []) {
+    for (const row of data) {
       if (row.id) labels.set(row.id, pickLocale(row.name_i18n, locale));
     }
   }

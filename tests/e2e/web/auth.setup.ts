@@ -18,6 +18,9 @@ export const WEB_STORAGE_STATE = "tests/e2e/.auth/traveler.json";
  */
 export const WEB_STORAGE_STATE_B = "tests/e2e/.auth/traveler-b.json";
 
+/** A third, for the account, add-to-journey and reorder specs (TEST-01's rule, applied again). */
+export const WEB_STORAGE_STATE_C = "tests/e2e/.auth/traveler-c.json";
+
 /**
  * The address this run's traveler signs in as.
  *
@@ -27,6 +30,7 @@ export const WEB_STORAGE_STATE_B = "tests/e2e/.auth/traveler-b.json";
  */
 export const TRAVELER_EMAIL = `traveler-${Date.now()}@mandhira.local`;
 export const TRAVELER_EMAIL_B = `traveler-b-${Date.now()}@mandhira.local`;
+export const TRAVELER_EMAIL_C = `traveler-c-${Date.now()}@mandhira.local`;
 
 /**
  * Signs in once, and every traveler test that needs an account reuses the session.
@@ -45,6 +49,10 @@ setup("authenticate as a traveler", async ({ page }) => {
 
 setup("authenticate as a second traveler", async ({ page }) => {
   await signIn(page, TRAVELER_EMAIL_B, WEB_STORAGE_STATE_B);
+});
+
+setup("authenticate as a third traveler", async ({ page }) => {
+  await signIn(page, TRAVELER_EMAIL_C, WEB_STORAGE_STATE_C);
 });
 
 async function signIn(page: Page, email: string, storageState: string) {

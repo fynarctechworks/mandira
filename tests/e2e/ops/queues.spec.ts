@@ -132,6 +132,7 @@ test("both queues are reachable from the Ops nav", async ({ page }) => {
   await page.goto("/");
 
   // They were `comingIn: "M3"` placeholders until this item.
-  await expect(page.getByRole("link", { name: /Freshness monitor/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Conflicts/ })).toBeVisible();
+  const nav = page.getByLabel("Operations sections");
+  await expect(nav.getByRole("link", { name: /Freshness monitor/ })).toBeVisible();
+  await expect(nav.getByRole("link", { name: /Conflicts/ })).toBeVisible();
 });

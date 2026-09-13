@@ -67,7 +67,7 @@ test.describe("The journey it proposes", () => {
   test("places each item inside its own availability window", async ({ page }) => {
     await page.goto(`${base}&mobility=full${both}`);
 
-    // Dawn Darshan runs 05:00–06:30 and the day starts at 06:00; the aarti is 18:30–19:30.
+    // Dawn Darshan runs 05:00–08:00 and the day starts at 06:00; the aarti is 18:30–19:30.
     // A schedule that ignored either would look completely normal on screen.
     await expect(page.getByText("6:00 AM")).toBeVisible();
     await expect(page.getByText("6:30 PM")).toBeVisible();

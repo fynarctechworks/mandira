@@ -88,7 +88,9 @@ function percentile95(samples: number[]): number {
 
 describe("performance", () => {
   const { journey, items, knowledge } = largeJourney();
-  const travelers = [{ id: "t1", mobility: "limited_walking" as const, age_band: "senior" as const }];
+  const travelers = [
+    { id: "t1", mobility: "limited_walking" as const, age_band: "senior" as const },
+  ];
 
   const recompute = () => {
     const scheduled = [0, 1, 2, 3, 4, 5, 6].flatMap(

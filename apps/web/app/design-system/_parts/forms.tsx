@@ -28,10 +28,7 @@ import {
   InputOTPSlot,
 } from "@mandhira/ui/components/ui/input-otp";
 import { Label } from "@mandhira/ui/components/ui/label";
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@mandhira/ui/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@mandhira/ui/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@mandhira/ui/components/ui/radio-group";
 import {
   Select,

@@ -31,11 +31,9 @@ export const DEVICE_COOKIE = "mandhira_device";
 /**
  * Who a guest's rate limit is counted against.
  *
- * KNOWN GAP (OPEN-011): nothing sets this cookie yet — the guest draft that issues it is
- * B-019 — so every guest currently shares the "anonymous" bucket. That is harmless while
- * no guest-facing rate-limited route exists, and unacceptable the moment one does: a
- * shared bucket means the first traveler to use their ten intent extractions spends
- * everyone's. `/api/intent/extract` (B-018) must not ship before the cookie does.
+ * The middleware issues this cookie on a guest's first request (OPEN-011, closed), so each
+ * browser has its own bucket. "anonymous" remains only for a client that refuses cookies —
+ * a shared bucket there is the conservative failure: it throttles, it never lets through.
  *
  * Not keyed on IP, deliberately: TRD §6.2 keys limits on a session and DPDP treats an IP
  * as personal data. `ip_hash` exists for the audit trail that genuinely needs one.

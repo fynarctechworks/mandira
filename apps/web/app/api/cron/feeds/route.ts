@@ -58,7 +58,15 @@ export async function GET(request: Request): Promise<Response> {
     if (!centre) {
       // No coordinates: nothing to ask about. Recorded so the gap is visible in Ops
       // rather than presenting as a feed that never updates.
-      if (!(await record(supabase, config.id, "unavailable", { reason: "no_destination_centre" }, writeFailures))) {
+      if (
+        !(await record(
+          supabase,
+          config.id,
+          "unavailable",
+          { reason: "no_destination_centre" },
+          writeFailures,
+        ))
+      ) {
         continue;
       }
       unavailable += 1;
@@ -73,7 +81,15 @@ export async function GET(request: Request): Promise<Response> {
     });
 
     if (!reading) {
-      if (!(await record(supabase, config.id, "unavailable", { reason: "provider_unavailable" }, writeFailures))) {
+      if (
+        !(await record(
+          supabase,
+          config.id,
+          "unavailable",
+          { reason: "provider_unavailable" },
+          writeFailures,
+        ))
+      ) {
         continue;
       }
       unavailable += 1;
@@ -96,7 +112,12 @@ export async function GET(request: Request): Promise<Response> {
       supabase,
       config.id,
       "ok",
-      { provider: reading.provider, observedAt: reading.observedAt, hours: reading.hours, disruptive },
+      {
+        provider: reading.provider,
+        observedAt: reading.observedAt,
+        hours: reading.hours,
+        disruptive,
+      },
       writeFailures,
     );
 

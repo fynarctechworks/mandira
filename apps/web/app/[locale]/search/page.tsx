@@ -4,7 +4,10 @@ import { setRequestLocale } from "next-intl/server";
 import { ExperienceCard } from "../../../components/experience-card";
 import { FilterBar } from "../../../components/filter-bar";
 import { PlaceCard } from "../../../components/place-card";
-import { getDestinationCards, searchKnowledge, type SearchFilters } from "../../../lib/knowledge";
+import { listJourneys } from "../../../lib/journeys";
+import { getDestinationCards, searchKnowledge } from "../../../lib/knowledge";
+import { searchFiltersFrom, type SearchQuery } from "../../../lib/search-filters";
+import { webSupabase } from "../../../lib/supabase";
 
 /**
  * Search results (A03, SRCH-01).
@@ -16,13 +19,7 @@ import { getDestinationCards, searchKnowledge, type SearchFilters } from "../../
  */
 export const dynamic = "force-dynamic";
 
-type SearchParams = {
-  q?: string;
-  type?: string;
-  access?: string;
-  duration?: string;
-  booking?: string;
-};
+type SearchParams = SearchQuery;
 
 export default async function SearchPage({
   params,
@@ -36,13 +33,14 @@ export default async function SearchPage({
 
   const query = await searchParams;
   const q = query.q ?? "";
-  const filters = toFilters(query);
+  const filters = searchFiltersFrom(query);
 
-  const [results, destinations] = await Promise.all([
+  const [results, destinations, journeys] = await Promise.all([
     searchKnowledge(q, filters, locale),
     // Results carry no destination name of their own, so the slug is resolved once here
     // rather than per card.
     getDestinationCards(locale, 20),
+    journeysForFilter(),
   ]);
 
   const slugById = new Map(destinations.map((d) => [d.id, d.slug]));
@@ -69,7 +67,7 @@ export default async function SearchPage({
           />
         </div>
 
-        <FilterBar filters={filters} />
+        <FilterBar filters={filters} journeys={journeys} />
 
         <button
           type="submit"
@@ -138,18 +136,15 @@ export default async function SearchPage({
   );
 }
 
-/** Query string → filters, ignoring anything that is not a value we offer. */
-function toFilters(query: SearchParams): SearchFilters {
-  const duration = Number(query.duration);
+/** The traveler's journeys for "Near a journey", or null for a guest, who has none to offer. */
+async function journeysForFilter(): Promise<{ id: string; title: string | null }[] | null> {
+  const supabase = await webSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
 
-  return {
-    ...(query.type ? { type: query.type } : {}),
-    ...(query.access === "step_free" ? { stepFreeOnly: true } : {}),
-    ...(Number.isFinite(duration) && duration > 0 ? { maxDurationMinutes: duration } : {}),
-    ...(query.booking === "yes"
-      ? { advanceBooking: true }
-      : query.booking === "no"
-        ? { advanceBooking: false }
-        : {}),
-  };
+  return (await listJourneys(supabase))
+    .filter((journey) => journey.status !== "completed" && journey.status !== "archived")
+    .map((journey) => ({ id: journey.id, title: journey.title }));
 }

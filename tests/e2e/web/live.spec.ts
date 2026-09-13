@@ -148,7 +148,9 @@ test.describe("What the screen says", () => {
     const journeyId = await saveJourney(page, tomorrowInIndia());
     await page.goto(`/en/journeys/${journeyId}/live`);
 
-    await expect(page.getByText(/hasn't started yet|Today is complete/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /hasn't started yet|Today is complete/ }),
+    ).toBeVisible();
   });
 });
 

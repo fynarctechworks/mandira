@@ -1,6 +1,7 @@
 import { HealthPill, ItemCard } from "@mandhira/ui";
 import type { DayHealth, Journey, JourneyItem } from "@mandhira/journey-engine";
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
+import { useTranslations } from "next-intl";
 
 import { durationLabel } from "../lib/present";
 import { causeText, trustText } from "./journey-health";
@@ -38,6 +39,7 @@ export function DayPlan({
   nameOf: Map<string, string>;
   locale: string;
 }) {
+  const t = useTranslations();
   const date = dateForDay(journey.start_date, dayIndex);
   const ordered = [...items].sort((a, b) => a.sort_order - b.sort_order);
 
@@ -47,8 +49,10 @@ export function DayPlan({
    * is noise, and would also collide as React keys. The item ids stay in the data for when
    * this list can point at a specific item.
    */
-  const causes = [...new Set((health?.causes ?? []).map(causeText).filter(Boolean))];
-  const trust = [...new Set((health?.trustExposure ?? []).map(trustText).filter(Boolean))];
+  const causes = [...new Set((health?.causes ?? []).map((c) => causeText(t, c)).filter(Boolean))];
+  const trust = [
+    ...new Set((health?.trustExposure ?? []).map((c) => trustText(t, c)).filter(Boolean)),
+  ];
 
   return (
     <section aria-labelledby={`day-${dayIndex}`} className="flex flex-col gap-3">

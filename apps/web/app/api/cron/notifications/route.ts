@@ -1,6 +1,7 @@
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
-import { createWebPushProvider, shouldDisable } from "@mandhira/providers";
+import { createWebPushProvider, getEmailProvider, shouldDisable } from "@mandhira/providers";
 
+import { deliverEmail } from "../../../../lib/email-delivery";
 import { render } from "../../../../lib/notifications";
 
 /**
@@ -13,8 +14,9 @@ import { render } from "../../../../lib/notifications";
  * subtly wrong, since a mis-signed payload fails silently at the push service.
  *
  * Runs as service-role because it sends on behalf of every traveler at once — the only
- * job in the product that legitimately reads across users. It reads exactly two tables and
- * writes only delivery outcomes.
+ * job in the product that legitimately reads across users. It reads the queue, the push
+ * subscriptions and — for email only — the traveler's own switches and address, and writes
+ * only delivery outcomes.
  */
 export const dynamic = "force-dynamic";
 
@@ -33,31 +35,41 @@ export async function GET(request: Request): Promise<Response> {
   const supabase = createServiceRoleSupabase();
 
   /*
-   * VAPID keys are optional in practice — they are absent until someone runs
-   * `pnpm push:keys` and sets them. The provider throws rather than half-working, which is
-   * right, so the job reports that it did nothing instead of taking the deploy down. Push
-   * being unavailable is a degradation; a cron endpoint that 500s every ten minutes is an
-   * alert nobody can act on.
+   * Each channel is delivered only when it can be. VAPID keys and the email sender are both
+   * optional in practice — absent until someone configures them — and the push provider
+   * throws rather than half-working, which is right.
+   *
+   * A channel that is not configured is left out of the READ, not read and skipped. Its rows
+   * stay scheduled for the day it is, and they cannot fill the batch of a hundred and starve
+   * the channels that work: in-app notifications are delivered whether or not push is.
    */
-  let push;
+  let push: ReturnType<typeof createWebPushProvider> | null;
   try {
     push = createWebPushProvider();
   } catch {
-    return Response.json(
-      { ok: true, sent: 0, failed: 0, skipped: "push is not configured" },
-      { headers: { "cache-control": "no-store" } },
-    );
+    push = null;
   }
+  const email = getEmailProvider();
+
+  const channels = [
+    "inapp",
+    ...(push ? ["push"] : []),
+    ...(email.name === "none" ? [] : ["email"]),
+  ];
 
   const { data: due } = await supabase
     .from("notifications")
-    .select("id, user_id, notification_type, title_i18n, body_i18n, payload, journey_id, channel")
+    .select(
+      "id, user_id, notification_type, title_i18n, body_i18n, payload, journey_id, channel, scheduled_for",
+    )
     .eq("status", "scheduled")
+    .in("channel", channels)
     .lte("scheduled_for", new Date().toISOString())
     .limit(BATCH);
 
   let sent = 0;
   let failed = 0;
+  let cancelled = 0;
 
   for (const row of due ?? []) {
     /*
@@ -69,6 +81,42 @@ export async function GET(request: Request): Promise<Response> {
       sent += 1;
       continue;
     }
+
+    if (row.channel === "email") {
+      const outcome = await deliverEmail(row, {
+        provider: email,
+        prefsOf: async (userId) => {
+          const { data } = await supabase
+            .from("profiles")
+            .select("notification_prefs, deleted_at")
+            .eq("id", userId)
+            .maybeSingle();
+          // An account on its way out is not written to, whatever it once agreed to.
+          if (!data || data.deleted_at) return null;
+          return (data.notification_prefs ?? {}) as Record<string, boolean>;
+        },
+        addressOf: async (userId) => {
+          const { data } = await supabase.auth.admin.getUserById(userId);
+          return data.user?.email ?? null;
+        },
+      });
+
+      if (outcome === "sent") {
+        await markSent(supabase, row.id);
+        sent += 1;
+      } else if (outcome === "cancelled") {
+        await supabase.from("notifications").update({ status: "cancelled" }).eq("id", row.id);
+        cancelled += 1;
+      } else if (outcome === "failed") {
+        await supabase.from("notifications").update({ status: "failed" }).eq("id", row.id);
+        failed += 1;
+      }
+      // "retry" stays scheduled; the next run picks it up.
+      continue;
+    }
+
+    // Push rows are only read when push is configured; this narrows the type for what follows.
+    if (!push) continue;
 
     const { data: subs } = await supabase
       .from("notification_subscriptions")
@@ -146,7 +194,14 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   return Response.json(
-    { ok: true, sent, failed, at: new Date().toISOString() },
+    {
+      ok: true,
+      sent,
+      failed,
+      cancelled,
+      notConfigured: [...(push ? [] : ["push"]), ...(email.name === "none" ? ["email"] : [])],
+      at: new Date().toISOString(),
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }

@@ -23,7 +23,14 @@ import {
 } from "lucide-react";
 import { Section, Specimen } from "./shell";
 
-const BUTTON_VARIANTS = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const;
+const BUTTON_VARIANTS = [
+  "default",
+  "secondary",
+  "outline",
+  "ghost",
+  "destructive",
+  "link",
+] as const;
 const BUTTON_SIZES = ["xs", "sm", "default", "lg"] as const;
 const BADGE_VARIANTS = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const;
 
@@ -118,7 +125,10 @@ export function Actions() {
         ))}
       </Specimen>
 
-      <Specimen name="Marker" note="Inline annotation, used to mark a value as changed or noteworthy">
+      <Specimen
+        name="Marker"
+        note="Inline annotation, used to mark a value as changed or noteworthy"
+      >
         <Marker>
           <MarkerIcon>
             <StarIcon />

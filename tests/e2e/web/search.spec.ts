@@ -87,14 +87,22 @@ test.describe("Search", () => {
       await expect(page.getByLabel("How long")).toHaveValue("120");
     });
 
-    test("says which filters are still to come, rather than showing dead controls", async ({
-      page,
-    }) => {
+    test("offers every PRD F2 filter as a working control, not a promise", async ({ page }) => {
       await page.goto("/en/search");
 
-      // A control that is always there and never works teaches people the controls do not
-      // work, and they stop trying the ones that do.
-      await expect(page.getByText(/arrives with the journey builder/)).toBeVisible();
+      // PRD-DISC-005 lists six. The two that were once announced as coming later are built
+      // (D-170), so the promise is gone and each is a real control.
+      for (const label of ["Type", "Available on", "Getting in", "How long", "Booking"]) {
+        await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+      }
+      // Near a journey needs a saved journey; a guest is told how to get one instead.
+      await expect(
+        page
+          .getByLabel("Near a journey", { exact: true })
+          .or(page.getByText(/find what's near it/))
+          .first(),
+      ).toBeVisible();
+      await expect(page.getByText(/arrives with the journey builder/)).toHaveCount(0);
     });
   });
 

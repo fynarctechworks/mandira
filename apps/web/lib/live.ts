@@ -1,3 +1,4 @@
+import { mustList } from "./data-error";
 import { assembleLiveView, type LivePlace, type LiveView } from "./live-view";
 import { getJourney } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
@@ -56,12 +57,15 @@ async function placesFor(
   const places = new Map<string, LivePlace>();
   if (ids.length === 0) return places;
 
-  const { data } = await supabase
-    .from("v_published_places")
-    .select("id, name_i18n, latitude, longitude")
-    .in("id", ids);
+  const data = mustList(
+    await supabase
+      .from("v_published_places")
+      .select("id, name_i18n, latitude, longitude")
+      .in("id", ids),
+    "v_published_places",
+  );
 
-  for (const row of data ?? []) {
+  for (const row of data) {
     if (!row.id) continue;
     const names = (row.name_i18n ?? {}) as Record<string, string>;
     places.set(row.id, {

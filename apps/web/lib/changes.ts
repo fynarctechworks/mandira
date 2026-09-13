@@ -8,6 +8,7 @@ import {
 
 import type { Database, Json } from "@mandhira/db/types";
 
+import { mustList, mustMaybe, mustWrite } from "./data-error";
 import { getJourney, toEngineJourney } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
@@ -66,17 +67,20 @@ export async function evaluateTrigger(
    * the product noticed and what it proposed — a row only written when options existed
    * would make the log say the system never saw the quiet days.
    */
-  const { data } = await supabase
-    .from("journey_change_events")
-    .insert({
-      journey_id: journeyId,
-      trigger: trigger.kind,
-      trigger_payload: trigger as unknown as Json,
-      impact: { outcome: card.outcome },
-      change_card: card as unknown as Json,
-    })
-    .select("id, decided_at")
-    .maybeSingle();
+  const data = mustMaybe(
+    await supabase
+      .from("journey_change_events")
+      .insert({
+        journey_id: journeyId,
+        trigger: trigger.kind,
+        trigger_payload: trigger as unknown as Json,
+        impact: { outcome: card.outcome },
+        change_card: card as unknown as Json,
+      })
+      .select("id, decided_at")
+      .maybeSingle(),
+    "journey_change_events insert",
+  );
 
   if (!data?.id) return null;
 
@@ -97,12 +101,15 @@ export async function decideChange(
   optionId: string | null,
   locale: string,
 ): Promise<{ applied: ItemChange[]; outcome: "applied" | "kept" } | null> {
-  const { data: event } = await supabase
-    .from("journey_change_events")
-    .select("id, change_card, decided_at")
-    .eq("id", eventId)
-    .eq("journey_id", journeyId)
-    .maybeSingle();
+  const event = mustMaybe(
+    await supabase
+      .from("journey_change_events")
+      .select("id, change_card, decided_at")
+      .eq("id", eventId)
+      .eq("journey_id", journeyId)
+      .maybeSingle(),
+    "journey_change_events",
+  );
 
   if (!event?.id) return null;
 
@@ -113,10 +120,13 @@ export async function decideChange(
   if (!card) return null;
 
   if (optionId === null) {
-    await supabase
-      .from("journey_change_events")
-      .update({ decided_at: new Date().toISOString(), chosen_option_index: null })
-      .eq("id", eventId);
+    mustWrite(
+      await supabase
+        .from("journey_change_events")
+        .update({ decided_at: new Date().toISOString(), chosen_option_index: null })
+        .eq("id", eventId),
+      "journey_change_events update",
+    );
 
     return { applied: [], outcome: "kept" };
   }
@@ -138,14 +148,17 @@ export async function decideChange(
 
   await writeChanges(supabase, journeyId, appliedChanges);
 
-  await supabase
-    .from("journey_change_events")
-    .update({
-      decided_at: new Date().toISOString(),
-      chosen_option_index: index,
-      applied_changes: appliedChanges as unknown as Json,
-    })
-    .eq("id", eventId);
+  mustWrite(
+    await supabase
+      .from("journey_change_events")
+      .update({
+        decided_at: new Date().toISOString(),
+        chosen_option_index: index,
+        applied_changes: appliedChanges as unknown as Json,
+      })
+      .eq("id", eventId),
+    "journey_change_events update",
+  );
 
   return { applied: appliedChanges, outcome: "applied" };
 }
@@ -188,21 +201,27 @@ async function writeChanges(
         break;
     }
 
-    await supabase
-      .from("journey_items")
-      .update(patch)
-      .eq("id", change.itemId)
-      .eq("journey_id", journeyId);
+    mustWrite(
+      await supabase
+        .from("journey_items")
+        .update(patch)
+        .eq("id", change.itemId)
+        .eq("journey_id", journeyId),
+      "journey_items update",
+    );
   }
 }
 
-async function travelersFor(supabase: Client, journeyId: string) {
-  const { data } = await supabase
-    .from("journey_travelers")
-    .select("traveler_profiles(id, mobility, age_band)")
-    .eq("journey_id", journeyId);
+export async function travelersFor(supabase: Client, journeyId: string) {
+  const data = mustList(
+    await supabase
+      .from("journey_travelers")
+      .select("traveler_profiles(id, mobility, age_band)")
+      .eq("journey_id", journeyId),
+    "journey_travelers",
+  );
 
-  return (data ?? [])
+  return data
     .map((row) => row.traveler_profiles)
     .filter((profile): profile is NonNullable<typeof profile> => !!profile);
 }

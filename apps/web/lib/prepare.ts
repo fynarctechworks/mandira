@@ -5,6 +5,10 @@ import {
   type TravelerProfile,
 } from "@mandhira/journey-engine";
 
+import { getTranslations } from "next-intl/server";
+
+import { mustList, mustWrite } from "./data-error";
+import { engineText, type Translate } from "./engine-text";
 import { getJourney, toEngineJourney } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
@@ -79,8 +83,11 @@ const GROUP_HEADING: Record<PrepareGroup, string> = {
  * Beside the reader rather than in the engine, exactly like the health causes and the
  * item-rule refusals: the engine states which task applies, never how to say it.
  */
-function titleFor(task: PrepareTask, labels: Map<string, string>): string {
+function titleFor(task: PrepareTask, labels: Map<string, string>, t: Translate): string {
   switch (task.titleKey) {
+    case "prepare.documents.identity_proof":
+    case "prepare.documents.booking_confirmation":
+      return engineText(t, task.titleKey, task.params);
     case "prepare.booking.title": {
       const id = String(task.params?.["experienceId"] ?? "");
       return `Book ${labels.get(id) ?? "something you added"} in advance`;
@@ -152,15 +159,16 @@ export async function getPrepareChecklist(
 
   await syncTaskRows(supabase, journeyId, tasks);
 
-  const [doneKeys, trust] = await Promise.all([
+  const [doneKeys, trust, t] = await Promise.all([
     doneKeysFor(supabase, journeyId),
     trustFor(supabase, tasks),
+    getTranslations({ locale }),
   ]);
 
   const rendered: PrepareItem[] = tasks.map((task) => ({
     key: task.id,
     group: task.group,
-    title: titleFor(task, labels),
+    title: titleFor(task, labels, t),
     body: task.body ?? null,
     dueDate: task.dueDate ?? null,
     isDone: doneKeys.has(task.id),
@@ -202,21 +210,25 @@ async function syncTaskRows(
     due_at: task.dueDate ? `${task.dueDate}T12:00:00Z` : null,
   }));
 
-  const { error } = await supabase
-    .from("prepare_tasks")
-    .upsert(rows, { onConflict: "journey_id,engine_key", ignoreDuplicates: false });
-
-  if (error) throw error;
+  mustWrite(
+    await supabase
+      .from("prepare_tasks")
+      .upsert(rows, { onConflict: "journey_id,engine_key", ignoreDuplicates: false }),
+    "prepare_tasks upsert",
+  );
 }
 
 async function doneKeysFor(supabase: Client, journeyId: string): Promise<Set<string>> {
-  const { data } = await supabase
-    .from("prepare_tasks")
-    .select("engine_key, is_done")
-    .eq("journey_id", journeyId)
-    .eq("is_done", true);
+  const data = mustList(
+    await supabase
+      .from("prepare_tasks")
+      .select("engine_key, is_done")
+      .eq("journey_id", journeyId)
+      .eq("is_done", true),
+    "prepare_tasks",
+  );
 
-  return new Set((data ?? []).map((row) => row.engine_key).filter((key): key is string => !!key));
+  return new Set(data.map((row) => row.engine_key).filter((key): key is string => !!key));
 }
 
 /** Trust for whatever the tasks point at, read through the published views only. */
@@ -232,7 +244,10 @@ async function trustFor(supabase: Client, tasks: PrepareTask[]): Promise<Map<str
     supabase.from("v_published_experiences").select("id, trust").in("id", ids),
   ]);
 
-  for (const row of [...(places.data ?? []), ...(experiences.data ?? [])]) {
+  for (const row of [
+    ...mustList(places, "v_published_places"),
+    ...mustList(experiences, "v_published_experiences"),
+  ]) {
     if (row.id) trust.set(row.id, (row.trust ?? {}) as TrustMap);
   }
 
@@ -247,12 +262,15 @@ async function trustFor(supabase: Client, tasks: PrepareTask[]): Promise<Map<str
  * says "check step-free access" — never which traveler needs it.
  */
 async function travelersFor(supabase: Client, journeyId: string): Promise<TravelerProfile[]> {
-  const { data } = await supabase
-    .from("journey_travelers")
-    .select("traveler_profiles(id, mobility, age_band)")
-    .eq("journey_id", journeyId);
+  const data = mustList(
+    await supabase
+      .from("journey_travelers")
+      .select("traveler_profiles(id, mobility, age_band)")
+      .eq("journey_id", journeyId),
+    "journey_travelers",
+  );
 
-  return (data ?? [])
+  return data
     .map((row) => row.traveler_profiles as TravelerProfile | null)
     .filter((profile): profile is TravelerProfile => !!profile);
 }
@@ -269,13 +287,15 @@ export async function setTaskDone(
   engineKey: string,
   isDone: boolean,
 ): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("prepare_tasks")
-    .update({ is_done: isDone, done_at: isDone ? new Date().toISOString() : null })
-    .eq("journey_id", journeyId)
-    .eq("engine_key", engineKey)
-    .select("id");
+  const data = mustList(
+    await supabase
+      .from("prepare_tasks")
+      .update({ is_done: isDone, done_at: isDone ? new Date().toISOString() : null })
+      .eq("journey_id", journeyId)
+      .eq("engine_key", engineKey)
+      .select("id"),
+    "prepare_tasks update",
+  );
 
-  if (error) throw error;
-  return (data ?? []).length > 0;
+  return data.length > 0;
 }

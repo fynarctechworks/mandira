@@ -269,3 +269,98 @@ describe("generatePrepareTasks", () => {
     }
   });
 });
+
+describe("the documents group", () => {
+  const temple = (entry: string | null) => ({ id: "p1", entry_requirements: entry });
+
+  it("asks for identity proof once when an entry requirement mentions it", () => {
+    const tasks = generatePrepareTasks({
+      journey,
+      knowledge: {
+        ...emptyKnowledge,
+        places: [
+          temple("Carry a government photo ID for the queue."),
+          { id: "p2", entry_requirements: "Show your ID at the gate." },
+        ],
+      },
+      items: [
+        item({ id: "i1", place_id: "p1" }),
+        item({ id: "i2", place_id: "p2", sort_order: 1 }),
+      ],
+    });
+
+    expect(tasks.filter((task) => task.group === "documents")).toEqual([
+      {
+        id: "documents:identity",
+        group: "documents",
+        titleKey: "prepare.documents.identity_proof",
+        body: "Carry a government photo ID for the queue.",
+        sourceItemId: "i1",
+        trustRef: { entityId: "p1", field: "entry_requirements_i18n" },
+      },
+    ]);
+  });
+
+  it("recognises identity proof asked for in Telugu and Hindi", () => {
+    for (const entry of ["ఆధార్ కార్డు తీసుకురండి", "पहचान पत्र साथ रखें"]) {
+      const tasks = generatePrepareTasks({
+        journey,
+        knowledge: { ...emptyKnowledge, places: [temple(entry)] },
+        items: [item({ id: "i1", place_id: "p1" })],
+      });
+
+      expect(tasks.some((task) => task.id === "documents:identity")).toBe(true);
+    }
+  });
+
+  it("does not mistake a word that merely contains the letters for identity proof", () => {
+    const tasks = generatePrepareTasks({
+      journey,
+      knowledge: {
+        ...emptyKnowledge,
+        places: [temple("Tickets are valid for one entry. Remove footwear.")],
+      },
+      items: [item({ id: "i1", place_id: "p1" })],
+    });
+
+    expect(tasks.some((task) => task.group === "documents")).toBe(false);
+  });
+
+  it("asks for booking confirmations once, however many bookings there are", () => {
+    const tasks = generatePrepareTasks({
+      journey,
+      knowledge: {
+        ...emptyKnowledge,
+        experiences: [
+          { id: "e1", advance_booking_required: true },
+          { id: "e2", advance_booking_required: true },
+        ],
+      },
+      items: [
+        item({ id: "i1", experience_id: "e1" }),
+        item({ id: "i2", experience_id: "e2", sort_order: 1 }),
+      ],
+    });
+
+    expect(tasks.filter((task) => task.group === "documents")).toEqual([
+      {
+        id: "documents:booking-confirmation",
+        group: "documents",
+        titleKey: "prepare.documents.booking_confirmation",
+        params: { count: 2 },
+        sourceItemId: "i1",
+        trustRef: { entityId: "e1", field: "advance_booking_required" },
+      },
+    ]);
+  });
+
+  it("raises nothing in the group when the knowledge asks for nothing", () => {
+    const tasks = generatePrepareTasks({
+      journey,
+      knowledge: { ...emptyKnowledge, places: [temple(null)] },
+      items: [item({ id: "i1", place_id: "p1" })],
+    });
+
+    expect(tasks.some((task) => task.group === "documents")).toBe(false);
+  });
+});

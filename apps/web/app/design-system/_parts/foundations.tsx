@@ -45,12 +45,12 @@ const CONTRAST_FAILURES = [
   {
     pair: "--primary as TEXT on --background",
     ratio: "2.93:1",
-    where: "Button and Badge variant=\"link\", HoverCard trigger",
+    where: 'Button and Badge variant="link", HoverCard trigger',
   },
   {
     pair: "--destructive on --destructive/10",
     ratio: "3.98:1",
-    where: "Button and Badge variant=\"destructive\"",
+    where: 'Button and Badge variant="destructive"',
   },
 ] as const;
 
@@ -111,7 +111,10 @@ export function Foundations() {
         ))}
       </Specimen>
 
-      <Specimen name="Chart ramp" note="Re-anchored on the #FF660E hue so series read as one family">
+      <Specimen
+        name="Chart ramp"
+        note="Re-anchored on the #FF660E hue so series read as one family"
+      >
         {CHARTS.map((t, i) => (
           <Swatch key={t} token={t} label={`Series ${i + 1}`} />
         ))}
@@ -157,17 +160,23 @@ export function Foundations() {
           </table>
         </div>
         <p className="mt-3 max-w-2xl text-xs text-muted-foreground">
-          The palette this replaced had all 47 of its pairs verified at 4.5:1 (D-025). These
-          three are open, and they are the reason `--primary` is never used for text on a light
-          ground in Mandhira&rsquo;s own components.
+          The palette this replaced had all 47 of its pairs verified at 4.5:1 (D-025). These three
+          are open, and they are the reason `--primary` is never used for text on a light ground in
+          Mandhira&rsquo;s own components.
         </p>
       </Specimen>
 
-      <Specimen name="Type" note="Outfit for headings, Inter for body — the preset's pairing" className="block">
+      <Specimen
+        name="Type"
+        note="Outfit for headings, Inter for body — the preset's pairing"
+        className="block"
+      >
         <div className="space-y-2">
           <p className="font-heading text-4xl font-semibold tracking-tight">Display — Outfit</p>
           <p className="font-heading text-2xl font-semibold tracking-tight">Heading — Outfit</p>
-          <p className="text-base">Body — Inter. A pilgrimage planned around what matters to you.</p>
+          <p className="text-base">
+            Body — Inter. A pilgrimage planned around what matters to you.
+          </p>
           <p className="text-sm text-muted-foreground">Secondary — Inter at 14px.</p>
           <p className="text-xs text-muted-foreground">Caption — Inter at 12px.</p>
           <p className="text-base">తెలుగు — Noto Sans Telugu stays in the stack.</p>

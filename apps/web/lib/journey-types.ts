@@ -51,6 +51,20 @@ export type StoredItem = JourneyItem & {
  * throwing — the traveler is mid-edit, not in an invalid state, and a screen that refuses
  * to render because a date is missing is a screen that punishes them for it.
  */
+/** Days the journey spans: its dates when it has both, otherwise as far as its items reach. */
+export function dayCountOf(
+  journey: Pick<StoredJourney, "startDate" | "endDate">,
+  items: readonly { day_index: number }[],
+): number {
+  if (journey.startDate && journey.endDate) {
+    const span = Math.round(
+      (Date.parse(journey.endDate) - Date.parse(journey.startDate)) / 86_400_000,
+    );
+    return Math.max(1, span + 1);
+  }
+  return Math.max(1, ...items.map((item) => item.day_index + 1));
+}
+
 export function toEngineJourney(journey: StoredJourney) {
   return {
     id: journey.id,

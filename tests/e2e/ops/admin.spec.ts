@@ -19,7 +19,7 @@ test.describe("O21 — Users, roles & flags", () => {
 
     const row = page.getByRole("row").filter({ hasText: ADMIN });
     await expect(row).toBeVisible();
-    await expect(row.getByText("admin", { exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: /^admin\b/ })).toBeVisible();
   });
 
   test("never offers an admin the removal of their own admin role", async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe("O21 — Users, roles & flags", () => {
   test("granting to an email with no account says what to do", async ({ page }) => {
     await page.goto("/team");
     await page.getByLabel("Email").fill(`nobody-${RUN}@example.org`);
-    await page.getByLabel("Role").selectOption("reviewer");
+    await page.getByLabel("Role", { exact: true }).selectOption("reviewer");
     await page.getByRole("button", { name: "Grant role" }).click();
 
     await expect(
@@ -76,7 +76,7 @@ test.describe("O18 — Locales", () => {
     await page.getByLabel("Code").fill("zz");
     await page.getByLabel("Name in its own script").fill("Test");
     await page.getByLabel("English name").fill("Test");
-    await page.getByLabel("Script").fill("latin");
+    await page.getByLabel("Script", { exact: true }).fill("latin");
     await page.getByRole("button", { name: "Add locale" }).click();
 
     await expect(page.getByRole("alert").filter({ hasText: /ISO 15924/ })).toBeVisible();
@@ -116,8 +116,14 @@ test.describe.serial("O20 — Audit log & versions", () => {
       page.getByRole("heading", { name: `History of Audit After ${RUN}` }),
     ).toBeVisible();
 
-    await page.getByRole("link", { name: "v1", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
+    // A click that lands while the History navigation is still settling can be dropped, so the
+    // step is retried until the version it asked for is on screen.
+    await expect(async () => {
+      await page.getByRole("link", { name: "v1", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible({
+        timeout: 2_000,
+      });
+    }).toPass({ timeout: 15_000 });
 
     await page.getByRole("button", { name: "Restore this version" }).click();
     const dialog = page.getByRole("alertdialog");

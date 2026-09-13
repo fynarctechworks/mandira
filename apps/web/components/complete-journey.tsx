@@ -35,12 +35,16 @@ export function CompleteJourney({ journeyId }: { journeyId: string }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <Button variant="secondary" fullWidth onClick={() => void complete()} disabled={state === "saving"}>
+      <Button
+        variant="secondary"
+        fullWidth
+        onClick={() => void complete()}
+        disabled={state === "saving"}
+      >
         {state === "saving" ? "Saving…" : "Mark this journey complete"}
       </Button>
       <p className="text-caption text-text-secondary">
-        Keeps this record as it stands today. You can still add to your reflection
-        afterwards.
+        Keeps this record as it stands today. You can still add to your reflection afterwards.
       </p>
       {state === "problem" ? (
         <p role="alert" className="text-body-sm text-status-broken">

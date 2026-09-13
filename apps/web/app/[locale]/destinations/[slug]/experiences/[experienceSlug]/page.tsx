@@ -1,11 +1,14 @@
 import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { dateForDay } from "@mandhira/journey-engine";
 
 import { AccessibilityIcons } from "../../../../../../components/accessibility-icons";
+import { AddToJourney } from "../../../../../../components/add-to-journey";
 import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
+import { listJourneysAt } from "../../../../../../lib/journeys";
 import { getExperienceDetail } from "../../../../../../lib/knowledge";
 import {
   accessibilityIcons,
@@ -13,6 +16,7 @@ import {
   durationRange,
   formatDate,
 } from "../../../../../../lib/present";
+import { webSupabase } from "../../../../../../lib/supabase";
 
 /**
  * Experience detail (PRD F2 / F9).
@@ -39,6 +43,26 @@ export default async function ExperienceDetailPage({
   const duration = durationRange(experience.durationLikelyMinutes, experience.durationMaxMinutes);
   const confirmed = (iso: string | null) => formatDate(iso, locale) ?? "Not recorded";
 
+  const supabase = await webSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const here = `/${locale}/destinations/${slug}/experiences/${experienceSlug}`;
+  const t = await getTranslations("addToJourney");
+  const journeys = user ? await listJourneysAt(supabase, experience.destinationId) : [];
+  const choices = journeys.map((journey) => ({
+    id: journey.id,
+    title: journey.title ?? t("untitled"),
+    dayLabels: Array.from({ length: journey.dayCount }, (_, index) =>
+      journey.startDate
+        ? t("day_option_dated", {
+            day: index + 1,
+            date: formatDate(dateForDay(journey.startDate, index), locale) ?? "",
+          })
+        : t("day_option", { day: index + 1 }),
+    ),
+  }));
+
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <Link
@@ -64,6 +88,16 @@ export default async function ExperienceDetailPage({
           <p className="text-body">{experience.significance.text}</p>
         ) : null}
       </header>
+
+      {/* PRD-DISC-004: the way from discovery into a plan. */}
+      <AddToJourney
+        experienceId={experience.id}
+        experienceName={experience.name.text}
+        journeys={choices}
+        planHref={`/${locale}/plan?destination=${encodeURIComponent(slug)}&must=${experience.id}`}
+        signInHref={user ? null : `/${locale}/sign-in?next=${encodeURIComponent(here)}`}
+        locale={locale}
+      />
 
       {/* Above the description, deliberately. See the note at the top of this file. */}
       {experience.advanceBookingRequired ? (

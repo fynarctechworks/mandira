@@ -8,6 +8,7 @@ import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
 import { OpenInMaps } from "../../../../../../components/open-in-maps";
 import { ReportAChange } from "../../../../../../components/report-a-change";
+import { SavePlaceToggle } from "../../../../../../components/save-place-toggle";
 import { getPlaceDetail } from "../../../../../../lib/knowledge";
 import {
   accessibilityIcons,
@@ -15,6 +16,8 @@ import {
   formatDate,
   openingWeek,
 } from "../../../../../../lib/present";
+import { isPlaceSaved } from "../../../../../../lib/saved-places";
+import { webSupabase } from "../../../../../../lib/supabase";
 
 /**
  * Place detail (PRD F2 / F9).
@@ -40,6 +43,13 @@ export default async function PlaceDetailPage({
   const week = openingWeek(place.openingSchedule, locale);
   const duration = durationRange(place.visitDurationLikelyMinutes, place.visitDurationMaxMinutes);
   const confirmed = (iso: string | null) => formatDate(iso, locale) ?? "Not recorded";
+
+  const supabase = await webSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const saved = user ? await isPlaceSaved(supabase, user.id, place.id) : false;
+  const here = `/${locale}/destinations/${slug}/places/${placeSlug}`;
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -68,6 +78,12 @@ export default async function PlaceDetailPage({
             label={place.name.text}
           />
         ) : null}
+
+        <SavePlaceToggle
+          placeId={place.id}
+          initialSaved={saved}
+          signInHref={user ? null : `/${locale}/sign-in?next=${encodeURIComponent(here)}`}
+        />
       </header>
 
       {week.length > 0 ? (

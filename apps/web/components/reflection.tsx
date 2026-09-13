@@ -50,8 +50,8 @@ export function Reflection({
       </h2>
 
       <p className="text-body-sm text-text-secondary">
-        Only you can see these. They&apos;re not sent anywhere and nobody reviews them — skip
-        any that don&apos;t apply.
+        Only you can see these. They&apos;re not sent anywhere and nobody reviews them — skip any
+        that don&apos;t apply.
       </p>
 
       {REFLECTION_QUESTIONS.map((item) => (

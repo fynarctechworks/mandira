@@ -1,7 +1,14 @@
 import { Constants, type Enums } from "@mandhira/db";
-import type { KnowledgeBundle } from "@mandhira/journey-engine";
+import type { Database } from "@mandhira/db/types";
+import {
+  resolveAvailability,
+  weekdayOf,
+  type AvailabilityRule,
+  type KnowledgeBundle,
+} from "@mandhira/journey-engine";
 import { getI18n } from "@mandhira/i18n";
 
+import { mustList, mustMaybe } from "./data-error";
 import { webSupabase } from "./supabase";
 import type { TrustEntry, TrustMap } from "./trust";
 
@@ -91,6 +98,9 @@ export type DestinationPage = {
   destination: DestinationSummary;
   experiences: ExperienceCard[];
   places: PlaceCard[];
+  /** How many are published in all, so a section can offer "See all" past its first 20. */
+  experienceTotal: number;
+  placeTotal: number;
   guidance: GuidanceBlock[];
   advisories: Advisory[];
   /** Every source used anywhere on the page, and the oldest verification across it. */
@@ -105,53 +115,65 @@ export async function getDestinationPage(
 ): Promise<DestinationPage | null> {
   const supabase = await webSupabase();
 
-  const { data: destination } = await supabase
-    .from("v_published_destinations")
-    .select("id, slug, name_i18n, region, overview_i18n")
-    .eq("slug", slug)
-    .maybeSingle();
+  const destination = mustMaybe(
+    await supabase
+      .from("v_published_destinations")
+      .select("id, slug, name_i18n, region, overview_i18n")
+      .eq("slug", slug)
+      .maybeSingle(),
+    "v_published_destinations",
+  );
 
   if (!destination?.id) return null;
 
-  const [experiences, places, guidance, advisories, availability] = await Promise.all([
-    supabase
-      .from("v_published_experiences")
-      // One string literal, not a concatenation: the client infers the row shape from the
-      // literal type, and a joined string degrades it to an opaque error type.
-      .select(
-        "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
-      )
-      .eq("destination_id", destination.id)
-      // PRD F2: ranked by the editorial weight Ops set, never by popularity.
-      .order("editorial_weight", { ascending: false })
-      .limit(SECTION_LIMIT),
-    supabase
-      .from("v_published_places")
-      .select(
-        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
-      )
-      .eq("destination_id", destination.id)
-      .order("editorial_weight", { ascending: false })
-      .limit(SECTION_LIMIT),
-    supabase
-      .from("v_published_guidance_blocks")
-      .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
-      .eq("applies_to_table", "destinations")
-      .eq("applies_to_id", destination.id)
-      .order("sort_order"),
-    supabase
-      .from("v_published_advisories")
-      .select("id, title_i18n, body_i18n, severity")
-      .eq("destination_id", destination.id),
-    supabase.from("v_published_availability_rules").select("experience_id, kind, daily_times"),
-  ]);
+  const [experiencesResult, placesResult, guidanceResult, advisoriesResult, availabilityResult] =
+    await Promise.all([
+      supabase
+        .from("v_published_experiences")
+        // One string literal, not a concatenation: the client infers the row shape from the
+        // literal type, and a joined string degrades it to an opaque error type.
+        .select(
+          "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
+          { count: "exact" },
+        )
+        .eq("destination_id", destination.id)
+        // PRD F2: ranked by the editorial weight Ops set, never by popularity.
+        .order("editorial_weight", { ascending: false })
+        .limit(SECTION_LIMIT),
+      supabase
+        .from("v_published_places")
+        .select(
+          "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
+          { count: "exact" },
+        )
+        .eq("destination_id", destination.id)
+        .order("editorial_weight", { ascending: false })
+        .limit(SECTION_LIMIT),
+      supabase
+        .from("v_published_guidance_blocks")
+        .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
+        .eq("applies_to_table", "destinations")
+        .eq("applies_to_id", destination.id)
+        .order("sort_order"),
+      supabase
+        .from("v_published_advisories")
+        .select("id, title_i18n, body_i18n, severity")
+        .eq("destination_id", destination.id),
+      supabase.from("v_published_availability_rules").select("experience_id, kind, daily_times"),
+    ]);
 
-  const windowsByExperience = groupAvailability(availability.data ?? []);
+  const experiences = mustList(experiencesResult, "v_published_experiences");
+  const places = mustList(placesResult, "v_published_places");
+  const guidance = mustList(guidanceResult, "v_published_guidance_blocks");
+  const advisories = mustList(advisoriesResult, "v_published_advisories");
+  const availability = mustList(availabilityResult, "v_published_availability_rules");
 
-  const experienceCards = (experiences.data ?? []).map((row) =>
+  const windowsByExperience = groupAvailability(availability);
+
+  const experienceCards = experiences.map((row) =>
     toExperienceCard(row, locale, windowsByExperience.get(row.id as string) ?? []),
   );
-  const placeCards = (places.data ?? []).map((row) => toPlaceCard(row, locale));
+  const placeCards = places.map((row) => toPlaceCard(row, locale));
 
   return {
     destination: {
@@ -163,12 +185,14 @@ export async function getDestinationPage(
     },
     experiences: experienceCards,
     places: placeCards,
-    guidance: (guidance.data ?? []).map((row) => ({
+    experienceTotal: experiencesResult.count ?? experienceCards.length,
+    placeTotal: placesResult.count ?? placeCards.length,
+    guidance: guidance.map((row) => ({
       id: row.id as string,
       guidanceType: row.guidance_type as string,
       body: text(row.body_i18n, locale),
     })),
-    advisories: (advisories.data ?? []).map((row) => ({
+    advisories: advisories.map((row) => ({
       id: row.id as string,
       title: text(row.title_i18n, locale),
       body: text(row.body_i18n, locale),
@@ -182,13 +206,16 @@ export async function getDestinationPage(
 export async function getDestinationCards(locale: string, limit = 3) {
   const supabase = await webSupabase();
 
-  const { data } = await supabase
-    .from("v_published_destinations")
-    .select("id, slug, name_i18n, region, overview_i18n, editorial_weight")
-    .order("editorial_weight", { ascending: false })
-    .limit(limit);
+  const data = mustList(
+    await supabase
+      .from("v_published_destinations")
+      .select("id, slug, name_i18n, region, overview_i18n, editorial_weight")
+      .order("editorial_weight", { ascending: false })
+      .limit(limit),
+    "v_published_destinations",
+  );
 
-  return (data ?? []).map((row) => ({
+  return data.map((row) => ({
     id: row.id as string,
     slug: row.slug as string,
     name: text(row.name_i18n, locale),
@@ -198,7 +225,144 @@ export async function getDestinationCards(locale: string, limit = 3) {
 }
 
 /** PRD F2: at most 20 cards per section, then "See all". No infinite feeds. */
-const SECTION_LIMIT = 20;
+export const SECTION_LIMIT = 20;
+
+/** Rows a search reads when a filter is applied in code after the read (date, near, step-free). */
+const POST_FILTER_WINDOW = 200;
+
+export type DestinationSection<T> = {
+  destination: DestinationSummary;
+  cards: T[];
+  total: number;
+  page: number;
+  pageCount: number;
+};
+
+/** "See all" for a destination's experiences, twenty at a time in editorial order (PRD F2). */
+export async function getDestinationExperiencesPage(
+  slug: string,
+  page: number,
+  locale: string,
+): Promise<DestinationSection<ExperienceCard> | null> {
+  const destination = await publishedDestination(slug, locale);
+  if (!destination) return null;
+
+  const supabase = await webSupabase();
+  const window = pageWindow(page);
+
+  const result = await supabase
+    .from("v_published_experiences")
+    .select(
+      "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
+      { count: "exact" },
+    )
+    .eq("destination_id", destination.id)
+    .order("editorial_weight", { ascending: false })
+    // A tiebreak, so equal weights cannot swap places between one page and the next.
+    .order("id")
+    .range(window.from, window.to);
+
+  const rows = mustList(result, "v_published_experiences");
+  const ids = rows.map((row) => row.id).filter((id): id is string => !!id);
+  const availability = ids.length
+    ? mustList(
+        await supabase
+          .from("v_published_availability_rules")
+          .select("experience_id, kind, daily_times")
+          .in("experience_id", ids),
+        "v_published_availability_rules",
+      )
+    : [];
+  const windows = groupAvailability(availability);
+
+  return sectionOf(
+    destination,
+    rows.map((row) => toExperienceCard(row, locale, windows.get(row.id as string) ?? [])),
+    result.count,
+    window.page,
+  );
+}
+
+/** "See all" for a destination's places. */
+export async function getDestinationPlacesPage(
+  slug: string,
+  page: number,
+  locale: string,
+): Promise<DestinationSection<PlaceCard> | null> {
+  const destination = await publishedDestination(slug, locale);
+  if (!destination) return null;
+
+  const supabase = await webSupabase();
+  const window = pageWindow(page);
+
+  const result = await supabase
+    .from("v_published_places")
+    .select(
+      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
+      { count: "exact" },
+    )
+    .eq("destination_id", destination.id)
+    .order("editorial_weight", { ascending: false })
+    .order("id")
+    .range(window.from, window.to);
+
+  const rows = mustList(result, "v_published_places");
+
+  return sectionOf(
+    destination,
+    rows.map((row) => toPlaceCard(row, locale)),
+    result.count,
+    window.page,
+  );
+}
+
+async function publishedDestination(
+  slug: string,
+  locale: string,
+): Promise<DestinationSummary | null> {
+  const supabase = await webSupabase();
+
+  const row = mustMaybe(
+    await supabase
+      .from("v_published_destinations")
+      .select("id, slug, name_i18n, region, overview_i18n")
+      .eq("slug", slug)
+      .maybeSingle(),
+    "v_published_destinations",
+  );
+
+  if (!row?.id) return null;
+
+  return {
+    id: row.id as string,
+    slug: row.slug as string,
+    name: text(row.name_i18n, locale),
+    region: (row.region as string | null) ?? null,
+    overview: text(row.overview_i18n, locale),
+  };
+}
+
+function pageWindow(page: number) {
+  const safe = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
+  const from = (safe - 1) * SECTION_LIMIT;
+  return { page: safe, from, to: from + SECTION_LIMIT - 1 };
+}
+
+function sectionOf<T>(
+  destination: DestinationSummary,
+  cards: T[],
+  count: number | null,
+  page: number,
+): DestinationSection<T> {
+  const total = count ?? cards.length;
+  return {
+    destination,
+    cards,
+    total,
+    page,
+    pageCount: Math.max(1, Math.ceil(total / SECTION_LIMIT)),
+  };
+}
 
 function text(value: unknown, locale: string): Text {
   const resolved = getI18n(value as Record<string, string> | null, locale);
@@ -362,16 +526,22 @@ export async function getPlaceDetail(
 ): Promise<PlaceDetail | null> {
   const supabase = await webSupabase();
 
-  const { data } = await supabase
-    .from("v_published_places")
-    .select(
-      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, trust, accessibility, destination_id, latitude, longitude",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
+  const destinationId = await destinationIdFor(destinationSlug);
+  if (!destinationId) return null;
+
+  const data = mustMaybe(
+    await supabase
+      .from("v_published_places")
+      .select(
+        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, trust, accessibility, destination_id, latitude, longitude",
+      )
+      .eq("destination_id", destinationId)
+      .eq("slug", slug)
+      .maybeSingle(),
+    "v_published_places",
+  );
 
   if (!data?.id) return null;
-  if (!(await belongsToDestination(data.destination_id, destinationSlug))) return null;
 
   return {
     ...toPlaceCard(data, locale),
@@ -397,18 +567,24 @@ export async function getExperienceDetail(
 ): Promise<ExperienceDetail | null> {
   const supabase = await webSupabase();
 
-  const { data } = await supabase
-    .from("v_published_experiences")
-    .select(
-      "id, slug, name_i18n, experience_type, significance_i18n, description_i18n, duration_min_minutes, duration_likely_minutes, duration_max_minutes, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before, eligibility_i18n, cost_note_i18n, queue_expectation_i18n, preparation_i18n, is_outdoor, editorial_weight, trust, accessibility, destination_id, place_id",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
+  const destinationId = await destinationIdFor(destinationSlug);
+  if (!destinationId) return null;
+
+  const data = mustMaybe(
+    await supabase
+      .from("v_published_experiences")
+      .select(
+        "id, slug, name_i18n, experience_type, significance_i18n, description_i18n, duration_min_minutes, duration_likely_minutes, duration_max_minutes, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before, eligibility_i18n, cost_note_i18n, queue_expectation_i18n, preparation_i18n, is_outdoor, editorial_weight, trust, accessibility, destination_id, place_id",
+      )
+      .eq("destination_id", destinationId)
+      .eq("slug", slug)
+      .maybeSingle(),
+    "v_published_experiences",
+  );
 
   if (!data?.id) return null;
-  if (!(await belongsToDestination(data.destination_id, destinationSlug))) return null;
 
-  const [availability, place] = await Promise.all([
+  const [availabilityResult, placeResult] = await Promise.all([
     supabase
       .from("v_published_availability_rules")
       .select("experience_id, kind, daily_times, trust")
@@ -419,10 +595,13 @@ export async function getExperienceDetail(
           .select("slug, name_i18n")
           .eq("id", data.place_id)
           .maybeSingle()
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
-  const windows = groupAvailability(availability.data ?? []).get(data.id as string) ?? [];
+  const availability = mustList(availabilityResult, "v_published_availability_rules");
+  const place = { data: mustMaybe(placeResult, "v_published_places") };
+
+  const windows = groupAvailability(availability).get(data.id as string) ?? [];
 
   return {
     ...toExperienceCard(data, locale, windows),
@@ -441,7 +620,7 @@ export async function getExperienceDetail(
     guidance: await getGuidance("experiences", data.id as string, locale),
     // Whole-entity trust on an availability rule has a NULL field name, which the view
     // emits under the key "entity".
-    availabilityTrust: ((availability.data?.[0]?.trust ?? {}) as TrustMap)["entity"],
+    availabilityTrust: ((availability[0]?.trust ?? {}) as TrustMap)["entity"],
   };
 }
 
@@ -451,20 +630,21 @@ export async function getExperienceDetail(
  * Without this check `/destinations/a/places/x` would happily render a place belonging to
  * destination `b`. Nothing unpublished leaks either way — the view already guarantees that
  * — but a URL that lies about where something is will end up shared, and then quoted.
+ * Slugs are only unique within a destination, so the entity is looked up inside it.
  */
-async function belongsToDestination(
-  destinationId: unknown,
-  destinationSlug: string,
-): Promise<boolean> {
+async function destinationIdFor(destinationSlug: string): Promise<string | null> {
   const supabase = await webSupabase();
 
-  const { data } = await supabase
-    .from("v_published_destinations")
-    .select("id")
-    .eq("slug", destinationSlug)
-    .maybeSingle();
+  const data = mustMaybe(
+    await supabase
+      .from("v_published_destinations")
+      .select("id")
+      .eq("slug", destinationSlug)
+      .maybeSingle(),
+    "v_published_destinations",
+  );
 
-  return Boolean(data?.id) && data?.id === destinationId;
+  return data?.id ?? null;
 }
 
 async function getGuidance(
@@ -474,14 +654,17 @@ async function getGuidance(
 ): Promise<GuidanceBlock[]> {
   const supabase = await webSupabase();
 
-  const { data } = await supabase
-    .from("v_published_guidance_blocks")
-    .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
-    .eq("applies_to_table", table)
-    .eq("applies_to_id", id)
-    .order("sort_order");
+  const data = mustList(
+    await supabase
+      .from("v_published_guidance_blocks")
+      .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
+      .eq("applies_to_table", table)
+      .eq("applies_to_id", id)
+      .order("sort_order"),
+    "v_published_guidance_blocks",
+  );
 
-  return (data ?? []).map((row) => ({
+  return data.map((row) => ({
     id: row.id as string,
     guidanceType: row.guidance_type as string,
     body: text(row.body_i18n, locale),
@@ -523,6 +706,10 @@ export type SearchFilters = {
   maxDurationMinutes?: number | undefined;
   /** true = only things needing booking; false = only things that do not. */
   advanceBooking?: boolean | undefined;
+  /** YYYY-MM-DD: only what is running (experiences) or open (places) that day. */
+  availableOn?: string | undefined;
+  /** One of the traveler's journeys: only what is within walking distance of a place in it. */
+  nearJourneyId?: string | undefined;
 };
 
 export type SearchResults = {
@@ -548,21 +735,29 @@ export async function searchKnowledge(
   const supabase = await webSupabase();
   const trimmed = query.trim();
 
+  /*
+   * Date, nearness and step-free are decided in code, after the read. Capping the read at
+   * twenty first would filter those twenty and show fewer — often none — while matches sat
+   * just past the cap. So a filtered search reads a wider window and caps what survives.
+   */
+  const postFiltered = !!(filters.availableOn || filters.nearJourneyId || filters.stepFreeOnly);
+  const readLimit = postFiltered ? POST_FILTER_WINDOW : SECTION_LIMIT;
+
   let experienceQuery = supabase
     .from("v_published_experiences")
     .select(
-      "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
+      "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id, place_id",
     )
     .order("editorial_weight", { ascending: false })
-    .limit(SECTION_LIMIT);
+    .limit(readLimit);
 
   let placeQuery = supabase
     .from("v_published_places")
     .select(
-      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
+      "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id, latitude, longitude, opening_schedule",
     )
     .order("editorial_weight", { ascending: false })
-    .limit(SECTION_LIMIT);
+    .limit(readLimit);
 
   if (trimmed) {
     experienceQuery = experienceQuery.textSearch("search_tsv", trimmed, {
@@ -605,18 +800,64 @@ export async function searchKnowledge(
 
   const [experiences, places] = await Promise.all([experienceQuery, placeQuery]);
 
-  const experienceCards = (experiences.data ?? []).map((row) => toExperienceCard(row, locale, []));
-  const placeCards = (places.data ?? []).map((row) => toPlaceCard(row, locale));
+  let experienceRows = mustList(experiences, "v_published_experiences");
+  let placeRows = mustList(places, "v_published_places");
+
+  if (filters.availableOn || filters.nearJourneyId) {
+    const hosts = await hostPlaces(
+      supabase,
+      experienceRows.map((row) => row.place_id),
+    );
+
+    if (filters.availableOn) {
+      const date = filters.availableOn;
+      const rules = await availabilityRulesFor(
+        supabase,
+        experienceRows.map((row) => row.id),
+      );
+
+      experienceRows = experienceRows.filter(
+        (row) =>
+          resolveAvailability({
+            rules: rules.filter((rule) => rule.experience_id === row.id),
+            date,
+            openingSchedule: row.place_id
+              ? (hosts.get(row.place_id)?.openingSchedule ?? null)
+              : null,
+          }).available,
+      );
+      placeRows = placeRows.filter((row) =>
+        openOn(row.opening_schedule as OpeningSchedule | null, date),
+      );
+    }
+
+    if (filters.nearJourneyId) {
+      const anchors = await journeyAnchors(supabase, filters.nearJourneyId);
+      experienceRows = experienceRows.filter((row) =>
+        isNear(row.place_id ? hosts.get(row.place_id) : undefined, anchors),
+      );
+      placeRows = placeRows.filter((row) => isNear(row, anchors));
+    }
+  }
+
+  const experienceCards = experienceRows.map((row) => toExperienceCard(row, locale, []));
+  const placeCards = placeRows.map((row) => toPlaceCard(row, locale));
 
   return {
     /*
      * The step-free filter runs here rather than in SQL. Accessibility arrives as a jsonb
      * blob built by `accessibility_for()`, and filtering inside it in PostgREST would mean
      * a `->>` predicate that cannot use an index and reads far worse than this does. The
-     * result set is already capped at twenty per kind.
+     * read is bounded by POST_FILTER_WINDOW, and the cap of twenty applies to what survives.
      */
-    experiences: filters.stepFreeOnly ? experienceCards.filter(isStepFree) : experienceCards,
-    places: filters.stepFreeOnly ? placeCards.filter(isStepFree) : placeCards,
+    experiences: (filters.stepFreeOnly
+      ? experienceCards.filter(isStepFree)
+      : experienceCards
+    ).slice(0, SECTION_LIMIT),
+    places: (filters.stepFreeOnly ? placeCards.filter(isStepFree) : placeCards).slice(
+      0,
+      SECTION_LIMIT,
+    ),
     filtersApplied: Object.values(filters).some((value) => value !== undefined),
   };
 }
@@ -629,6 +870,124 @@ export async function searchKnowledge(
  * narrows what is shown, and the card still says "partly" so nobody is misled.
  * Unrecorded never matches: a filter is a claim, and we have nothing to claim.
  */
+/*
+ * The two journey-aware filters (PRD F2). Both are claims, so both answer no when nothing is
+ * recorded: an experience with no availability rules is not "running on your date", and a
+ * place with no pin is not near anything.
+ */
+type Client = Awaited<ReturnType<typeof webSupabase>>;
+type Point = { latitude: number | null; longitude: number | null };
+
+/** Roughly a twenty-minute walk: near enough to fit around what is already planned. */
+const NEAR_METRES = 2000;
+
+async function hostPlaces(
+  supabase: Client,
+  ids: (string | null)[],
+): Promise<Map<string, Point & { openingSchedule: OpeningSchedule | null }>> {
+  const wanted = [...new Set(ids.filter((id): id is string => !!id))];
+  if (wanted.length === 0) return new Map();
+
+  const rows = mustList(
+    await supabase
+      .from("v_published_places")
+      .select("id, latitude, longitude, opening_schedule")
+      .in("id", wanted),
+    "v_published_places",
+  );
+
+  return new Map(
+    rows.map((row) => [
+      row.id as string,
+      {
+        latitude: row.latitude,
+        longitude: row.longitude,
+        openingSchedule: (row.opening_schedule as OpeningSchedule | null) ?? null,
+      },
+    ]),
+  );
+}
+
+async function availabilityRulesFor(
+  supabase: Client,
+  ids: (string | null)[],
+): Promise<AvailabilityRule[]> {
+  const wanted = ids.filter((id): id is string => !!id);
+  if (wanted.length === 0) return [];
+
+  const rows = mustList(
+    await supabase
+      .from("v_published_availability_rules")
+      .select(
+        "id, experience_id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority, valid_from, valid_to",
+      )
+      .in("experience_id", wanted),
+    "v_published_availability_rules",
+  );
+
+  return rows.map(toAvailabilityRule);
+}
+
+/** Where the journey already goes, read as the traveler, so another traveler's journey yields nothing. */
+async function journeyAnchors(
+  supabase: Client,
+  journeyId: string,
+): Promise<{ latitude: number; longitude: number }[]> {
+  const items = mustList(
+    await supabase
+      .from("journey_items")
+      .select("place_id")
+      .eq("journey_id", journeyId)
+      .is("deleted_at", null),
+    "journey_items",
+  );
+
+  const placeIds = [
+    ...new Set(items.map((row) => row.place_id).filter((id): id is string => !!id)),
+  ];
+  if (placeIds.length === 0) return [];
+
+  const places = mustList(
+    await supabase.from("v_published_places").select("latitude, longitude").in("id", placeIds),
+    "v_published_places",
+  );
+
+  return places.flatMap((place) =>
+    place.latitude != null && place.longitude != null
+      ? [{ latitude: place.latitude, longitude: place.longitude }]
+      : [],
+  );
+}
+
+function openOn(schedule: OpeningSchedule | null, date: string): boolean {
+  if (!schedule) return false;
+
+  const exception = schedule.exceptions?.find((entry) => entry.date === date);
+  if (exception?.closed) return false;
+  if (exception?.hours) return exception.hours.length > 0;
+
+  return (schedule.weekly?.[weekdayOf(date)]?.length ?? 0) > 0;
+}
+
+function isNear(point: Point | undefined, anchors: { latitude: number; longitude: number }[]) {
+  if (point?.latitude == null || point.longitude == null) return false;
+  const here = { latitude: point.latitude, longitude: point.longitude };
+  return anchors.some((anchor) => metresBetween(here, anchor) <= NEAR_METRES);
+}
+
+function metresBetween(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number },
+): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const dLat = radians(b.latitude - a.latitude);
+  const dLon = radians(b.longitude - a.longitude);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(radians(a.latitude)) * Math.cos(radians(b.latitude)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
+}
+
 function isStepFree(entity: { accessibility: Accessibility | null }): boolean {
   const value = entity.accessibility?.step_free;
   return value === "yes" || value === "partial";
@@ -652,7 +1011,7 @@ export async function getKnowledgeBundle(
 ): Promise<KnowledgeBundle> {
   const supabase = await webSupabase();
 
-  const [places, experiences, rules, routes, transport, estimates] = await Promise.all([
+  const results = await Promise.all([
     supabase
       .from("v_published_places")
       .select(
@@ -683,8 +1042,15 @@ export async function getKnowledgeBundle(
       .select("from_place_id, to_place_id, mode, distance_m, duration_seconds"),
   ]);
 
+  const places = mustList(results[0], "v_published_places");
+  const experiences = mustList(results[1], "v_published_experiences");
+  const rules = mustList(results[2], "v_published_availability_rules");
+  const routes = mustList(results[3], "v_published_routes");
+  const transport = mustList(results[4], "v_published_transport_connections");
+  const estimates = mustList(results[5], "v_published_travel_estimates");
+
   return {
-    places: (places.data ?? []).map((row) => ({
+    places: places.map((row) => ({
       id: row.id as string,
       // `?? null` throughout: the view returns a nullable column, and the engine models
       // "not recorded" as null rather than as an absent property (exactOptionalPropertyTypes).
@@ -697,7 +1063,7 @@ export async function getKnowledgeBundle(
       visit_duration_likely_minutes: row.visit_duration_likely_minutes,
       visit_duration_max_minutes: row.visit_duration_max_minutes,
     })),
-    experiences: (experiences.data ?? []).map((row) => ({
+    experiences: experiences.map((row) => ({
       id: row.id as string,
       place_id: row.place_id,
       route_id: row.route_id,
@@ -709,29 +1075,14 @@ export async function getKnowledgeBundle(
       advance_booking_how: text(row.advance_booking_how_i18n, locale).text || null,
       advance_booking_opens_days_before: row.advance_booking_opens_days_before,
     })),
-    availability_rules: (rules.data ?? []).map((row) => ({
-      id: row.id as string,
-      experience_id: row.experience_id as string,
-      kind: row.kind as KnowledgeBundle["availability_rules"][number]["kind"],
-      daily_times:
-        (row.daily_times as KnowledgeBundle["availability_rules"][number]["daily_times"]) ?? null,
-      weekly_pattern:
-        (row.weekly_pattern as KnowledgeBundle["availability_rules"][number]["weekly_pattern"]) ??
-        null,
-      date_start: row.date_start,
-      date_end: row.date_end,
-      calendar_dates: row.calendar_dates,
-      priority: row.priority ?? 1,
-      valid_from: row.valid_from,
-      valid_to: row.valid_to,
-    })),
-    routes: (routes.data ?? []).map((row) => ({
+    availability_rules: rules.map(toAvailabilityRule),
+    routes: routes.map((row) => ({
       id: row.id as string,
       distance_m: row.distance_m,
       duration_likely_minutes: row.duration_likely_minutes,
       duration_max_minutes: row.duration_max_minutes,
     })),
-    transport_connections: (transport.data ?? []).map((row) => ({
+    transport_connections: transport.map((row) => ({
       id: row.id as string,
       from_place_id: row.from_place_id,
       to_place_id: row.to_place_id,
@@ -739,7 +1090,7 @@ export async function getKnowledgeBundle(
       duration_likely_minutes: row.duration_likely_minutes,
       duration_max_minutes: row.duration_max_minutes,
     })),
-    travel_estimates: (estimates.data ?? []).map((row) => ({
+    travel_estimates: estimates.map((row) => ({
       from_place_id: row.from_place_id as string,
       to_place_id: row.to_place_id as string,
       mode: row.mode as KnowledgeBundle["transport_connections"][number]["mode"],
@@ -747,6 +1098,37 @@ export async function getKnowledgeBundle(
       duration_seconds: row.duration_seconds,
     })),
     trust: {},
+  };
+}
+
+type AvailabilityRuleRow = Pick<
+  Database["public"]["Views"]["v_published_availability_rules"]["Row"],
+  | "id"
+  | "experience_id"
+  | "kind"
+  | "daily_times"
+  | "weekly_pattern"
+  | "date_start"
+  | "date_end"
+  | "calendar_dates"
+  | "priority"
+  | "valid_from"
+  | "valid_to"
+>;
+
+function toAvailabilityRule(row: AvailabilityRuleRow): AvailabilityRule {
+  return {
+    id: row.id as string,
+    experience_id: row.experience_id as string,
+    kind: row.kind as AvailabilityRule["kind"],
+    daily_times: (row.daily_times as AvailabilityRule["daily_times"]) ?? null,
+    weekly_pattern: (row.weekly_pattern as AvailabilityRule["weekly_pattern"]) ?? null,
+    date_start: row.date_start,
+    date_end: row.date_end,
+    calendar_dates: row.calendar_dates,
+    priority: row.priority ?? 1,
+    valid_from: row.valid_from,
+    valid_to: row.valid_to,
   };
 }
 

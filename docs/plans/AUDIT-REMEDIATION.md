@@ -40,7 +40,13 @@ Verified locally unless marked otherwise. Committed checkpoint `f76cfd4`; the re
 - **R9** — README, registry header and totals, inventory/backlog headers, backend and database architecture, risk register re-reviewed, GIT-01 count.
 - **Engine tests added** — PRD-ADPT-008 matrix (50 journeys × 8 triggers) and PRD-PLAN-009 performance budget.
 
+- **R4/R5 integration** — A07/A08 describe-and-review screens on `/api/intent/extract`, with the structured questions as the fallback; email delivery behind its own opt-in, checked at send time; filtered search reads a wider window before the twenty cap; the stale OPEN-011 comment in `lib/api.ts` corrected; a third e2e traveler for the new write-heavy specs (TEST-01). D-170, D-171.
+
+- **Full-suite pass** — the first complete e2e run after R3/R4 failed 18 tests and five routes were over budget. Fixed without raising any budget or limit: barrel imports optimised and interaction-only sheets deferred; destructive contrast and system dark mode fixed; the Ops restore dialog and signals links corrected; the fixture Dawn Darshan window widened to 05:00–08:00; selectors updated only where the product had deliberately changed (D-172).
+
 Counts at this point: pgTAP 633/633 (34 files); providers + UI vitest 313/313; full unit suite 766/766 before the latest additions.
+
+Counts after the full-suite pass (2026-09-13): unit vitest for UI, web and Ops 476/476 (53 files); Playwright 274 passed, 4 skipped, 0 failed across web and Ops, the last two failures being test races that were hardened and rerun (19/19); `check:bundle` 32/32 routes within 180 kB with no new allowance. The engine and pgTAP suites were not rerun for this batch: it changes no migration and no engine code, only one fixture seed row.
 
 ## Out of reach from this machine (built to be ready, not claimed done)
 GIT-01 push credentials · real provider keys (Gemini, Resend, MapTiler, ORS, Sentry) ·

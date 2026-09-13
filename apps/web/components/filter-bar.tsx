@@ -1,17 +1,28 @@
+import { getTranslations } from "next-intl/server";
+
 import { EXPERIENCE_TYPES, PLACE_TYPES, type SearchFilters } from "../lib/knowledge";
 
 /**
- * PRD F2's filters — the four that can be answered honestly today.
- *
- * F2 caps the visible filters at six. "Availability on my dates" and "Near a place I've
- * added" both need an active journey, which is B-019, so they are absent rather than
- * present and inert. A control that is always there and never works teaches a traveler
- * that the controls do not work, and they stop trying the ones that do.
+ * PRD F2's six filters: type, duration, booking, access, availability on a date, and near a
+ * journey.
  *
  * Plain form fields, no client JavaScript: the whole search screen is a GET form, so the
  * filters survive a reload, a share, and a browser with nothing running.
+ *
+ * "Near a journey" needs a saved journey to be near. Without one the traveler is told how to
+ * get one, rather than shown a control that can never match anything.
  */
-export function FilterBar({ filters }: { filters: SearchFilters }) {
+export async function FilterBar({
+  filters,
+  journeys,
+}: {
+  filters: SearchFilters;
+  /** The traveler's journeys still ahead, or null for a guest. */
+  journeys: { id: string; title: string | null }[] | null;
+}) {
+  const t = await getTranslations("searchFilters");
+  const tJourney = await getTranslations("addToJourney");
+
   return (
     <fieldset className="flex flex-col gap-3">
       <legend className="sr-only">Narrow these results</legend>
@@ -88,11 +99,41 @@ export function FilterBar({ filters }: { filters: SearchFilters }) {
             <option value="step_free">Step-free, or partly</option>
           </select>
         </Field>
+
+        <Field label={t("on")} htmlFor="on">
+          <input
+            id="on"
+            name="on"
+            type="date"
+            defaultValue={filters.availableOn ?? ""}
+            className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
+          />
+        </Field>
+
+        {journeys && journeys.length > 0 ? (
+          <Field label={t("near")} htmlFor="near">
+            <select
+              id="near"
+              name="near"
+              defaultValue={filters.nearJourneyId ?? ""}
+              className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
+            >
+              <option value="">{t("near_any")}</option>
+              {journeys.map((journey) => (
+                <option key={journey.id} value={journey.id}>
+                  {journey.title ?? tJourney("untitled")}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
       </div>
 
-      <p className="text-caption text-text-secondary">
-        Filtering by your dates and by what you have already added arrives with the journey builder.
-      </p>
+      {journeys && journeys.length > 0 ? null : (
+        <p className="text-caption text-text-secondary">
+          {journeys ? t("near_hint_saved") : t("near_hint")}
+        </p>
+      )}
     </fieldset>
   );
 }

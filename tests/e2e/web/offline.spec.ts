@@ -164,7 +164,7 @@ test.describe("With no network at all", () => {
      * projection rather than recomputing, this would eventually drift into showing an item
      * as "now" that had already finished, and it would look completely normal.
      */
-    await expect(page.getByText(/hasn't started yet/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /hasn't started yet/ })).toBeVisible();
     await expect(page.getByText(/Leave by/)).toBeVisible();
 
     await context.setOffline(false);

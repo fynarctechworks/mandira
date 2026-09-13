@@ -22,5 +22,348 @@
   "home": {
     "title": "Plan around what matters.",
     "intro": "Tell Mandhira what your journey has to include, and it works out whether the days hold together."
+  },
+  "health": {
+    "title": "How this journey holds together",
+    "state": {
+      "comfortable": "Comfortable — there's room to breathe.",
+      "tight": "Tight — workable, but delays will have an effect.",
+      "at_risk": "At risk — something may not fit. Let's look at options.",
+      "broken": "This can't work as planned. Here's what would need to change."
+    },
+    "cause": {
+      "day_overruns": "This day runs about {minutes} minutes past its end.",
+      "fixed_unreachable": "Everything before one of your fixed times needs about {minutes} minutes more than there is.",
+      "outside_availability": "Something is planned for {at}, when it isn't running.",
+      "runs_past_availability": "Something starting at {at} runs past {closes}, when it stops.",
+      "dependency_broken": "Something is planned before the thing it depends on.",
+      "walking_over_limit": "Walking is about {metres} m — above the {limitMetres} m that's comfortable for your group.",
+      "not_step_free": "One of these places isn't step-free.",
+      "partly_step_free": "One of these places is only partly step-free.",
+      "step_free_unknown": "We don't know whether one of these places is step-free.",
+      "no_rest_in_stretch": "There's about {minutes} minutes here without a proper break.",
+      "return_guard_breached": "You'd reach your return about {minutes} minutes late."
+    },
+    "trust": {
+      "unverified": "{count, plural, one {# detail here hasn't been verified recently.} other {# details here haven't been verified recently.}}",
+      "conflicting": "{count, plural, one {# detail here has sources that disagree.} other {# details here have sources that disagree.}}"
+    }
+  },
+  "change": {
+    "card": {
+      "title": "Something changed",
+      "what_changed": "What changed",
+      "why_it_matters": "Why it matters",
+      "recommended": "Recommended",
+      "other_options": "Other options",
+      "keep_as_is": "Keep my plan as is",
+      "resulting_health": "If you choose this:",
+      "why_fallback": "This affects how the rest of the day fits together.",
+      "one_of_your_plans": "one of your plans",
+      "left_out": "left out",
+      "unscheduled": "not yet on the clock",
+      "on_day": "day {day}, {time}"
+    },
+    "what": {
+      "user_late": "You're about {minutes} minutes behind.",
+      "user_stay_longer": "You're staying about {minutes} minutes longer.",
+      "user_done_delta": "That finished about {minutes} minutes off the plan.",
+      "knowledge_update": "Something we know about your day has changed.",
+      "live_transport": "A transport connection has changed.",
+      "live_weather": "The weather for your day has changed.",
+      "item_added": "You added something to the day.",
+      "item_removed": "You took something out of the day.",
+      "availability_changed": "Opening times for one of these have changed.",
+      "preferences_changed": "What matters to you has changed."
+    },
+    "option": {
+      "absorb_buffers": "{minutes, plural, =0 {Use the free time you'd left} other {Use the spare time you'd left — about # minutes}}",
+      "shorten_item": "Spend less time at {item} — about {toMinutes} minutes instead of {fromMinutes}",
+      "move_optional_to_day": "Move {item} to day {day}",
+      "move_to_day": "Move {item} to day {day}",
+      "move_protected_within_window": "Go to {item} at {time} instead",
+      "remove_optional": "Leave out {item}",
+      "remove_important": "Leave out {item}, even though you marked it important"
+    },
+    "because": {
+      "nothing_moves": "because the buffers were there for exactly this, and nothing you planned has to change.",
+      "keeps_everything": "because everything stays in the day, just a little shorter.",
+      "nothing_removed": "because nothing is taken out — it moves to a day where it fits.",
+      "keeps_protected": "because it keeps what you said must happen, at a time it's still open.",
+      "protects_the_rest": "because you marked it optional, and leaving it out keeps the rest of the day within reach.",
+      "last_resort": "because nothing gentler brings the day back within reach, so it's your call."
+    },
+    "keep": {
+      "comfortable": "Nothing needs to change.",
+      "tight": "It still works, with less room if anything slips.",
+      "at_risk": "It may still work, but there's no room left if anything slips.",
+      "broken": "The day won't work as planned, and something will be missed."
+    },
+    "trust": {
+      "unverified": "This is based on information we're not fully sure of — worth checking locally.",
+      "conflicting": "Sources disagree about something this depends on — worth checking locally.",
+      "changed": "This is based on information that changed."
+    },
+    "offline_note": "Worked out from what's saved on this device. Your choice is kept and sent when there's a signal, and we'll check it again then."
+  },
+  "plan": {
+    "rule": {
+      "fixed_cannot_move": "A fixed time can't be moved — it's what the rest of the day works around.",
+      "fixed_cannot_remove": "A fixed commitment can't be taken out from here.",
+      "protected_cannot_remove": "You marked this as something that must happen, so it stays. Change what matters first if your plans have changed.",
+      "item_not_found": "That part of the plan isn't there any more."
+    }
+  },
+  "skip": {
+    "to_content": "Skip to content"
+  },
+  "language": {
+    "label": "Language",
+    "description": "Screens use this language. Places and experiences show English where a translation isn't ready yet."
+  },
+  "prepareHub": {
+    "title": "Prepare",
+    "intro": "What to get ready before you set off, for each journey coming up.",
+    "signed_out": "Checklists come from your saved journeys, so they start once you sign in.",
+    "sign_in": "Sign in",
+    "empty": "No journeys coming up. Plan one and its checklist appears here.",
+    "plan": "Plan a journey",
+    "progress": "{done} of {total} ready",
+    "nothing": "Nothing to prepare for this one yet.",
+    "untitled": "Your journey",
+    "no_date": "No date yet"
+  },
+  "profile": {
+    "title": "Profile",
+    "signed_out": "Sign in to keep your journeys, travelers and saved places on any device.",
+    "sign_in": "Sign in",
+    "account": "Your account",
+    "email": "Email",
+    "display_name": "Your name",
+    "display_name_hint": "How Mandhira addresses you. Leave it empty if you'd rather not say.",
+    "save": "Save",
+    "saved": "Saved.",
+    "not_saved": "That didn't save. Please try again.",
+    "notifications": "Notifications",
+    "notifications_hint": "Choose what Mandhira tells you about, and when.",
+    "sign_out": "Sign out"
+  },
+  "travelers": {
+    "title": "Travelers",
+    "intro": "The people you usually travel with. Mandhira plans around what each of them can comfortably do.",
+    "empty": "No travelers yet. Add yourself and anyone you travel with.",
+    "add": "Add a traveler",
+    "edit": "Edit",
+    "edit_named": "Edit {name}",
+    "remove": "Remove",
+    "remove_named": "Remove {name}",
+    "label": "Name or relation",
+    "label_hint": "For example Amma, or Me.",
+    "unnamed": "Traveler",
+    "you": "You",
+    "mobility": "Getting around",
+    "age": "Age group",
+    "mobility_options": {
+      "full": "Walks without difficulty",
+      "limited_walking": "Can't walk far",
+      "wheelchair": "Uses a wheelchair",
+      "needs_rest_frequently": "Needs to rest often"
+    },
+    "age_options": {
+      "child": "Child",
+      "adult": "Adult",
+      "senior": "Senior"
+    },
+    "save": "Save traveler",
+    "cancel": "Cancel",
+    "remove_title": "Remove {name}?",
+    "remove_body": "Journeys already planned keep them. They won't be offered for new journeys.",
+    "keep": "Keep",
+    "self_note": "This is you, so it stays.",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "savedPlaces": {
+    "title": "Saved places",
+    "empty": "Nothing saved yet. Tap Save on any place to find it here.",
+    "save": "Save this place",
+    "saved": "Saved",
+    "unsave_label": "Saved. Tap to remove it from your saved places.",
+    "sign_in": "Sign in to save this place",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "accountData": {
+    "title": "Your data",
+    "export": "Download my data",
+    "export_hint": "A copy of everything Mandhira holds about you, as a file.",
+    "exporting": "Preparing your file…",
+    "export_unavailable": "That download didn't start. Please try again.",
+    "delete": "Delete my account",
+    "delete_hint": "Your account and everything in it is erased 30 days after you ask. Until then you can change your mind.",
+    "delete_title": "Delete your account?",
+    "delete_body": "Your journeys, travelers and saved places will be erased after 30 days. You can keep your account any time before then.",
+    "delete_cancel": "Not now",
+    "scheduled": "Your account will be erased on {date}.",
+    "keep": "Keep my account",
+    "kept": "Your account is staying.",
+    "not_done": "That didn't go through. Please try again."
+  },
+  "addToJourney": {
+    "action": "Add to journey",
+    "sign_in": "Sign in to add this to a journey",
+    "title": "Add to a journey",
+    "description": "Choose where {name} goes and how much it matters.",
+    "journey": "Which journey",
+    "no_journeys": "You don't have a journey for this destination yet.",
+    "plan_new": "Plan a new journey",
+    "day": "Which day",
+    "day_option": "Day {day}",
+    "day_option_dated": "Day {day} · {date}",
+    "tier": "How much it matters",
+    "tiers": {
+      "protected": "Must do — never removed",
+      "important": "Important — may be moved, if you agree",
+      "optional": "Optional — the first thing offered up when time is short",
+      "fixed": "Fixed — a set time that never moves"
+    },
+    "time": "What time",
+    "time_hint": "A fixed item needs its time.",
+    "add": "Add to this journey",
+    "adding": "Adding…",
+    "added": "Added to your journey.",
+    "open_journey": "Open the journey",
+    "not_added": "That wasn't added. Please try again.",
+    "untitled": "Your journey"
+  },
+  "reorder": {
+    "earlier": "Move {name} earlier",
+    "later": "Move {name} later",
+    "not_moved": "That didn't move. Please try again."
+  },
+  "journeyEdit": {
+    "open": "Edit journey details",
+    "title": "Journey details",
+    "name": "Journey name",
+    "start_date": "First day",
+    "end_date": "Last day",
+    "day_start": "Day starts",
+    "day_end": "Day ends",
+    "pace": "Pace",
+    "pace_options": {
+      "relaxed": "Relaxed",
+      "balanced": "Balanced",
+      "full": "Full"
+    },
+    "save": "Save details",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "healthSheet": {
+    "open": "See why",
+    "open_named": "See why {day} is like this",
+    "title": "How {day} holds together",
+    "time_load": {
+      "comfortable": "There's room in this day.",
+      "full": "This day is nearly full.",
+      "over": "This day holds more than the time available."
+    },
+    "checks": {
+      "time_load": "Time",
+      "availability": "Opening times",
+      "dependency": "Order of things",
+      "physical_load": "Walking and rest",
+      "return_guard": "Getting back"
+    },
+    "trust_title": "How sure we are",
+    "nothing": "Nothing here needs attention.",
+    "about_item": "About {item}",
+    "simplify": "Simplify this day",
+    "simplify_hint": "Mandhira suggests options. Nothing changes until you choose one.",
+    "simplifying": "Checking how this change affects your journey.",
+    "fits": "This day already fits — nothing needs to change.",
+    "simplify_what": "You asked for a simpler day.",
+    "not_available": "Options aren't available right now. Please try again.",
+    "no_options": "Mandhira could not find a gentler way through this day. You can still move or remove something yourself."
+  },
+  "discovery": {
+    "see_all": "See all {count}",
+    "page": "Page {page} of {pages}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "back": "Back to {name}",
+    "empty": "Nothing has been published here yet.",
+    "experiences_title": "What people come here for",
+    "places_title": "Important places"
+  },
+  "searchFilters": {
+    "on": "Available on",
+    "near": "Near a journey",
+    "near_any": "Anywhere",
+    "near_hint": "Sign in and save a journey to find what's near it.",
+    "near_hint_saved": "Save a journey to find what's near it."
+  },
+  "live": {
+    "announce_now": "Now: {label}. {detail}",
+    "announce_next": "Next: {label}, leave by {time}.",
+    "leave_by_title": "Time to set off",
+    "leave_by_body": "Leave by {time} for {label}."
+  },
+  "prepare": {
+    "documents": {
+      "identity_proof": "Carry proof of identity",
+      "booking_confirmation": "{count, plural, one {Keep your booking confirmation with you} other {Keep your # booking confirmations with you}}"
+    }
+  },
+  "intent": {
+    "entry_link": "Or describe it in your own words",
+    "title": "Describe your journey",
+    "lede": "Say it the way you would to a friend — where, when, who is coming, and what has to happen. Mandhira turns it into a plan you check before anything is built.",
+    "input_label": "Your journey, in your own words",
+    "input_hint": "For example: three days in Tirumala from 14 October with my mother, who can't walk far. We must do the Suprabhatam seva. Our train home leaves at 6 pm on the 16th.",
+    "submit": "Read my description",
+    "reading": "Reading…",
+    "too_short": "Write a little more — a place and a few days is enough to start.",
+    "problem": "That didn't go through. Please try again.",
+    "or_form": "Prefer to answer a few questions?",
+    "unavailable_title": "Let's do it with a few questions instead",
+    "unavailable_body": "Mandhira can't read descriptions right now. The questions get you to the same plan.",
+    "use_form": "Answer a few questions",
+    "review_title": "Check your journey",
+    "review_lede": "This is what Mandhira understood. Anything marked Suggested is a guess — keep it or take it out before the plan is built.",
+    "suggested": "Suggested",
+    "keep": "Keep",
+    "remove": "Take out",
+    "destination": "Destination",
+    "choose_destination": "Choose a destination",
+    "start": "Starting on",
+    "days": "How many days",
+    "day_count": "{count, plural, one {# day} other {# days}}",
+    "pace": "Pace",
+    "pace_unset": "No preference",
+    "pace_relaxed": "Relaxed — leave room to breathe",
+    "pace_balanced": "Balanced",
+    "pace_full": "Full — fit in as much as the day allows",
+    "travelers": "Who is coming",
+    "mobility": "Mobility need in the group",
+    "mobility_hint": "Mandhira plans every day around the most limited need.",
+    "mobility_full": "Everyone walks freely",
+    "mobility_limited_walking": "Someone cannot walk far",
+    "mobility_wheelchair": "Someone uses a wheelchair",
+    "mobility_needs_rest_frequently": "Someone needs to rest often",
+    "must": "What you must do",
+    "like": "What you would like to do",
+    "none_named": "Nothing named here. You can add things on the questions screen.",
+    "return": "Your way home",
+    "return_hint": "Mandhira works backwards from it. Choose the one that is your journey home, if any.",
+    "return_none": "None of these",
+    "unmatched_title": "Not something Mandhira knows about yet",
+    "unmatched_body": "These aren't published yet, so they are not in the plan.",
+    "unclear_title": "Worth a second look",
+    "unclear_body": "Mandhira wasn't sure about these. Change anything above that isn't right.",
+    "pending": "{count, plural, one {One suggestion still needs Keep or Take out.} other {# suggestions still need Keep or Take out.}}",
+    "needs_basics": "Choose a destination and a start date to build the plan.",
+    "build": "Build my journey",
+    "edit_description": "Change the description",
+    "adjust_in_form": "Adjust with the questions instead"
   }
 }
