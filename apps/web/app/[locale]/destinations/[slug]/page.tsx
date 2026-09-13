@@ -33,7 +33,10 @@ export default async function DestinationPage({
 
   const page = await getDestinationPage(slug, locale);
   if (!page) notFound();
-  const t = await getTranslations("discovery");
+  const [t, tPage] = await Promise.all([
+    getTranslations("discovery"),
+    getTranslations("destinationPage"),
+  ]);
 
   const { destination, experiences, places, guidance, advisories } = page;
   const oldestVerified = formatDate(page.oldestVerifiedAt, locale);
@@ -56,7 +59,7 @@ export default async function DestinationPage({
        * reason their day does not work.
        */}
       {advisories.length > 0 ? (
-        <section aria-label="Advisories" className="flex flex-col gap-3">
+        <section aria-label={tPage("advisories")} className="flex flex-col gap-3">
           {advisories.map((advisory) => (
             <div
               key={advisory.id}
@@ -86,8 +89,9 @@ export default async function DestinationPage({
       ) : null}
 
       <Section
-        title="What people come here for"
-        empty="Nothing here has been published yet."
+        id="what-people-come-here-for"
+        title={t("experiences_title")}
+        empty={tPage("empty_experiences")}
         count={experiences.length}
         seeAll={
           page.experienceTotal > experiences.length
@@ -109,8 +113,9 @@ export default async function DestinationPage({
       </Section>
 
       <Section
-        title="Important places"
-        empty="No places have been published yet."
+        id="important-places"
+        title={t("places_title")}
+        empty={tPage("empty_places")}
         count={places.length}
         seeAll={
           page.placeTotal > places.length
@@ -129,7 +134,7 @@ export default async function DestinationPage({
       {guidance.length > 0 ? (
         <section aria-labelledby="guidance-heading" className="flex flex-col gap-3">
           <h2 id="guidance-heading" className="text-h2">
-            Practical essentials
+            {tPage("essentials")}
           </h2>
           <ul className="flex flex-col gap-3">
             {guidance.map((block) => (
@@ -159,12 +164,15 @@ export default async function DestinationPage({
 
 /** A section that says so when it is empty, rather than collapsing and looking complete. */
 function Section({
+  id,
   title,
   empty,
   count,
   seeAll,
   children,
 }: {
+  /** Fixed per section: an id built from the title would change with the language. */
+  id: string;
   title: string;
   empty: string;
   count: number;
@@ -172,8 +180,6 @@ function Section({
   seeAll: { href: string; label: string } | null;
   children: React.ReactNode;
 }) {
-  const id = title.toLowerCase().replace(/[^a-z]+/g, "-");
-
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-h2">

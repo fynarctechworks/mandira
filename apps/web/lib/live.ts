@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { mustList } from "./data-error";
 import { assembleLiveView, type LivePlace, type LiveView } from "./live-view";
 import { getJourney } from "./journeys";
@@ -44,6 +46,7 @@ export async function getLiveView(
     labels,
     places: await placesFor(supabase, items, locale),
     nowAt,
+    t: await getTranslations({ locale }),
   });
 }
 

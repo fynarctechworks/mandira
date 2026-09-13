@@ -1,10 +1,11 @@
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
+import type { PrecacheEntry, SerwistGlobalConfig, SerwistPlugin } from "serwist";
 import {
   CacheFirst,
   ExpirationPlugin,
   NetworkFirst,
   NetworkOnly,
+  RangeRequestsPlugin,
   Serwist,
   StaleWhileRevalidate,
 } from "serwist";
@@ -83,6 +84,30 @@ const serwist = new Serwist({
         cacheName: "mandhira-pages",
         networkTimeoutSeconds: 3,
         plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+      }),
+    },
+    {
+      /*
+       * Phrase recordings (A17, D-175). The offline sync downloads each whole file into this
+       * cache (`lib/offline/phrase-audio.ts`); playback asks for byte ranges, which the range
+       * plugin answers from that stored file, so a phrase plays at a temple gate with no signal.
+       * A partial 206 fetched on first play is never stored, only a whole 200.
+       */
+      matcher: ({ request, url }) =>
+        request.destination === "audio" &&
+        url.pathname.includes("/storage/v1/object/public/media/"),
+      handler: new CacheFirst({
+        cacheName: "mandhira-audio",
+        plugins: [
+          // Only a whole file is stored; a 206 fetched on first play is served but never kept.
+          { cacheWillUpdate: async ({ response }) => (response.status === 200 ? response : null) },
+          /*
+           * The class declares its optional hooks in a way `exactOptionalPropertyTypes` rejects,
+           * though at runtime it is exactly a Serwist plugin; the adapter says so once, here.
+           */
+          new RangeRequestsPlugin() as unknown as SerwistPlugin,
+          new ExpirationPlugin({ maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 60 }),
+        ],
       }),
     },
     {

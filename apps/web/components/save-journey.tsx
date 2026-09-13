@@ -2,6 +2,7 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { saveGuestDraft } from "../lib/offline/guest-draft";
@@ -26,6 +27,7 @@ type Brief = {
  * guest draft.
  */
 export function SaveJourney({ brief, locale }: { brief: Brief; locale: string }) {
+  const t = useTranslations("saveJourney");
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [problem, setProblem] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function SaveJourney({ brief, locale }: { brief: Brief; locale: string })
     }
 
     if (!payload.ok) {
-      setProblem(payload.error?.message ?? "That didn't save. Please try again.");
+      setProblem(payload.error?.message ?? t("not_saved"));
       setStatus("idle");
       return;
     }
@@ -73,7 +75,7 @@ export function SaveJourney({ brief, locale }: { brief: Brief; locale: string })
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={() => void save()} disabled={status === "saving"} fullWidth>
-        {status === "saving" ? "Keeping it…" : "Keep this journey"}
+        {status === "saving" ? t("keeping") : t("keep")}
       </Button>
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">

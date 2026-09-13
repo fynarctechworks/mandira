@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { PrintButton } from "../../../../../components/print-button";
 import { ShareControls } from "../../../../../components/share-controls";
@@ -44,6 +44,7 @@ export default async function SummaryPage({
   if (!summary) notFound();
 
   const live = shares[0] ?? null;
+  const t = await getTranslations("summaryPage");
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -53,7 +54,7 @@ export default async function SummaryPage({
           className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
         >
           <ArrowLeft className="size-4" aria-hidden />
-          Back to your journey
+          {t("back")}
         </Link>
 
         <PrintButton />

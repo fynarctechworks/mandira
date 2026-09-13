@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { SignInForm } from "./sign-in-form";
 
@@ -23,15 +23,13 @@ export default async function SignInPage({
   setRequestLocale(locale);
 
   const { next } = await searchParams;
+  const t = await getTranslations("signIn");
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-display">Keep your journey</h1>
-        <p className="text-body text-text-secondary">
-          Signing in saves what you have planned, so it is here on any device and while you are
-          travelling.
-        </p>
+        <h1 className="text-display">{t("title")}</h1>
+        <p className="text-body text-text-secondary">{t("intro")}</p>
       </header>
 
       {/*
@@ -41,9 +39,7 @@ export default async function SignInPage({
        */}
       <SignInForm next={safeNext(next, locale)} />
 
-      <p className="text-caption text-text-secondary">
-        We only use your email to sign you in. No password to remember, and nothing else to fill in.
-      </p>
+      <p className="text-caption text-text-secondary">{t("email_use")}</p>
     </main>
   );
 }

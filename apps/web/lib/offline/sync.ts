@@ -9,6 +9,7 @@ import {
   writeMeta,
   type OfflineEntity,
 } from "./db";
+import { warmPhraseAudio } from "./phrase-audio";
 import { replacePhrases } from "./phrases-local";
 import type { JourneySnapshot } from "./snapshot";
 
@@ -70,6 +71,15 @@ export async function syncJourneyOffline(
     await writeSnapshot(journeyId, snapshot);
   } catch {
     return { ok: false, changed: [] };
+  }
+
+  /*
+   * Phrase recordings after the transaction, never inside it: a network fetch inside an
+   * IndexedDB transaction lets it commit early. Not awaited, because the plan is already on the
+   * device and audio must not hold the sync up (D-175).
+   */
+  if (Array.isArray(snapshot.phrases)) {
+    void warmPhraseAudio(snapshot.phrases.map((phrase) => phrase.audio_url));
   }
 
   return { ok: true, changed };

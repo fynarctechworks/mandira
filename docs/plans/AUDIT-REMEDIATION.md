@@ -54,6 +54,10 @@ Counts after the full-suite pass (2026-09-13): unit vitest for UI, web and Ops 4
 
 Counts after the launch-hardening and parallel feature batches (2026-09-13): unit vitest 1,076/1,076 (98 files); engine 278/278 at 99.65% statements and 92.98% branches; pgTAP 699/699 (38 files); Playwright 286 passed, 3 skipped, 0 failed (three failures in the first run fixed and rerun: a phrase page answering 200 for an unknown destination because of a streaming loading file, and two tests racing streamed content); `check:bundle` every route within 180 kB; `pnpm audit --prod` clean; typecheck and lint clean in all 7 packages.
 
+- **P1 behaviours (D-179)** — journey-aware search ranking, the stale in-journey note and multi-device sync; the traveler knowledge bundle carries trust. Also report-photo retention (D-177), offline phrase audio (D-178), and R6's hardcoded-string scanner with every traveler string in the catalogs.
+
+Counts after the P1 batch (2026-09-13): unit vitest 1,107/1,107 (106 files, including the R6 scanner); engine 278/278 at 99.65% statements and 92.98% branches; pgTAP 711/711 (39 files); Playwright 287 passed, 2 skipped, 0 failed (two Ops publish tests hit a dropped-click race on a growing list, hardened and rerun 10/10); `check:bundle` 33/33 routes within budget; typecheck, lint and format clean in all 7 packages.
+
 ## Out of reach from this machine (built to be ready, not claimed done)
 GIT-01 push credentials · real provider keys (Gemini, Resend, MapTiler, ORS, Sentry) ·
 production domain and deployment · pilot planners. Each code path works locally and

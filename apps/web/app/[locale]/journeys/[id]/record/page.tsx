@@ -1,7 +1,7 @@
 import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { TierChip } from "@mandhira/ui";
 import { dateForDay } from "@mandhira/journey-engine";
 
@@ -41,6 +41,7 @@ export default async function RecordPage({
   const record = await getJourneyRecord(supabase, id, locale);
   if (!record) notFound();
 
+  const t = await getTranslations("record");
   const start = record.startDate ?? new Date().toISOString().slice(0, 10);
   const clock = (at: string) =>
     new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(new Date(at));
@@ -56,9 +57,7 @@ export default async function RecordPage({
       </Link>
 
       <header className="flex flex-col gap-2">
-        <h1 className="text-display">
-          {record.isOver ? "Your journey is complete" : "How it's going"}
-        </h1>
+        <h1 className="text-display">{record.isOver ? t("complete_title") : t("going_title")}</h1>
 
         {/*
           PRD F16's "plain statement, no score". A sentence, never a ratio and never a
@@ -67,10 +66,13 @@ export default async function RecordPage({
         {record.protectedPlanned > 0 ? (
           <p className="text-body text-text-secondary">
             {record.protectedCompleted === record.protectedPlanned
-              ? "You did everything you said mattered most."
+              ? t("all_done")
               : record.protectedCompleted === 0
-                ? "The things you said mattered most are still ahead of you."
-                : `You've done ${record.protectedCompleted} of the ${record.protectedPlanned} things you said mattered most.`}
+                ? t("none_done")
+                : t("some_done", {
+                    done: record.protectedCompleted,
+                    planned: record.protectedPlanned,
+                  })}
           </p>
         ) : null}
       </header>
@@ -117,9 +119,9 @@ export default async function RecordPage({
                 <p className="pl-6 text-caption text-text-secondary">
                   {item.completed
                     ? item.actualEndAt
-                      ? `Done at ${clock(item.actualEndAt)}`
-                      : "Done"
-                    : "Not marked done"}
+                      ? t("done_at", { time: clock(item.actualEndAt) })
+                      : t("done")
+                    : t("not_done")}
                 </p>
 
                 {/* The traveler's own note, kept beside what it was about. */}

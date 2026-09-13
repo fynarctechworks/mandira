@@ -9,6 +9,7 @@ import {
   type PriorityTier,
 } from "@mandhira/journey-engine";
 
+import { engineText, type Translate } from "./engine-text";
 import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 
 /**
@@ -62,8 +63,10 @@ export function assembleLiveView(input: {
   /** Never `Date.now()` inside this function — the caller owns the clock (D-005). */
   nowAt: string;
   syncedAt?: string | null;
+  /** The reader's language: the server passes its request translator, the browser its own. */
+  t: Translate;
 }): LiveView {
-  const { journey, items, bundle, labels, places, nowAt } = input;
+  const { journey, items, bundle, labels, places, nowAt, t } = input;
   const engineJourney = toEngineJourney(journey);
 
   const projection = getNowNextLater({
@@ -82,7 +85,7 @@ export function assembleLiveView(input: {
 
     return {
       itemId: card.itemId,
-      label: labelFor(card, item?.experience_id ?? null, labels),
+      label: labelFor(card, item?.experience_id ?? null, labels, t),
       place: card.placeId ? (places.get(card.placeId) ?? null) : null,
       startAt: card.startAt,
       endAt: card.endAt,
@@ -95,7 +98,7 @@ export function assembleLiveView(input: {
     item
       ? {
           itemId: item.id,
-          label: labelFor(null, item.experience_id ?? null, labels),
+          label: labelFor(null, item.experience_id ?? null, labels, t),
           place: item.place_id ? (places.get(item.place_id) ?? null) : null,
           startAt: item.planned_start_at ?? null,
           endAt: item.planned_end_at ?? null,
@@ -116,7 +119,7 @@ export function assembleLiveView(input: {
 
   return {
     journeyId: journey.id,
-    journeyTitle: journey.title ?? "Your journey",
+    journeyTitle: journey.title ?? t("addToJourney.untitled"),
     destinationId: journey.destinationId,
     projection,
     now: view(projection.now)!,
@@ -131,7 +134,7 @@ export function assembleLiveView(input: {
     dayCauses: [
       ...new Set(
         (health.days.find((d) => d.dayIndex === projection.dayIndex)?.causes ?? [])
-          .map(causeSentence)
+          .map((cause) => causeSentence(cause, t))
           .filter(Boolean),
       ),
     ],
@@ -151,15 +154,18 @@ function labelFor(
   card: LiveCard | null,
   experienceId: string | null,
   labels: Map<string, string>,
+  t: Translate,
 ): string {
   const named = experienceId ? labels.get(experienceId) : undefined;
 
-  if (card?.kind === "travel") return named ? `On your way to ${named}` : "On your way";
-  if (card?.kind === "free") return "Nothing you need to do right now";
-  if (card?.kind === "before_day") return "Your day hasn't started yet";
-  if (card?.kind === "day_complete") return "Today is complete";
+  if (card?.kind === "travel") {
+    return named ? t("live.labels.travel_to", { name: named }) : t("live.labels.travel");
+  }
+  if (card?.kind === "free") return t("live.labels.free");
+  if (card?.kind === "before_day") return t("live.labels.before_day");
+  if (card?.kind === "day_complete") return t("live.labels.day_complete");
 
-  return named ?? "Something you added";
+  return named ?? t("common.something_you_added");
 }
 
 /**
@@ -168,20 +174,13 @@ function labelFor(
  * Beside the reader rather than in the engine, exactly like the builder's — the engine
  * states which check failed, never how to say it.
  */
-function causeSentence(cause: Cause): string {
-  const minutes = String(cause.params?.["minutes"] ?? "");
-
-  const sentences: Record<string, string> = {
-    "health.cause.overlap": "Two things overlap.",
-    "health.cause.tight_transition": `Only ${minutes} minutes to get between two of these.`,
-    "health.cause.outside_window": "One of these falls outside when it's open.",
-    "health.cause.return_at_risk": `You'd reach your return about ${minutes} minutes late.`,
-    "health.cause.physical_load": "This day asks a lot on foot.",
-    "health.cause.no_break": "There's a long stretch here without a proper break.",
-    "health.cause.not_step_free": "Part of this day is only partly step-free.",
-  };
-
-  return sentences[cause.key] ?? "";
+function causeSentence(cause: Cause, t: Translate): string {
+  /*
+   * The engine's own keys, through the one renderer every screen uses (D-158). Live kept a
+   * private map of older cause names, so most of today's causes (a day that overruns, a
+   * fixed commitment it cannot reach) rendered as nothing here.
+   */
+  return engineText(t, cause.key, cause.params);
 }
 
 /** Re-exported so consumers do not need to reach into the engine for one type. */

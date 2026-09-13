@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { DEFAULT_LOCALE } from "@mandhira/i18n";
 
+import { createTranslator } from "next-intl";
+
+import en from "../messages/en.json";
 import "./globals.css";
+
+/*
+ * Outside `[locale]`, so no request locale exists and next-intl's request config never runs.
+ * The default locale's catalog is read directly — the same words as the localised page, from
+ * the same place.
+ */
+const t = createTranslator({ locale: DEFAULT_LOCALE, messages: en, namespace: "notFound" });
 
 /**
  * A URL that matched no route at all (CLAUDE.md §4).
@@ -23,7 +33,7 @@ import "./globals.css";
  * a screen-reader user with a tab announced as the raw URL.
  */
 export const metadata = {
-  title: "This page isn't here — Mandhira",
+  title: `${t("title")} — Mandhira`,
   robots: { index: false, follow: false },
 };
 
@@ -32,17 +42,14 @@ export default function RootNotFound() {
     <html lang={DEFAULT_LOCALE}>
       <body className="antialiased">
         <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-10">
-          <h1 className="text-display">This page isn&apos;t here</h1>
-          <p className="text-body text-text-secondary">
-            The link may have changed, or it may have been a shared journey that is no longer being
-            shared.
-          </p>
+          <h1 className="text-display">{t("title")}</h1>
+          <p className="text-body text-text-secondary">{t("body")}</p>
 
           <Link
             href="/"
             className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-button bg-brand-primary px-4 font-medium text-text-on-primary"
           >
-            Go to the home screen
+            {t("home")}
           </Link>
         </main>
       </body>

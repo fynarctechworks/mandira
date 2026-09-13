@@ -1,6 +1,7 @@
 import { CalendarClock, ChevronRight, Clock, Ticket } from "lucide-react";
 import Link from "next/link";
 import { TrustBadge } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 
 import type { ExperienceCard as Experience } from "../lib/knowledge";
 import { weakestTrustState } from "../lib/knowledge";
@@ -28,16 +29,24 @@ export function ExperienceCard({
   locale: string;
   destinationSlug: string;
 }) {
-  const availability = availabilityLine(experience.availability, locale);
-  const duration = durationLabel(experience.durationLikelyMinutes);
+  const t = useTranslations("knowledgeFields");
+  const tPresent = useTranslations("present");
+  const tPhrases = useTranslations("phrases");
+  const tSearch = useTranslations("search");
+  const availability = availabilityLine(experience.availability, locale, tPresent);
+  const duration = durationLabel(experience.durationLikelyMinutes, tPresent);
   const booking = bookingLine(
     experience.advanceBookingRequired,
     experience.advanceBookingOpensDaysBefore,
+    tPresent,
   );
   const trust = weakestTrustState(experience.trust);
 
   return (
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
+      {experience.fitsJourney ? (
+        <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-h3">
           {/*
@@ -64,7 +73,7 @@ export function ExperienceCard({
         {availability ? (
           <div className="flex items-center gap-1.5">
             <CalendarClock className="size-4 shrink-0" aria-hidden />
-            <dt className="sr-only">Availability</dt>
+            <dt className="sr-only">{t("availability")}</dt>
             <dd>{availability}</dd>
           </div>
         ) : null}
@@ -72,15 +81,15 @@ export function ExperienceCard({
         {duration ? (
           <div className="flex items-center gap-1.5">
             <Clock className="size-4 shrink-0" aria-hidden />
-            <dt className="sr-only">Usually takes</dt>
-            <dd>Usually {duration}</dd>
+            <dt className="sr-only">{t("usually_takes")}</dt>
+            <dd>{tPresent("usually", { usual: duration })}</dd>
           </div>
         ) : null}
 
         {booking ? (
           <div className="flex items-center gap-1.5 text-text-primary">
             <Ticket className="size-4 shrink-0" aria-hidden />
-            <dt className="sr-only">Booking</dt>
+            <dt className="sr-only">{t("booking")}</dt>
             <dd>{booking}</dd>
           </div>
         ) : null}
@@ -90,7 +99,7 @@ export function ExperienceCard({
 
       {/* PRD-KNOW-005: a traveler reading English instead of their language is told so. */}
       {experience.name.isFallback ? (
-        <p className="text-caption text-text-secondary">Not yet available in your language</p>
+        <p className="text-caption text-text-secondary">{tPhrases("not_in_language")}</p>
       ) : null}
     </article>
   );

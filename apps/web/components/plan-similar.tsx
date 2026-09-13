@@ -2,6 +2,7 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 /**
@@ -19,6 +20,7 @@ import { useState } from "react";
  * the one thing the traveler certainly has a view on.
  */
 export function PlanSimilar({ journeyId, locale }: { journeyId: string; locale: string }) {
+  const t = useTranslations("planSimilar");
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function PlanSimilar({ journeyId, locale }: { journeyId: string; locale: 
     const payload = await response.json().catch(() => ({ ok: false }));
 
     if (!payload.ok || !payload.data.destinationSlug) {
-      setProblem("We couldn't set that up just now. Please try again.");
+      setProblem(t("not_set_up"));
       setPending(false);
       return;
     }
@@ -66,11 +68,9 @@ export function PlanSimilar({ journeyId, locale }: { journeyId: string; locale: 
   return (
     <section className="flex flex-col gap-2">
       <Button variant="secondary" fullWidth onClick={() => void start()} disabled={pending}>
-        {pending ? "Setting it up…" : "Plan a similar journey"}
+        {pending ? t("setting_up") : t("action")}
       </Button>
-      <p className="text-caption text-text-secondary">
-        Opens the same brief with what you said mattered already ticked. You choose the dates.
-      </p>
+      <p className="text-caption text-text-secondary">{t("hint")}</p>
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">
           {problem}

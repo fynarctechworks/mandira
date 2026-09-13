@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import type { Text } from "../lib/knowledge";
 import type { TrustEntry } from "../lib/trust";
 import { FieldTrust } from "./field-trust";
@@ -31,6 +33,7 @@ export function FactRow({
   lastConfirmed?: string;
   validUntil?: string | undefined;
 }) {
+  const t = useTranslations("phrases");
   const text = typeof value === "string" ? value : (value?.text ?? "");
   if (!text.trim()) return null;
 
@@ -53,7 +56,7 @@ export function FactRow({
         {text}
         {isFallback ? (
           <span className="mt-1 block text-caption text-text-secondary">
-            Not yet available in your language
+            {t("not_in_language")}
           </span>
         ) : null}
       </dd>

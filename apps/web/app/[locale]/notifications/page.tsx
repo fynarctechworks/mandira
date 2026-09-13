@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { NotificationPreferences } from "../../../components/notification-preferences";
 import { PushToggle } from "../../../components/push-toggle";
@@ -25,7 +25,11 @@ export default async function NotificationsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const supabase = await webSupabase();
+  const [supabase, t, tProfile] = await Promise.all([
+    webSupabase(),
+    getTranslations("notificationsPage"),
+    getTranslations("profile"),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -33,10 +37,8 @@ export default async function NotificationsPage({
   if (!user) {
     return (
       <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
-        <h1 className="text-display">Notifications</h1>
-        <p className="text-body text-text-secondary">
-          Reminders are tied to your journeys, so they start once you have an account.
-        </p>
+        <h1 className="text-display">{tProfile("notifications")}</h1>
+        <p className="text-body text-text-secondary">{t("signed_out")}</p>
       </main>
     );
   }
@@ -48,7 +50,7 @@ export default async function NotificationsPage({
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
-      <h1 className="text-display">Notifications</h1>
+      <h1 className="text-display">{tProfile("notifications")}</h1>
 
       <PushToggle />
 
@@ -57,10 +59,7 @@ export default async function NotificationsPage({
          * An empty list is the normal, healthy state — this product notifies rarely by
          * design. Said as a fact rather than as an absence, so it does not read as broken.
          */
-        <p className="text-body text-text-secondary">
-          Nothing yet. Mandhira only gets in touch about your own journey — a booking deadline, the
-          morning you set off, or when something changes.
-        </p>
+        <p className="text-body text-text-secondary">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {notifications.map((notification) => (

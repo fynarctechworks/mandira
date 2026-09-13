@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message: string };
@@ -18,6 +19,7 @@ type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message
  * Copy follows PRD §12.7 — no "error"/"failed", and each state says what to do next.
  */
 export function SignInForm({ next }: { next: string }) {
+  const t = useTranslations("signIn");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
@@ -35,10 +37,7 @@ export function SignInForm({ next }: { next: string }) {
     if (!payload?.ok) {
       setStatus({
         kind: "problem",
-        message:
-          payload?.error?.code === "rate_limited"
-            ? "That's a few links in a short time. Please wait a little and try again."
-            : "We couldn't send that link just now. Please try again in a moment.",
+        message: payload?.error?.code === "rate_limited" ? t("rate_limited") : t("not_sent"),
       });
       return;
     }
@@ -52,10 +51,8 @@ export function SignInForm({ next }: { next: string }) {
         role="status"
         className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4"
       >
-        <h2 className="text-h3">Check your email</h2>
-        <p className="text-body-sm text-text-secondary">
-          We&apos;ve sent a link to {email}. Opening it on this device signs you in.
-        </p>
+        <h2 className="text-h3">{t("check_email")}</h2>
+        <p className="text-body-sm text-text-secondary">{t("sent", { email })}</p>
       </div>
     );
   }
@@ -63,7 +60,7 @@ export function SignInForm({ next }: { next: string }) {
   return (
     <form onSubmit={sendMagicLink} className="flex flex-col gap-3">
       <label htmlFor="email" className="text-caption font-medium text-text-secondary">
-        Your email
+        {t("email_label")}
       </label>
       <input
         id="email"
@@ -77,7 +74,7 @@ export function SignInForm({ next }: { next: string }) {
       />
 
       <Button type="submit" fullWidth disabled={status.kind === "sending"}>
-        {status.kind === "sending" ? "Sending…" : "Email me a link"}
+        {status.kind === "sending" ? t("sending") : t("send")}
       </Button>
 
       {status.kind === "problem" ? (

@@ -1,4 +1,5 @@
 import { Accessibility, Armchair, HandHelping, MoveHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 
 import type { AccessibilityIcon } from "../lib/present";
@@ -18,10 +19,12 @@ const ICONS: Record<AccessibilityIcon["key"], ComponentType<{ className?: string
  * loses it. An unrecorded field is absent from the list entirely (D-080).
  */
 export function AccessibilityIcons({ icons }: { icons: AccessibilityIcon[] }) {
+  const t = useTranslations("accessibility");
+
   if (icons.length === 0) return null;
 
   return (
-    <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label="Accessibility">
+    <ul className="flex flex-wrap gap-x-3 gap-y-1" aria-label={t("label")}>
       {icons.map((icon) => {
         const Icon = ICONS[icon.key];
         return (
@@ -33,9 +36,9 @@ export function AccessibilityIcons({ icons }: { icons: AccessibilityIcon[] }) {
           >
             <Icon className="size-4 shrink-0" aria-hidden />
             <span>
-              {icon.label}
-              {icon.value === "partial" ? " — partly" : null}
-              {icon.value === "no" ? " — no" : null}
+              {t(`features.${icon.key}`)}
+              {icon.value === "partial" ? ` — ${t("partly")}` : null}
+              {icon.value === "no" ? ` — ${t("no")}` : null}
             </span>
           </li>
         );

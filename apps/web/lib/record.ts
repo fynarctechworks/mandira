@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { Json } from "@mandhira/db/types";
 import type { PriorityTier } from "@mandhira/journey-engine";
 
@@ -63,6 +64,7 @@ export async function getJourneyRecord(
   if (!detail) return null;
 
   const { journey, items, labels } = detail;
+  const t = await getTranslations({ locale });
 
   const record = mustMaybe(
     await supabase
@@ -89,8 +91,8 @@ export async function getJourneyRecord(
   const rows: RecordItem[] = items.map((item) => ({
     itemId: item.id,
     label: item.experience_id
-      ? (labels.get(item.experience_id) ?? "Something you added")
-      : "Free time",
+      ? (labels.get(item.experience_id) ?? t("common.something_you_added"))
+      : t("common.free_time"),
     tier: item.tier,
     plannedStartAt: item.planned_start_at ?? null,
     actualEndAt: item.actual_end_at,
@@ -112,7 +114,7 @@ export async function getJourneyRecord(
 
   return {
     journeyId: journey.id,
-    title: journey.title ?? "Your journey",
+    title: journey.title ?? t("addToJourney.untitled"),
     startDate: journey.startDate,
     endDate: journey.endDate,
     days: dayIndexes.map((dayIndex) => ({

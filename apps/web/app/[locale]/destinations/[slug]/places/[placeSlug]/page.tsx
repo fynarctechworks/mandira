@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { AccessibilityIcons } from "../../../../../../components/accessibility-icons";
 import { FactRow } from "../../../../../../components/fact-row";
@@ -41,9 +41,18 @@ export default async function PlaceDetailPage({
   const place = await getPlaceDetail(slug, placeSlug, locale);
   if (!place) notFound();
 
+  const [tFields, tPresent, tCommon] = await Promise.all([
+    getTranslations("knowledgeFields"),
+    getTranslations("present"),
+    getTranslations("common"),
+  ]);
   const week = openingWeek(place.openingSchedule, locale);
-  const duration = durationRange(place.visitDurationLikelyMinutes, place.visitDurationMaxMinutes);
-  const confirmed = (iso: string | null) => formatDate(iso, locale) ?? "Not recorded";
+  const duration = durationRange(
+    place.visitDurationLikelyMinutes,
+    place.visitDurationMaxMinutes,
+    tPresent,
+  );
+  const confirmed = (iso: string | null) => formatDate(iso, locale) ?? tCommon("not_recorded");
 
   const supabase = await webSupabase();
   const {
@@ -59,7 +68,7 @@ export default async function PlaceDetailPage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Back to the destination
+        {tFields("back_to_destination")}
       </Link>
 
       <header className="flex flex-col gap-2">
@@ -96,11 +105,11 @@ export default async function PlaceDetailPage({
            */}
           <div className="flex items-center justify-between gap-3">
             <h2 id="hours" className="text-h2">
-              Opening hours
+              {tFields("opening_hours")}
             </h2>
             <FieldTrust
               entry={place.trust["opening_schedule"]}
-              fieldLabel="Opening hours"
+              fieldLabel={tFields("opening_hours")}
               lastConfirmed={confirmed(place.trust["opening_schedule"]?.verified_at ?? null)}
               validUntil={
                 formatDate(place.trust["opening_schedule"]?.valid_until ?? null, locale) ??
@@ -121,7 +130,7 @@ export default async function PlaceDetailPage({
                  * answer someone travelled to find out.
                  */}
                 <dd className={day.hours ? "text-body" : "text-body text-text-secondary"}>
-                  {day.hours ?? "Closed"}
+                  {day.hours ?? tFields("closed")}
                 </dd>
               </div>
             ))}
@@ -134,36 +143,36 @@ export default async function PlaceDetailPage({
 
       <section aria-labelledby="before-you-go" className="flex flex-col gap-2">
         <h2 id="before-you-go" className="text-h2">
-          Before you go
+          {tFields("before_you_go")}
         </h2>
         <dl className="rounded-lg border border-border bg-bg-surface p-4">
           <FactRow
-            label="Entry requirements"
+            label={tFields("entry_requirements")}
             value={place.entryRequirements}
             trust={place.trust["entry_requirements_i18n"]}
             lastConfirmed={confirmed(place.trust["entry_requirements_i18n"]?.verified_at ?? null)}
           />
-          <FactRow label="Dress code" value={place.dressCode} />
+          <FactRow label={tFields("dress_code")} value={place.dressCode} />
           <FactRow
-            label="Closures"
+            label={tFields("closures")}
             value={place.closureRules}
             trust={place.trust["closure_rules_i18n"]}
             lastConfirmed={confirmed(place.trust["closure_rules_i18n"]?.verified_at ?? null)}
           />
-          <FactRow label="How long to allow" value={duration} />
+          <FactRow label={tFields("how_long")} value={duration} />
         </dl>
       </section>
 
       <section aria-labelledby="access" className="flex flex-col gap-2">
         <h2 id="access" className="text-h2">
-          Getting in
+          {tFields("getting_in")}
         </h2>
         {place.accessibility ? (
           <div className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4">
             <AccessibilityIcons icons={accessibilityIcons(place.accessibility)} />
             {place.accessibility.distance_from_dropoff_m != null ? (
               <p className="text-body-sm">
-                About {place.accessibility.distance_from_dropoff_m} m from the nearest drop-off.
+                {tFields("dropoff", { metres: place.accessibility.distance_from_dropoff_m })}
               </p>
             ) : null}
             {place.accessibility.notes?.text ? (
@@ -176,8 +185,7 @@ export default async function PlaceDetailPage({
            * to find out whether they can get in deserves a sentence, not an empty section.
            */
           <p className="rounded-lg border border-border bg-bg-surface p-4 text-body-sm text-text-secondary">
-            We don&apos;t have accessibility information for this place yet. If you find out, you
-            can tell us and we&apos;ll check it.
+            {tFields("no_access_info")}
           </p>
         )}
       </section>
@@ -185,7 +193,7 @@ export default async function PlaceDetailPage({
       {place.guidance.length > 0 ? (
         <section aria-labelledby="guidance" className="flex flex-col gap-2">
           <h2 id="guidance" className="text-h2">
-            Worth knowing
+            {tFields("worth_knowing")}
           </h2>
           <ul className="flex flex-col gap-3">
             {place.guidance.map((block) => (

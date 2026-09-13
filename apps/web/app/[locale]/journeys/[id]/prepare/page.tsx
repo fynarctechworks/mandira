@@ -1,7 +1,7 @@
 import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { PrepareList } from "../../../../../components/prepare-list";
 import { getPrepareChecklist } from "../../../../../lib/prepare";
@@ -41,6 +41,10 @@ export default async function PreparePage({
   // than a 403 — confirming it exists would itself be a leak.
   const checklist = await getPrepareChecklist(supabase, id, locale);
   if (!checklist) notFound();
+  const [t, tHub] = await Promise.all([
+    getTranslations("preparePage"),
+    getTranslations("prepareHub"),
+  ]);
 
   // Dates are formatted server-side, where the locale lives, and handed down as labels —
   // the client component never does locale work of its own.
@@ -64,10 +68,10 @@ export default async function PreparePage({
       </Link>
 
       <header className="flex flex-col gap-2">
-        <h1 className="text-display">Prepare</h1>
+        <h1 className="text-display">{tHub("title")}</h1>
         {checklist.totalCount > 0 ? (
           <p className="text-body-sm text-text-secondary">
-            {checklist.doneCount} of {checklist.totalCount} done
+            {t("progress", { done: checklist.doneCount, total: checklist.totalCount })}
           </p>
         ) : null}
       </header>
@@ -78,10 +82,7 @@ export default async function PreparePage({
          * needs booking, and nothing has a dress code recorded. Said plainly rather than
          * dressed up as an error.
          */
-        <p className="text-body text-text-secondary">
-          There's nothing to prepare for this journey yet. Once you add something that needs booking
-          or has a dress code, it'll show up here.
-        </p>
+        <p className="text-body text-text-secondary">{t("empty")}</p>
       ) : (
         <PrepareList journeyId={id} groups={checklist.groups} dateLabels={dateLabels} />
       )}
@@ -91,7 +92,7 @@ export default async function PreparePage({
         className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 text-body-sm font-medium"
       >
         <Printer className="size-4" aria-hidden />
-        Journey summary
+        {t("summary_link")}
       </Link>
     </main>
   );

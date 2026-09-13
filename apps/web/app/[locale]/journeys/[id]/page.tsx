@@ -8,11 +8,15 @@ import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 import { DayHealthSheet } from "../../../../components/day-health-sheet";
 import { ItemActions } from "../../../../components/item-actions";
 import { JourneyDetailsSheet } from "../../../../components/journey-details-sheet";
+import { JourneySync } from "../../../../components/journey-sync";
 import { KnowledgeWatch } from "../../../../components/knowledge-watch";
 import { ReorderButtons } from "../../../../components/reorder-buttons";
+import { StaleNote } from "../../../../components/stale-note";
 import { causeText, JourneyHealth, trustText } from "../../../../components/journey-health";
+import { journeyVersion } from "../../../../lib/journey-version";
 import { getJourney, toEngineJourney } from "../../../../lib/journeys";
 import { durationLabel } from "../../../../lib/present";
+import { staleNoteFor, staleNoteKey } from "../../../../lib/stale-note";
 import { webSupabase } from "../../../../lib/supabase";
 
 /**
@@ -57,15 +61,32 @@ export default async function JourneyPage({
   const detail = await getJourney(supabase, id, locale);
   if (!detail) notFound();
 
-  const t = await getTranslations();
-  const { journey, items, health, labels } = detail;
+  const [t, tPresent] = await Promise.all([getTranslations(), getTranslations("present")]);
+  const { journey, items, health, labels, trust } = detail;
+  // What another device may change underneath this page (PRD-ACCT-005).
+  const version = await journeyVersion(supabase, journey.id);
+
+  /*
+   * PRD-TRST-004: in an active journey, an item whose critical information has gone stale
+   * says so once, on its card. Before the journey starts, Prepare's knowledge check covers it.
+   */
+  const staleNotes = new Map(
+    journey.status === "active"
+      ? items.flatMap((item) => {
+          const note = staleNoteFor(item, trust);
+          return note ? [[item.id, note] as const] : [];
+        })
+      : [],
+  );
   const engineJourney = toEngineJourney(journey);
   const dayCount = Math.max(1, new Set(items.map((i) => i.day_index)).size);
   const dayIndexes = [...new Set(items.map((i) => i.day_index))].sort((a, b) => a - b);
   const itemNames = Object.fromEntries(
     items.map((item) => [
       item.id,
-      item.experience_id ? (labels.get(item.experience_id) ?? "Something you added") : "Free time",
+      item.experience_id
+        ? (labels.get(item.experience_id) ?? t("common.something_you_added"))
+        : t("common.free_time"),
     ]),
   );
 
@@ -76,11 +97,11 @@ export default async function JourneyPage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Your journeys
+        {t("journeysList.title")}
       </Link>
 
       <header className="flex flex-col gap-3">
-        <h1 className="text-display">{journey.title ?? "Your journey"}</h1>
+        <h1 className="text-display">{journey.title ?? t("addToJourney.untitled")}</h1>
         <JourneyDetailsSheet
           journeyId={journey.id}
           initial={{
@@ -102,6 +123,7 @@ export default async function JourneyPage({
         when there is nothing to say, which is almost always.
       */}
       <KnowledgeWatch journeyId={journey.id} />
+      {version ? <JourneySync journeyId={journey.id} version={version} /> : null}
 
       {/*
        * PRD-LIVE-001's read-time half: Live is reachable whenever the journey has days,
@@ -116,7 +138,7 @@ export default async function JourneyPage({
         className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-button bg-brand-primary px-4 font-medium text-text-on-primary"
       >
         <Play className="size-4" aria-hidden />
-        Today
+        {t("journeyPage.today")}
       </Link>
 
       <div className="flex gap-2">
@@ -130,14 +152,14 @@ export default async function JourneyPage({
           className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
         >
           <ListChecks className="size-4" aria-hidden />
-          Prepare
+          {t("prepareHub.title")}
         </Link>
         <Link
           href={`/${locale}/journeys/${journey.id}/summary`}
           className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
         >
           <Share2 className="size-4" aria-hidden />
-          Summary
+          {t("journeyPage.summary")}
         </Link>
 
         {/*
@@ -150,7 +172,7 @@ export default async function JourneyPage({
           className="focus-ring flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border text-body-sm font-medium"
         >
           <BookOpen className="size-4" aria-hidden />
-          Record
+          {t("journeyPage.record")}
         </Link>
       </div>
 
@@ -215,9 +237,9 @@ export default async function JourneyPage({
                 .sort((a, b) => a.sort_order - b.sort_order)
                 .map((item, index, dayItems) => {
                   const label = item.experience_id
-                    ? (labels.get(item.experience_id) ?? "Something you added")
-                    : "Free time";
-                  const duration = durationLabel(item.duration_likely_minutes ?? null);
+                    ? (labels.get(item.experience_id) ?? t("common.something_you_added"))
+                    : t("common.free_time");
+                  const duration = durationLabel(item.duration_likely_minutes ?? null, tPresent);
 
                   return (
                     <li
@@ -228,11 +250,17 @@ export default async function JourneyPage({
                         <div className="flex flex-col gap-1">
                           <h3 className="text-h3">{label}</h3>
                           <p className="text-caption text-text-secondary">
-                            {clock(item.planned_start_at, date, engineJourney.timezone, locale)}
+                            {clock(
+                              item.planned_start_at,
+                              date,
+                              engineJourney.timezone,
+                              locale,
+                              t("common.not_scheduled"),
+                            )}
                             {duration ? ` · ${duration}` : ""}
                             {/* PRD-PLAN-005: the buffer is visible, not just editable. */}
                             {item.buffer_minutes
-                              ? ` · ${item.buffer_minutes} min to get there`
+                              ? ` · ${t("journeyPage.buffer", { minutes: item.buffer_minutes })}`
                               : ""}
                           </p>
                         </div>
@@ -243,6 +271,16 @@ export default async function JourneyPage({
                          */}
                         <TierChip tier={TIER_CHIP[item.tier]} readOnly />
                       </div>
+
+                      {staleNotes.has(item.id) ? (
+                        <StaleNote
+                          storageKey={staleNoteKey(item.id, staleNotes.get(item.id)!)}
+                          text={t("journeyPage.stale_note", {
+                            months: staleNotes.get(item.id)!.months,
+                          })}
+                          dismissLabel={t("journeyPage.stale_dismiss")}
+                        />
+                      ) : null}
 
                       {dayItems.length > 1 ? (
                         <ReorderButtons
@@ -279,8 +317,10 @@ function clock(
   date: string,
   timeZone: string,
   locale: string,
+  /** What an item the engine could not place says instead of a time. */
+  unscheduled: string,
 ): string {
-  if (!instant) return "Not scheduled";
+  if (!instant) return unscheduled;
 
   const minutes = fromInstant(instant, date, timeZone);
   const inDay = ((minutes % 1440) + 1440) % 1440;

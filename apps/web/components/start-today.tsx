@@ -2,6 +2,7 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 /**
@@ -16,6 +17,7 @@ import { useState } from "react";
  * because a phone woke at 6am is a state change nobody asked for (PRD Principle 6).
  */
 export function StartToday({ journeyId }: { journeyId: string }) {
+  const t = useTranslations("startToday");
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export function StartToday({ journeyId }: { journeyId: string }) {
 
     const payload = await response.json().catch(() => ({ ok: false }));
     if (!payload.ok) {
-      setProblem("That didn't work. Please try again.");
+      setProblem(t("not_started"));
       setPending(false);
       return;
     }
@@ -44,7 +46,7 @@ export function StartToday({ journeyId }: { journeyId: string }) {
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={() => void start()} disabled={pending} fullWidth>
-        {pending ? "Starting…" : "Start today"}
+        {pending ? t("starting") : t("action")}
       </Button>
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">

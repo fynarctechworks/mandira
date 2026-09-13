@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 /**
  * What changed while the traveler was away, and how old what they are reading is
@@ -24,6 +24,7 @@ export function OfflineNotice({
   onDismiss: () => void;
 }) {
   const format = useFormatter();
+  const t = useTranslations("offlineNotice");
 
   if (changed.length === 0) {
     /*
@@ -38,7 +39,7 @@ export function OfflineNotice({
 
     return (
       <p className="text-caption text-text-secondary">
-        Showing information saved {format.relativeTime(new Date(syncedAt))}.
+        {t("saved", { when: format.relativeTime(new Date(syncedAt)) })}
       </p>
     );
   }
@@ -54,7 +55,7 @@ export function OfflineNotice({
        * occasionally it will matter a great deal.
        */}
       <h2 id="offline-notice" className="text-h3">
-        Some information updated while you were offline
+        {t("updated_title")}
       </h2>
 
       <ul className="flex flex-col gap-1">
@@ -70,7 +71,7 @@ export function OfflineNotice({
         onClick={onDismiss}
         className="focus-ring min-h-11 self-start px-2 text-body-sm font-medium text-brand-primary-text"
       >
-        Got it
+        {t("got_it")}
       </button>
     </section>
   );

@@ -20,8 +20,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, destinations, supabase] = await Promise.all([
+  const [t, tSearch, tHub, destinations, supabase] = await Promise.all([
     getTranslations("home"),
+    getTranslations("search"),
+    getTranslations("prepareHub"),
     getDestinationCards(locale),
     webSupabase(),
   ]);
@@ -47,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
        */}
       <form method="get" action={`/${locale}/search`} role="search" className="flex gap-2">
         <label htmlFor="home-search" className="sr-only">
-          Search places and experiences
+          {t("search_label")}
         </label>
         <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-bg-surface px-3">
           <Search className="size-5 shrink-0 text-text-secondary" aria-hidden />
@@ -55,7 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             id="home-search"
             name="q"
             type="search"
-            placeholder="A place, a ritual, a name…"
+            placeholder={tSearch("placeholder")}
             className="min-h-11 flex-1 bg-transparent text-body outline-none"
           />
         </div>
@@ -63,7 +65,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           type="submit"
           className="focus-ring min-h-11 rounded-lg border border-border px-4 text-body-sm font-medium"
         >
-          Search
+          {tSearch("submit")}
         </button>
       </form>
 
@@ -72,12 +74,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         href={`/${locale}/plan`}
         className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 py-3 text-body font-medium text-text-on-primary"
       >
-        Plan a journey
+        {tHub("plan")}
       </Link>
 
       <section aria-labelledby="destinations-heading" className="flex flex-col gap-3">
         <h2 id="destinations-heading" className="text-h2">
-          Where you could go
+          {t("destinations_title")}
         </h2>
 
         {destinations.length === 0 ? (
@@ -86,9 +88,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
            * Until B-013 publishes a destination this is the true state of the product, and
            * a shimmer pretending otherwise would be the first thing the app lies about.
            */
-          <p className="text-body-sm text-text-secondary">
-            No destinations have been published yet.
-          </p>
+          <p className="text-body-sm text-text-secondary">{t("no_destinations")}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {destinations.map((destination) => (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 /**
  * A page that is not there (CLAUDE.md §4).
@@ -16,19 +17,18 @@ import Link from "next/link";
  * middleware add the locale, which it does for exactly this case.
  */
 export default function TravelerNotFound() {
+  const t = useTranslations("notFound");
+
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-10">
-      <h1 className="text-display">This page isn&apos;t here</h1>
-      <p className="text-body text-text-secondary">
-        The link may have changed, or it may have been a shared journey that is no longer being
-        shared.
-      </p>
+      <h1 className="text-display">{t("title")}</h1>
+      <p className="text-body text-text-secondary">{t("body")}</p>
 
       <Link
         href="/"
         className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-button bg-brand-primary px-4 font-medium text-text-on-primary"
       >
-        Go to the home screen
+        {t("home")}
       </Link>
     </main>
   );

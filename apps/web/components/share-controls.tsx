@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Input, Label } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /**
@@ -26,6 +27,7 @@ export function ShareControls({
   /** Formatted server-side, where the locale lives. */
   expiresLabel: string | null;
 }) {
+  const t = useTranslations("shareControls");
   const [token, setToken] = useState<string | null>(initialToken);
   const [busy, setBusy] = useState(false);
   const [confirmingRevoke, setConfirmingRevoke] = useState(false);
@@ -52,11 +54,7 @@ export function ShareControls({
     const payload = await response.json().catch(() => ({ ok: false }));
 
     if (!payload.ok) {
-      setProblem(
-        response.status === 429
-          ? "That's a lot of links for one journey. Try again tomorrow."
-          : "That didn't work. Please try again.",
-      );
+      setProblem(response.status === 429 ? t("too_many") : t("not_worked"));
     } else {
       setToken(method === "POST" ? payload.data.token : null);
       setConfirmingRevoke(false);
@@ -69,12 +67,9 @@ export function ShareControls({
     return (
       <div className="flex flex-col gap-2">
         <Button onClick={() => void call("POST")} disabled={busy} variant="secondary" fullWidth>
-          {busy ? "Making a link…" : "Share a read-only copy"}
+          {busy ? t("making") : t("share")}
         </Button>
-        <p className="text-caption text-text-secondary">
-          Anyone with the link can read the day-by-day plan. It never shows your travellers' details
-          or your notes, and it stops working after 30 days.
-        </p>
+        <p className="text-caption text-text-secondary">{t("share_hint")}</p>
         {problem ? (
           <p role="alert" className="text-body-sm text-status-broken">
             {problem}
@@ -87,7 +82,7 @@ export function ShareControls({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor="share-url" className="text-body-sm font-medium">
-        Anyone with this link can read your plan
+        {t("link_label")}
       </Label>
       {/*
        * Selects itself on focus. This is a 43-character token on a phone screen, and
@@ -102,7 +97,7 @@ export function ShareControls({
       />
 
       {expiresLabel ? (
-        <p className="text-caption text-text-secondary">It stops working on {expiresLabel}.</p>
+        <p className="text-caption text-text-secondary">{t("expires", { date: expiresLabel })}</p>
       ) : null}
 
       <div className="flex gap-2">
@@ -111,28 +106,26 @@ export function ShareControls({
           onClick={() => {
             void navigator.clipboard?.writeText(url ?? "").then(
               () => setCopied(true),
-              () => setProblem("Copying didn't work — you can select the link above instead."),
+              () => setProblem(t("copy_problem")),
             );
           }}
         >
-          {copied ? "Copied" : "Copy link"}
+          {copied ? t("copied") : t("copy")}
         </Button>
 
         {confirmingRevoke ? (
           <Button variant="secondary" onClick={() => void call("DELETE")} disabled={busy}>
-            {busy ? "Stopping…" : "Yes, stop sharing"}
+            {busy ? t("stopping") : t("confirm_stop")}
           </Button>
         ) : (
           <Button variant="secondary" onClick={() => setConfirmingRevoke(true)}>
-            Stop sharing
+            {t("stop")}
           </Button>
         )}
       </div>
 
       {confirmingRevoke ? (
-        <p className="text-body-sm text-text-secondary">
-          The link stops working for everyone you sent it to, including people who have it open.
-        </p>
+        <p className="text-body-sm text-text-secondary">{t("stop_hint")}</p>
       ) : null}
 
       {problem ? (

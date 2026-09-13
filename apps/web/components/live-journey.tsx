@@ -9,6 +9,7 @@ import type { ChangeCard } from "@mandhira/journey-engine";
 
 import { useLeaveByReminder } from "../lib/leave-by-reminder";
 import type { LiveItemView, LiveView } from "../lib/live-view";
+import type { PlainTranslate } from "../lib/present";
 import { ChangeSheet } from "./change-sheet";
 import { readLiveViewLocally } from "../lib/offline/live-local";
 import { enqueue, flushOutbox, pendingCount } from "../lib/offline/outbox";
@@ -80,6 +81,7 @@ export function LiveJourney({
   /** How many actions are waiting to be sent (PRD-OFFL-004). */
   const [queued, setQueued] = useState(0);
   const journeyId = serverView?.journeyId ?? "";
+  const tAll = useTranslations();
 
   const {
     data: localView,
@@ -102,7 +104,7 @@ export function LiveJourney({
 
       return syncJourneyOffline(journeyId, locale);
     },
-    read: () => readLiveViewLocally(journeyId, locale, new Date().toISOString()),
+    read: () => readLiveViewLocally(journeyId, locale, new Date().toISOString(), tAll),
   });
 
   const view = manualView ?? localView ?? serverView;
@@ -114,6 +116,7 @@ export function LiveJourney({
   }, []);
 
   const t = useTranslations("live");
+  const tPresent = useTranslations("present");
   const leaveByAt = view?.projection.leaveByAt ?? null;
   const leaveByClock = leaveByAt ? clock(leaveByAt, locale) : null;
 
@@ -134,7 +137,7 @@ export function LiveJourney({
   const minute = Math.floor(now / 60_000) * 60_000;
   const announcement = view
     ? [
-        t("announce_now", { label: view.now.label, detail: nowDetail(view, minute) }),
+        t("announce_now", { label: view.now.label, detail: nowDetail(view, minute, t, tPresent) }),
         view.next && leaveByClock
           ? t("announce_next", { label: view.next.label, time: leaveByClock })
           : null,
@@ -148,12 +151,7 @@ export function LiveJourney({
    * plainly rather than rendered as an empty screen that looks broken.
    */
   if (!view) {
-    return (
-      <p className="text-body text-text-secondary">
-        This journey hasn&apos;t been saved for offline use yet. Open it once with a connection and
-        it&apos;ll be here next time.
-      </p>
-    );
+    return <p className="text-body text-text-secondary">{t("offline_missing")}</p>;
   }
 
   async function act(itemId: string, action: string, extraMinutes?: number) {
@@ -170,7 +168,7 @@ export function LiveJourney({
       });
 
       const payload = await response.json().catch(() => ({ ok: false }));
-      if (!payload.ok) setProblem("That didn't save. Please try again.");
+      if (!payload.ok) setProblem(t("not_saved"));
     } catch {
       /*
        * No network (PRD-OFFL-004). Queued and sent on reconnect — and NOT reported as a
@@ -213,7 +211,7 @@ export function LiveJourney({
     if (flushed.sent > 0) setQueued(await pendingCount());
 
     await syncJourneyOffline(journeyId, locale);
-    const local = await readLiveViewLocally(journeyId, locale, new Date().toISOString());
+    const local = await readLiveViewLocally(journeyId, locale, new Date().toISOString(), tAll);
     if (local) setManualView(local);
   }
 
@@ -268,7 +266,7 @@ export function LiveJourney({
     if (!card) return;
 
     if (card.outcome === "no_impact" || !card.recommended) {
-      setQuiet("That still fits — nothing else needs to move.");
+      setQuiet(t("still_fits"));
       return;
     }
 
@@ -304,7 +302,7 @@ export function LiveJourney({
         });
 
         const payload = await response.json().catch(() => ({ ok: false }));
-        if (!payload.ok) setProblem("That didn't save. Please try again.");
+        if (!payload.ok) setProblem(t("not_saved"));
       } catch {
         // Signal went while the sheet was open. Queued rather than lost.
         await enqueue("change_decision", { journeyId, eventId: change.id, optionId });
@@ -329,7 +327,7 @@ export function LiveJourney({
         {view.dayCauses.length > 0 ? (
           <details className="min-w-0 flex-1">
             <summary className="focus-ring min-h-11 cursor-pointer list-none text-body-sm text-brand-primary-text">
-              Why?
+              {t("why")}
             </summary>
             <ul className="mt-1 flex flex-col gap-1">
               {view.dayCauses.map((cause) => (
@@ -365,8 +363,7 @@ export function LiveJourney({
       */}
       {queued > 0 ? (
         <p role="status" className="text-caption text-text-secondary">
-          {queued === 1 ? "One change" : `${queued} changes`} saved on this device, waiting for a
-          signal.
+          {t("queued", { count: queued })}
         </p>
       ) : null}
 
@@ -399,9 +396,9 @@ export function LiveJourney({
 
       {/* ── NOW ─────────────────────────────────────────────────────────────── */}
       <NowCard
-        eyebrow={kind === "day_complete" ? "Today" : "Now"}
+        eyebrow={kind === "day_complete" ? t("eyebrow_today") : t("eyebrow_now")}
         title={nowView.label}
-        detail={nowDetail(view, now)}
+        detail={nowDetail(view, now, t, tPresent)}
         trailing={nowView.tier ? <TierChip tier={TIER_CHIP[nowView.tier]} readOnly /> : undefined}
         /*
          * Exactly three, and only on a real item. PRD-LIVE-006 caps any card at three
@@ -412,16 +409,16 @@ export function LiveJourney({
           kind === "item" && nowView.itemId && !pending
             ? [
                 {
-                  label: "Done",
+                  label: t("action_done"),
                   variant: "primary" as const,
                   onClick: () => void act(nowView.itemId!, "done"),
                 },
                 {
-                  label: "Running late",
+                  label: t("action_running_late"),
                   onClick: () => void act(nowView.itemId!, "running_late", 15),
                 },
                 {
-                  label: "Stay longer",
+                  label: t("action_stay_longer"),
                   onClick: () => void act(nowView.itemId!, "stay_longer", 30),
                 },
               ]
@@ -435,7 +432,7 @@ export function LiveJourney({
           onClick={() => nowView.itemId && void act(nowView.itemId, "reopen")}
           className="focus-ring min-h-11 self-start px-2 text-body-sm text-brand-primary-text"
         >
-          Actually, not done yet
+          {t("reopen")}
         </button>
       ) : null}
 
@@ -448,7 +445,7 @@ export function LiveJourney({
       {view.next ? (
         <section aria-labelledby="next" className="flex flex-col gap-2">
           <h2 id="next" className="text-h2">
-            Next
+            {t("next")}
           </h2>
 
           <div className="flex flex-col gap-3 rounded-card border border-border bg-bg-surface p-4">
@@ -469,17 +466,17 @@ export function LiveJourney({
              */}
             {projection.leaveByAt ? (
               <p className="text-body font-medium">
-                Leave by {clock(projection.leaveByAt, locale)}
+                {t("leave_by", { time: clock(projection.leaveByAt, locale) })}
                 <span className="font-normal text-text-secondary">
                   {" "}
-                  · {relative(projection.leaveByAt, now)}
+                  · {relative(projection.leaveByAt, now, t, tPresent)}
                 </span>
               </p>
             ) : null}
 
             {projection.now.travelMinutes ? (
               <p className="text-body-sm text-text-secondary">
-                About {projection.now.travelMinutes} minutes to get there.
+                {t("travel_minutes", { minutes: projection.now.travelMinutes })}
               </p>
             ) : null}
 
@@ -498,7 +495,7 @@ export function LiveJourney({
       {view.later.length > 0 ? (
         <section aria-labelledby="later" className="flex flex-col gap-2">
           <h2 id="later" className="text-h2">
-            Later today
+            {t("later_today")}
           </h2>
 
           {/* Compact by design (PRD-LIVE-003): a time window, a name, a tier. */}
@@ -510,7 +507,9 @@ export function LiveJourney({
               >
                 <div className="min-w-0">
                   <p className="truncate text-body">{row.label}</p>
-                  <p className="text-caption text-text-secondary">{window_(row, locale)}</p>
+                  <p className="text-caption text-text-secondary">
+                    {window_(row, locale, tAll("common.not_scheduled"))}
+                  </p>
                 </div>
                 <TierChip tier={TIER_CHIP[row.tier]} readOnly />
               </li>
@@ -523,29 +522,28 @@ export function LiveJourney({
       {kind === "day_complete" ? (
         <section aria-labelledby="tomorrow" className="flex flex-col gap-2">
           <h2 id="tomorrow" className="text-h2">
-            Tomorrow
+            {t("tomorrow")}
           </h2>
 
           {view.tomorrowFirst ? (
             <div className="flex flex-col gap-1 rounded-card border border-border bg-bg-surface p-4">
               <p className="text-body">
-                Starts with {view.tomorrowFirst.label}
                 {view.tomorrowFirst.startAt
-                  ? ` at ${clock(view.tomorrowFirst.startAt, locale)}`
-                  : ""}
-                .
+                  ? t("starts_with_at", {
+                      label: view.tomorrowFirst.label,
+                      time: clock(view.tomorrowFirst.startAt, locale),
+                    })
+                  : t("starts_with", { label: view.tomorrowFirst.label })}
               </p>
               <a
                 href={`/${locale}/journeys/${view.journeyId}/prepare`}
                 className="focus-ring min-h-11 self-start py-2 text-body-sm font-medium text-brand-primary-text"
               >
-                Anything to prepare tonight?
+                {t("prepare_tonight")}
               </a>
             </div>
           ) : (
-            <p className="text-body text-text-secondary">
-              That&apos;s the last day of this journey.
-            </p>
+            <p className="text-body text-text-secondary">{t("last_day")}</p>
           )}
         </section>
       ) : null}
@@ -554,46 +552,59 @@ export function LiveJourney({
 }
 
 /** The sentence under the NOW title, which differs completely by state. */
-function nowDetail(view: LiveView, now: number): string {
+function nowDetail(
+  view: LiveView,
+  now: number,
+  t: PlainTranslate,
+  tPresent: PlainTranslate,
+): string {
   const { projection } = view;
   const place = view.now.place?.name;
 
   switch (projection.now.kind) {
     case "item": {
-      const until = projection.now.endAt ? relative(projection.now.endAt, now) : null;
+      const until = projection.now.endAt ? relative(projection.now.endAt, now, t, tPresent) : null;
       // PRD F8's "time guidance": when to be finished, not how long it has been.
-      return [place, until ? `Aim to be done ${until}` : null].filter(Boolean).join(" · ");
+      return [place, until ? t("aim_done", { until }) : null].filter(Boolean).join(" · ");
     }
     case "travel":
       return projection.now.travelMinutes
-        ? `About ${projection.now.travelMinutes} minutes on the way.`
-        : "On your way.";
+        ? t("travel_detail", { minutes: projection.now.travelMinutes })
+        : t("on_your_way");
     case "free":
       return projection.leaveByAt
-        ? `Next departure ${relative(projection.leaveByAt, now)}.`
-        : "Nothing scheduled right now.";
+        ? t("next_departure", { when: relative(projection.leaveByAt, now, t, tPresent) })
+        : t("nothing_now");
     case "before_day":
       return projection.next?.startAt
-        ? `Your first thing starts ${relative(projection.next.startAt, now)}.`
-        : "Nothing scheduled yet.";
+        ? t("first_starts", { when: relative(projection.next.startAt, now, t, tPresent) })
+        : t("nothing_yet");
     case "day_complete":
-      return "Everything you planned for today is behind you.";
+      return t("day_behind");
   }
 }
 
 /** "in 12 minutes" / "25 minutes ago" — never a bare timestamp for something imminent. */
-function relative(instant: string, now: number): string {
+function relative(
+  instant: string,
+  now: number,
+  t: PlainTranslate,
+  tPresent: PlainTranslate,
+): string {
   const minutes = Math.round((Date.parse(instant) - now) / 60_000);
   const abs = Math.abs(minutes);
 
-  if (abs < 1) return "now";
+  if (abs < 1) return t("relative_now");
 
+  const hours = Math.floor(abs / 60);
   const said =
     abs < 60
-      ? `${abs} minute${abs === 1 ? "" : "s"}`
-      : `${Math.floor(abs / 60)} h ${abs % 60 ? `${abs % 60} m` : ""}`.trim();
+      ? t("minutes_count", { count: abs })
+      : abs % 60
+        ? tPresent("hours_minutes", { hours, minutes: abs % 60 })
+        : tPresent("hours", { hours });
 
-  return minutes > 0 ? `in ${said}` : `${said} ago`;
+  return minutes > 0 ? t("relative_in", { duration: said }) : t("relative_ago", { duration: said });
 }
 
 function clock(instant: string, locale: string): string {
@@ -602,8 +613,8 @@ function clock(instant: string, locale: string): string {
   );
 }
 
-function window_(row: LiveItemView, locale: string): string {
-  if (!row.startAt) return "Not scheduled";
+function window_(row: LiveItemView, locale: string, unscheduled: string): string {
+  if (!row.startAt) return unscheduled;
   const from = clock(row.startAt, locale);
   return row.endAt ? `${from} — ${clock(row.endAt, locale)}` : from;
 }

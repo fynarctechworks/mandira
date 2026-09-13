@@ -4,6 +4,8 @@ import { mustList, mustMaybe } from "./data-error";
 import { dayCountOf, toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
+import { pickJourneyToFit, type JourneyToFit } from "./journey-fit";
+import type { TrustMap } from "./trust";
 
 /**
  * Reading and writing a traveler's own journey.
@@ -34,6 +36,11 @@ export type JourneyDetail = {
   health: HealthReport;
   /** Experience and place names, so the timeline can label what it shows. */
   labels: Map<string, string>;
+  /**
+   * Trust by experience and place id, from the same bundle health was computed on, so the
+   * journey screen can say when a critical field has gone stale (PRD-TRST-004).
+   */
+  trust: Record<string, TrustMap>;
 };
 
 const JOURNEY_COLUMNS =
@@ -149,7 +156,14 @@ export async function getJourney(
     knowledge,
   });
 
-  return { journey, items, health, labels: await labelsFor(supabase, items, locale) };
+  return {
+    journey,
+    items,
+    health,
+    labels: await labelsFor(supabase, items, locale),
+    // Built from the published views' TrustMap rows in getKnowledgeBundle.
+    trust: (knowledge.trust ?? {}) as Record<string, TrustMap>,
+  };
 }
 
 const EMPTY_KNOWLEDGE = {
@@ -261,4 +275,40 @@ async function labelsFor(
 function pickLocale(value: unknown, locale: string): string {
   const record = (value ?? {}) as Record<string, string>;
   return record[locale] ?? record["en"] ?? "";
+}
+
+/**
+ * The journey search should rank against (PRD-DISC-006): the traveler's journey under way,
+ * otherwise the soonest one ahead, with the destination it is planned against. Null for a
+ * traveler with none, so search behaves exactly as it does for a guest.
+ */
+export async function journeyToFit(supabase: Client, today: string): Promise<JourneyToFit | null> {
+  const journeys = (await listJourneys(supabase)).filter(
+    (journey) =>
+      journey.status === "active" || journey.status === "upcoming" || journey.status === "draft",
+  );
+  if (journeys.length === 0) return null;
+
+  const links = mustList(
+    await supabase
+      .from("journey_destinations")
+      .select("journey_id, destination_id, sort_order")
+      .in(
+        "journey_id",
+        journeys.map((journey) => journey.id),
+      )
+      .order("sort_order"),
+    "journey_destinations",
+  );
+
+  // The first destination is the one a journey is planned against, as in getJourney.
+  const first = new Map<string, string>();
+  for (const link of links) {
+    if (!first.has(link.journey_id)) first.set(link.journey_id, link.destination_id);
+  }
+
+  return pickJourneyToFit(
+    journeys.map((journey) => ({ ...journey, destinationId: first.get(journey.id) ?? null })),
+    today,
+  );
 }

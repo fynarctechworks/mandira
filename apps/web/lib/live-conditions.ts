@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { mustList } from "./data-error";
 import type { webSupabase } from "./supabase";
 
@@ -47,6 +49,7 @@ export async function getLiveConditions(
   destinationId: string,
   locale: string,
 ): Promise<LiveCondition[]> {
+  const t = await getTranslations({ locale, namespace: "conditions" });
   const data = mustList(
     await supabase
       .from("v_published_live_conditions")
@@ -68,7 +71,7 @@ export async function getLiveConditions(
       provider: row.provider as string,
       readAt: row.read_at as string,
       degraded,
-      label: labelFor(row.provider as string, row.read_at as string, degraded, locale),
+      label: labelFor(row.provider as string, row.read_at as string, degraded, locale, t),
       /*
        * An unavailable reading carries no hours of its own — its payload is the reason it
        * failed. The last GOOD reading is what the label refers to, and showing its hours
@@ -88,15 +91,19 @@ export async function getLiveConditions(
  * surface say the same thing — a live value labelled two different ways in two places is
  * a trust problem, not a copy problem.
  */
-function labelFor(provider: string, readAt: string, degraded: boolean, locale: string): string {
+function labelFor(
+  provider: string,
+  readAt: string,
+  degraded: boolean,
+  locale: string,
+  t: (key: string, values: Record<string, string>) => string,
+): string {
   const at = new Intl.DateTimeFormat(locale, {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(readAt));
 
-  return degraded
-    ? `Live update unavailable — showing last known (as of ${at}).`
-    : `Live · ${provider} · as of ${at}`;
+  return degraded ? t("live_unavailable", { at }) : t("live_label", { provider, at });
 }
 
 /**

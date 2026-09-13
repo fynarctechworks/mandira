@@ -27,12 +27,12 @@ export type ReflectionAnswers = {
  * comment repeats it. Prettier names here would have made this jsonb a second shape that
  * nothing else in the system could query against.
  */
+/* The wording of each question lives in the message catalogs, under `reflection.questions`. */
 export const REFLECTION_QUESTIONS = [
-  { key: "most_meaningful" as const, question: "What was most meaningful?" },
-  { key: "do_differently" as const, question: "What would you do differently?" },
+  { key: "most_meaningful" as const },
+  { key: "do_differently" as const },
   {
     key: "got_wrong" as const,
-    question: "Anything we got wrong?",
     /*
      * PRD F16: the last one offers to create a Report (F14). Offered, never automatic —
      * a traveler reflecting privately has not asked us to file anything on their behalf.

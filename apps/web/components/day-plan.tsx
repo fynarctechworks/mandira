@@ -40,6 +40,7 @@ export function DayPlan({
   locale: string;
 }) {
   const t = useTranslations();
+  const tPresent = useTranslations("present");
   const date = dateForDay(journey.start_date, dayIndex);
   const ordered = [...items].sort((a, b) => a.sort_order - b.sort_order);
 
@@ -90,12 +91,12 @@ export function DayPlan({
 
       <div>
         {ordered.map((item) => {
-          const duration = durationLabel(item.duration_likely_minutes ?? null);
+          const duration = durationLabel(item.duration_likely_minutes ?? null, tPresent);
           return (
             <ItemCard
               key={item.id}
               time={clock(item.planned_start_at, date, journey.timezone, locale)}
-              title={titleOf(item, nameOf)}
+              title={titleOf(item, nameOf, t)}
               // Omitted rather than passed as undefined: the workspace runs with
               // exactOptionalPropertyTypes, under which those are not the same thing.
               {...(duration ? { duration } : {})}
@@ -109,12 +110,18 @@ export function DayPlan({
 }
 
 /** An item's own name, or an honest label for something with no experience behind it. */
-function titleOf(item: JourneyItem, nameOf: Map<string, string>): string {
-  if (item.experience_id) return nameOf.get(item.experience_id) ?? "Something you added";
-  if (item.item_type === "fixed_commitment") return "A fixed commitment";
-  if (item.item_type === "rest") return "A break";
-  if (item.item_type === "meal") return "A meal";
-  return "Free time";
+function titleOf(
+  item: JourneyItem,
+  nameOf: Map<string, string>,
+  t: (key: string) => string,
+): string {
+  if (item.experience_id) {
+    return nameOf.get(item.experience_id) ?? t("common.something_you_added");
+  }
+  if (item.item_type === "fixed_commitment") return t("dayPlan.fixed_commitment");
+  if (item.item_type === "rest") return t("dayPlan.rest");
+  if (item.item_type === "meal") return t("dayPlan.meal");
+  return t("common.free_time");
 }
 
 /**

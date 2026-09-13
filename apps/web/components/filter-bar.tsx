@@ -22,53 +22,58 @@ export async function FilterBar({
 }) {
   const t = await getTranslations("searchFilters");
   const tJourney = await getTranslations("addToJourney");
+  const tSearch = await getTranslations("search");
+  const tFields = await getTranslations("knowledgeFields");
+  // A type added to the schema before the catalogs still reads as words, not as a key path.
+  const typeLabel = (value: string) =>
+    t.has(`type_options.${value}`) ? t(`type_options.${value}`) : humanise(value);
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="sr-only">Narrow these results</legend>
+      <legend className="sr-only">{t("legend")}</legend>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Type" htmlFor="type">
+        <Field label={t("type")} htmlFor="type">
           <select
             id="type"
             name="type"
             defaultValue={filters.type ?? ""}
             className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
           >
-            <option value="">Anything</option>
-            <optgroup label="Experiences">
+            <option value="">{t("type_any")}</option>
+            <optgroup label={tSearch("experiences")}>
               {EXPERIENCE_TYPES.map((value) => (
                 <option key={value} value={value}>
-                  {humanise(value)}
+                  {typeLabel(value)}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Places">
+            <optgroup label={tSearch("places")}>
               {PLACE_TYPES.map((value) => (
                 <option key={value} value={value}>
-                  {humanise(value)}
+                  {typeLabel(value)}
                 </option>
               ))}
             </optgroup>
           </select>
         </Field>
 
-        <Field label="How long" htmlFor="duration">
+        <Field label={t("how_long")} htmlFor="duration">
           <select
             id="duration"
             name="duration"
             defaultValue={filters.maxDurationMinutes?.toString() ?? ""}
             className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
           >
-            <option value="">Any length</option>
-            <option value="30">Up to 30 minutes</option>
-            <option value="60">Up to an hour</option>
-            <option value="120">Up to two hours</option>
-            <option value="240">Up to half a day</option>
+            <option value="">{t("any_length")}</option>
+            <option value="30">{t("up_to_30")}</option>
+            <option value="60">{t("up_to_60")}</option>
+            <option value="120">{t("up_to_120")}</option>
+            <option value="240">{t("up_to_240")}</option>
           </select>
         </Field>
 
-        <Field label="Booking" htmlFor="booking">
+        <Field label={tFields("booking")} htmlFor="booking">
           <select
             id="booking"
             name="booking"
@@ -77,26 +82,26 @@ export async function FilterBar({
             }
             className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
           >
-            <option value="">Either way</option>
-            <option value="no">No booking needed</option>
-            <option value="yes">Needs booking ahead</option>
+            <option value="">{t("either_way")}</option>
+            <option value="no">{t("no_booking")}</option>
+            <option value="yes">{t("needs_booking")}</option>
           </select>
         </Field>
 
-        <Field label="Getting in" htmlFor="access">
+        <Field label={tFields("getting_in")} htmlFor="access">
           <select
             id="access"
             name="access"
             defaultValue={filters.stepFreeOnly ? "step_free" : ""}
             className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
           >
-            <option value="">Any</option>
+            <option value="">{t("access_any")}</option>
             {/*
              * "or partly" is in the label on purpose. A ramp on one side and steps
              * elsewhere is a match worth showing to the person who needs the ramp, and
              * the card still says "partly" so nobody is misled into expecting more.
              */}
-            <option value="step_free">Step-free, or partly</option>
+            <option value="step_free">{t("step_free_or_partly")}</option>
           </select>
         </Field>
 

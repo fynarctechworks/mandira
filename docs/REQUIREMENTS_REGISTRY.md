@@ -34,7 +34,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-DISC-003 | Experience card | Name, significance line, plain-language availability, duration, booking flag, accessibility icons, trust badge | P0 | KNOW-003 |
 | PRD-DISC-004 | Add-to-journey | Single action; default tier IMPORTANT with tier picker in same sheet | P0 | PLAN-002 |
 | PRD-DISC-005 | Filters | Exactly 6: type, availability-on-dates, accessibility, duration, booking, near-added | P0 | — |
-| PRD-DISC-006 | Journey-aware ranking | Active journey → "fits your journey" first | P1 | PLAN-001 |
+| PRD-DISC-006 ✅ | Journey-aware ranking | Active journey → "fits your journey" first | P1 | PLAN-001 |
 | PRD-DISC-007 | Anti-feed rules | ≤20 cards/section then See-all; no reviews/ratings/trending; editorial weight ranks | P0 | — |
 | PRD-DISC-008 | 60-second comprehension | Top-3 significance + availability + booking discoverable in ≤60 s, ≤3 screens (usability test) | P0 | DISC-002 |
 
@@ -127,7 +127,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-TRST-001 | Badge vocabulary | ✓ Verified / ◐ Verified earlier / ! Check locally mapped from confidence per F9 | P0 | KNOW-006 |
 | PRD-TRST-002 | Trust sheet | Source name + tier-in-words, last confirmed, valid until, conflict note, Report button; ≤1 tap | P0 | TRST-001 |
 | PRD-TRST-003 | Sources & freshness footer | All sources + oldest verification date per page | P0 | — |
-| PRD-TRST-004 | Stale in-journey note | One-time note on stale critical fields in active journeys | P1 | KNOW-006 |
+| PRD-TRST-004 ✅ | Stale in-journey note | One-time note on stale critical fields in active journeys | P1 | KNOW-006 |
 | PRD-TRST-005 | Honesty rules | No percentages; low-confidence badges never hidden; AI text labelled "Mandhira summary", never Verified | P0 | — |
 | PRD-TRST-006 | Coverage | 100% published critical fields render a badge | P0 | TRST-001 |
 
@@ -177,7 +177,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | PRD-ACCT-002 | Profile | Name, locale, notification prefs, journeys by status, saved places | P0 | ACCT-001 |
 | PRD-ACCT-003 | Traveler profiles | Label/mobility/age_band/dietary/locale; owner-only sensitivity | P0 | PRIV-002 |
 | PRD-ACCT-004 | Explicit-signal personalization | Only explicit signals; "Because you protected X" explanations; no dwell-time inference | P1 | — |
-| PRD-ACCT-005 | Multi-device sync | Second device shows state ≤10 s; latest-edit wins | P1 | ACCT-001 |
+| PRD-ACCT-005 ✅ | Multi-device sync | Second device shows state ≤10 s; latest-edit wins | P1 | ACCT-001 |
 
 ## PRD-REPT — User Reports (F14)
 

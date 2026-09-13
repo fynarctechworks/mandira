@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { DraftRecovery } from "../../../components/draft-recovery";
 import { listJourneys } from "../../../lib/journeys";
@@ -27,12 +27,17 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
 
   if (!user) redirect(`/${locale}/sign-in?next=${encodeURIComponent(`/${locale}/journeys`)}`);
 
-  const journeys = await listJourneys(supabase);
+  const [journeys, t, tJourney, tHub] = await Promise.all([
+    listJourneys(supabase),
+    getTranslations("journeysList"),
+    getTranslations("addToJourney"),
+    getTranslations("prepareHub"),
+  ]);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-display">Your journeys</h1>
+        <h1 className="text-display">{t("title")}</h1>
       </header>
 
       {/*
@@ -43,12 +48,12 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
 
       {journeys.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <p className="text-body text-text-secondary">You haven&apos;t saved a journey yet.</p>
+          <p className="text-body text-text-secondary">{t("empty")}</p>
           <Link
             href={`/${locale}/plan`}
             className="focus-ring flex min-h-11 items-center justify-center rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
           >
-            Plan a journey
+            {tHub("plan")}
           </Link>
         </div>
       ) : (
@@ -60,7 +65,7 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
                 className="focus-ring flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-bg-surface p-4"
               >
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-h3">{journey.title ?? "Your journey"}</span>
+                  <span className="text-h3">{journey.title ?? tJourney("untitled")}</span>
                   {journey.startDate ? (
                     <span className="text-caption text-text-secondary">
                       {new Intl.DateTimeFormat(locale, {

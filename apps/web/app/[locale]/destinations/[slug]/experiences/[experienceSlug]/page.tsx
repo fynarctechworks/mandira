@@ -13,6 +13,7 @@ import { getExperienceDetail } from "../../../../../../lib/knowledge";
 import {
   accessibilityIcons,
   availabilityLine,
+  bookingLine,
   durationRange,
   formatDate,
 } from "../../../../../../lib/present";
@@ -39,9 +40,18 @@ export default async function ExperienceDetailPage({
   const experience = await getExperienceDetail(slug, experienceSlug, locale);
   if (!experience) notFound();
 
-  const availability = availabilityLine(experience.availability, locale);
-  const duration = durationRange(experience.durationLikelyMinutes, experience.durationMaxMinutes);
-  const confirmed = (iso: string | null) => formatDate(iso, locale) ?? "Not recorded";
+  const [tFields, tPresent, tCommon] = await Promise.all([
+    getTranslations("knowledgeFields"),
+    getTranslations("present"),
+    getTranslations("common"),
+  ]);
+  const availability = availabilityLine(experience.availability, locale, tPresent);
+  const duration = durationRange(
+    experience.durationLikelyMinutes,
+    experience.durationMaxMinutes,
+    tPresent,
+  );
+  const confirmed = (iso: string | null) => formatDate(iso, locale) ?? tCommon("not_recorded");
 
   const supabase = await webSupabase();
   const {
@@ -70,7 +80,7 @@ export default async function ExperienceDetailPage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Back to the destination
+        {tFields("back_to_destination")}
       </Link>
 
       <header className="flex flex-col gap-2">
@@ -107,9 +117,7 @@ export default async function ExperienceDetailPage({
         >
           <div className="flex items-start justify-between gap-3">
             <h2 id="booking" className="text-h3">
-              {experience.advanceBookingOpensDaysBefore
-                ? `Advance booking required — opens ${experience.advanceBookingOpensDaysBefore} days before`
-                : "Advance booking required"}
+              {bookingLine(true, experience.advanceBookingOpensDaysBefore, tPresent)}
             </h2>
             {/*
              * The badge belongs on the requirement itself. This is the field the fixture
@@ -118,7 +126,7 @@ export default async function ExperienceDetailPage({
              */}
             <FieldTrust
               entry={experience.trust["advance_booking_how_i18n"]}
-              fieldLabel="Booking"
+              fieldLabel={tFields("booking")}
               lastConfirmed={confirmed(
                 experience.trust["advance_booking_how_i18n"]?.verified_at ?? null,
               )}
@@ -132,17 +140,17 @@ export default async function ExperienceDetailPage({
 
       <section aria-labelledby="when" className="flex flex-col gap-2">
         <h2 id="when" className="text-h2">
-          When
+          {tFields("when")}
         </h2>
         <dl className="rounded-lg border border-border bg-bg-surface p-4">
           <FactRow
-            label="Availability"
+            label={tFields("availability")}
             value={availability}
             trust={experience.availabilityTrust}
             lastConfirmed={confirmed(experience.availabilityTrust?.verified_at ?? null)}
           />
-          <FactRow label="How long to allow" value={duration} />
-          <FactRow label="What the queue is usually like" value={experience.queueExpectation} />
+          <FactRow label={tFields("how_long")} value={duration} />
+          <FactRow label={tFields("queue")} value={experience.queueExpectation} />
         </dl>
       </section>
 
@@ -152,14 +160,14 @@ export default async function ExperienceDetailPage({
       experience.costNote.text ? (
         <section aria-labelledby="about" className="flex flex-col gap-2">
           <h2 id="about" className="text-h2">
-            About this
+            {tFields("about_this")}
           </h2>
           <dl className="rounded-lg border border-border bg-bg-surface p-4">
-            <FactRow label="What happens" value={experience.description} />
-            <FactRow label="Who can take part" value={experience.eligibility} />
-            <FactRow label="How to prepare" value={experience.preparation} />
+            <FactRow label={tFields("what_happens")} value={experience.description} />
+            <FactRow label={tFields("who_can_take_part")} value={experience.eligibility} />
+            <FactRow label={tFields("how_to_prepare")} value={experience.preparation} />
             {/* Cost carries no trust record of its own in §4.4, so it carries no badge. */}
-            <FactRow label="Cost" value={experience.costNote} />
+            <FactRow label={tFields("cost")} value={experience.costNote} />
           </dl>
         </section>
       ) : null}
@@ -167,7 +175,7 @@ export default async function ExperienceDetailPage({
       {experience.accessibility ? (
         <section aria-labelledby="access" className="flex flex-col gap-2">
           <h2 id="access" className="text-h2">
-            Getting in
+            {tFields("getting_in")}
           </h2>
           <div className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4">
             <AccessibilityIcons icons={accessibilityIcons(experience.accessibility)} />
@@ -182,7 +190,7 @@ export default async function ExperienceDetailPage({
              */}
             {experience.placeName ? (
               <p className="text-caption text-text-secondary">
-                Recorded for {experience.placeName.text}.
+                {tFields("recorded_for", { place: experience.placeName.text })}
               </p>
             ) : null}
           </div>
@@ -192,7 +200,7 @@ export default async function ExperienceDetailPage({
       {experience.guidance.length > 0 ? (
         <section aria-labelledby="guidance" className="flex flex-col gap-2">
           <h2 id="guidance" className="text-h2">
-            Worth knowing
+            {tFields("worth_knowing")}
           </h2>
           <ul className="flex flex-col gap-3">
             {experience.guidance.map((block) => (

@@ -218,6 +218,10 @@ They are dispatched by pg_cron, not Vercel (D-173). Check in this order:
    - `timed_out` — the route took over 55 s; check Vercel's function logs for that minute.
 3. The route itself answers with a summary: `curl -H "Authorization: Bearer $CRON_SECRET" https://app.<domain>/api/cron/notifications` returns `sent`, `failed`, `cancelled` and `notConfigured` (which channels have no keys).
 
+## Report photos and retention
+
+Photos attached to reports are deleted 30 days after the report is resolved or closed, or 180 days after filing when nobody resolved it (D-177). The nightly `purge_report_photos` job does it; its row on the Ops job panel says whether it ran. To see what is waiting: `select * from report_photos_due(500);` as a superuser. A traveler asking for their photo to go sooner: resolve or close the report, or remove the file in the `reports` bucket and run `select forget_report_photo('<media id>');`.
+
 ## A server refuses to start
 
 In production both apps validate their configuration at start (`instrumentation.ts`) and refuse on anything `docs/LAUNCH_KEYS.md` marks required. The Vercel log names every problem on lines beginning `[env] BLOCK`. Fix the variable, redeploy. Running `node scripts/preflight.mjs --env production` with the same values shows the same list before deploying.

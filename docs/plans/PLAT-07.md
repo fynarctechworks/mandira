@@ -17,7 +17,7 @@ so CI has never executed either.
 
 | Blocked on | Item |
 |---|---|
-| Push credentials for `fynarctechworks/mandira` | **GIT-01** — 12 unpushed commits; CI has never run |
+| Push credentials for `fynarctechworks/mandira` | **GIT-01** — every commit on the branch is unpushed (52 at 2026-09-13); CI has never run |
 | Production domain | **OPEN-003** |
 | Resend + verified sending domain | **ACCT-01** — magic links do not work in production without it |
 | Google OAuth client | **ACCT-02** |
@@ -82,7 +82,7 @@ M1 is code-complete. What remains is not code.
 
 | Needed | Unblocks |
 |---|---|
-| **GIT-01** — push credentials | 13 unpushed commits; CI has never run |
+| **GIT-01** — push credentials | every commit on the branch is unpushed (52 at 2026-09-13); CI has never run |
 | **OPEN-003** — a domain | Production URLs |
 | Vercel projects + Supabase prod (Mumbai) | The deploy itself |
 | **ACCT-01** — Resend + verified domain | Magic links; without it most travelers cannot sign in |

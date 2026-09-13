@@ -50,7 +50,12 @@ export default async function PlanPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations("intent");
+  const [t, tPlan, tHub, tDiscovery] = await Promise.all([
+    getTranslations("intent"),
+    getTranslations("planForm"),
+    getTranslations("prepareHub"),
+    getTranslations("discovery"),
+  ]);
   const query = await searchParams;
   const destinationSlug = query.destination;
   const destinations = await getDestinationCards(locale, 20);
@@ -68,11 +73,8 @@ export default async function PlanPage({
   if (destinations.length === 0) {
     return (
       <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
-        <h1 className="text-display">Plan a journey</h1>
-        <p className="text-body text-text-secondary">
-          There are no published destinations yet, so there is nothing to plan around. This screen
-          will do something the moment there is.
-        </p>
+        <h1 className="text-display">{tHub("plan")}</h1>
+        <p className="text-body text-text-secondary">{tPlan("no_destinations")}</p>
       </main>
     );
   }
@@ -84,11 +86,8 @@ export default async function PlanPage({
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-display">Plan a journey</h1>
-        <p className="text-body text-text-secondary">
-          Tell Mandhira what the journey has to include. It works out whether the days hold together
-          — and tells you when they do not.
-        </p>
+        <h1 className="text-display">{tHub("plan")}</h1>
+        <p className="text-body text-text-secondary">{tPlan("intro")}</p>
         {/* PRD F3's first path, for anyone who would rather just say it (A07). */}
         <Link
           href={`/${locale}/plan/describe`}
@@ -103,8 +102,8 @@ export default async function PlanPage({
        * plan survives a reload and can be sent to whoever is coming along.
        */}
       <form method="get" action={`/${locale}/plan/preview`} className="flex flex-col gap-6">
-        <Fieldset legend="Where and when" hint="The only two things Mandhira needs.">
-          <Field label="Destination" htmlFor="destination">
+        <Fieldset legend={tPlan("where_when")} hint={tPlan("where_when_hint")}>
+          <Field label={t("destination")} htmlFor="destination">
             <select
               id="destination"
               name="destination"
@@ -119,7 +118,7 @@ export default async function PlanPage({
             </select>
           </Field>
 
-          <Field label="Starting on" htmlFor="start">
+          <Field label={t("start")} htmlFor="start">
             <input
               id="start"
               name="start"
@@ -129,7 +128,7 @@ export default async function PlanPage({
             />
           </Field>
 
-          <Field label="How many days" htmlFor="days">
+          <Field label={t("days")} htmlFor="days">
             <select
               id="days"
               name="days"
@@ -138,19 +137,16 @@ export default async function PlanPage({
             >
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
-                  {n} {n === 1 ? "day" : "days"}
+                  {t("day_count", { count: n })}
                 </option>
               ))}
             </select>
           </Field>
         </Fieldset>
 
-        <Fieldset
-          legend="What you must do"
-          hint="Mandhira never removes these, and never moves them without asking."
-        >
+        <Fieldset legend={t("must")} hint={tPlan("must_hint")}>
           {page.experiences.length === 0 ? (
-            <p className="text-body-sm text-text-secondary">Nothing has been published here yet.</p>
+            <p className="text-body-sm text-text-secondary">{tDiscovery("empty")}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {page.experiences.map((experience) => (
@@ -171,10 +167,7 @@ export default async function PlanPage({
           )}
         </Fieldset>
 
-        <Fieldset
-          legend="What you would like to do"
-          hint="Mandhira may suggest moving these — never without asking."
-        >
+        <Fieldset legend={t("like")} hint={tPlan("like_hint")}>
           <ul className="flex flex-col gap-2">
             {page.experiences.map((experience) => (
               <li key={experience.id}>
@@ -193,16 +186,13 @@ export default async function PlanPage({
           </ul>
         </Fieldset>
 
-        <Fieldset
-          legend="Getting home"
-          hint="If you have a train, flight or booked slot, Mandhira works backwards from it and tells you when the plan stops reaching it."
-        >
+        <Fieldset legend={tPlan("getting_home")} hint={tPlan("getting_home_hint")}>
           {/*
            * The return guard's anchor (PRD-PLAN-006). Optional like everything else, but
            * it is the single most useful thing a traveler can tell Mandhira: a day that
            * overruns is inconvenient, a day that misses the train home is not.
            */}
-          <Field label="Return, if you have one" htmlFor="return">
+          <Field label={tPlan("return_label")} htmlFor="return">
             <input
               id="return"
               name="return"
@@ -212,17 +202,17 @@ export default async function PlanPage({
           </Field>
         </Fieldset>
 
-        <Fieldset legend="How you travel" hint="Everything here can be skipped.">
-          <Field label="Pace" htmlFor="pace">
+        <Fieldset legend={tPlan("how_you_travel")} hint={tPlan("how_you_travel_hint")}>
+          <Field label={t("pace")} htmlFor="pace">
             <select
               id="pace"
               name="pace"
               defaultValue={query.pace ?? "balanced"}
               className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
             >
-              <option value="relaxed">Relaxed — leave room to breathe</option>
-              <option value="balanced">Balanced</option>
-              <option value="full">Full — fit in as much as the day allows</option>
+              <option value="relaxed">{t("pace_relaxed")}</option>
+              <option value="balanced">{t("pace_balanced")}</option>
+              <option value="full">{t("pace_full")}</option>
             </select>
           </Field>
 
@@ -233,9 +223,9 @@ export default async function PlanPage({
            * ever read it (PRD-PRIV-002).
            */}
           <Field
-            label="Is anyone travelling with a mobility need?"
+            label={tPlan("mobility_question")}
             htmlFor="mobility"
-            hint="This changes how much time Mandhira leaves between things."
+            hint={tPlan("mobility_hint")}
           >
             <select
               id="mobility"
@@ -243,10 +233,10 @@ export default async function PlanPage({
               defaultValue={query.mobility ?? "full"}
               className="min-h-11 w-full rounded-lg border border-border bg-bg-surface px-3 text-body"
             >
-              <option value="full">No — everyone walks freely</option>
-              <option value="limited_walking">Someone cannot walk far</option>
-              <option value="wheelchair">Someone uses a wheelchair</option>
-              <option value="needs_rest_frequently">Someone needs to rest often</option>
+              <option value="full">{tPlan("mobility_none")}</option>
+              <option value="limited_walking">{t("mobility_limited_walking")}</option>
+              <option value="wheelchair">{t("mobility_wheelchair")}</option>
+              <option value="needs_rest_frequently">{t("mobility_needs_rest_frequently")}</option>
             </select>
           </Field>
         </Fieldset>
@@ -255,7 +245,7 @@ export default async function PlanPage({
           type="submit"
           className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
         >
-          Build my journey
+          {t("build")}
         </button>
       </form>
     </main>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TrustBadge, TrustSheet } from "@mandhira/ui";
 
@@ -31,6 +32,8 @@ export function FieldTrust({
   lastConfirmed: string;
   validUntil?: string | undefined;
 }) {
+  const t = useTranslations("fieldTrust");
+  const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
   const state = trustStateOf(entry);
 
@@ -41,12 +44,12 @@ export function FieldTrust({
       <TrustBadge
         state={state}
         onClick={() => setOpen(true)}
-        aria-label={`${fieldLabel} — where this comes from`}
+        aria-label={t("badge_label", { field: fieldLabel })}
       />
       <TrustSheet
         open={open}
         onOpenChange={setOpen}
-        sourceName={entry.source_name ?? "Not recorded"}
+        sourceName={entry.source_name ?? tCommon("not_recorded")}
         sourceTierLabel={entry.source_tier_label ?? ""}
         lastConfirmed={lastConfirmed}
         {...(validUntil ? { validUntil } : {})}
@@ -56,8 +59,7 @@ export function FieldTrust({
                * PRD F9's own wording. A traveler is told a disagreement exists and which
                * side we chose — not reassured, and not left to find out at the gate.
                */
-              conflictNote:
-                "Two sources list different information for this. We show the official one.",
+              conflictNote: t("conflict"),
             }
           : {})}
       />

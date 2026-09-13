@@ -3,7 +3,8 @@
     "home": "Home",
     "journey": "Journey",
     "prepare": "Prepare",
-    "profile": "Profile"
+    "profile": "Profile",
+    "label": "Main"
   },
   "offline": {
     "banner": "You're offline — showing information saved on {when}.",
@@ -21,7 +22,10 @@
   },
   "home": {
     "title": "Plan around what matters.",
-    "intro": "Tell Mandhira what your journey has to include, and it works out whether the days hold together."
+    "intro": "Tell Mandhira what your journey has to include, and it works out whether the days hold together.",
+    "search_label": "Search places and experiences",
+    "destinations_title": "Where you could go",
+    "no_destinations": "No destinations have been published yet."
   },
   "health": {
     "title": "How this journey holds together",
@@ -300,18 +304,122 @@
     "near": "Near a journey",
     "near_any": "Anywhere",
     "near_hint": "Sign in and save a journey to find what's near it.",
-    "near_hint_saved": "Save a journey to find what's near it."
+    "near_hint_saved": "Save a journey to find what's near it.",
+    "legend": "Narrow these results",
+    "type": "Type",
+    "type_any": "Anything",
+    "type_options": {
+      "darshan": "Darshan",
+      "ritual": "Ritual",
+      "aarti": "Aarti",
+      "seva": "Seva",
+      "festival": "Festival",
+      "event": "Event",
+      "walk": "Walk",
+      "cultural": "Cultural",
+      "other": "Other",
+      "temple": "Temple",
+      "shrine": "Shrine",
+      "sacred_site": "Sacred site",
+      "ghat": "Ghat",
+      "viewpoint": "Viewpoint",
+      "facility": "Facility",
+      "transport_point": "Transport point",
+      "accommodation": "Accommodation",
+      "food": "Food"
+    },
+    "how_long": "How long",
+    "any_length": "Any length",
+    "up_to_30": "Up to 30 minutes",
+    "up_to_60": "Up to an hour",
+    "up_to_120": "Up to two hours",
+    "up_to_240": "Up to half a day",
+    "either_way": "Either way",
+    "no_booking": "No booking needed",
+    "needs_booking": "Needs booking ahead",
+    "access_any": "Any",
+    "step_free_or_partly": "Step-free, or partly"
   },
   "live": {
     "announce_now": "Now: {label}. {detail}",
     "announce_next": "Next: {label}, leave by {time}.",
     "leave_by_title": "Time to set off",
-    "leave_by_body": "Leave by {time} for {label}."
+    "leave_by_body": "Leave by {time} for {label}.",
+    "offline_missing": "This journey hasn't been saved for offline use yet. Open it once with a connection and it'll be here next time.",
+    "not_saved": "That didn't save. Please try again.",
+    "still_fits": "That still fits — nothing else needs to move.",
+    "why": "Why?",
+    "queued": "{count, plural, one {One change saved on this device, waiting for a signal.} other {# changes saved on this device, waiting for a signal.}}",
+    "eyebrow_now": "Now",
+    "eyebrow_today": "Today",
+    "action_done": "Done",
+    "action_running_late": "Running late",
+    "action_stay_longer": "Stay longer",
+    "reopen": "Actually, not done yet",
+    "next": "Next",
+    "leave_by": "Leave by {time}",
+    "travel_minutes": "About {minutes} minutes to get there.",
+    "later_today": "Later today",
+    "tomorrow": "Tomorrow",
+    "starts_with": "Starts with {label}.",
+    "starts_with_at": "Starts with {label} at {time}.",
+    "prepare_tonight": "Anything to prepare tonight?",
+    "last_day": "That's the last day of this journey.",
+    "aim_done": "Aim to be done {until}",
+    "travel_detail": "About {minutes} minutes on the way.",
+    "on_your_way": "On your way.",
+    "next_departure": "Next departure {when}.",
+    "nothing_now": "Nothing scheduled right now.",
+    "first_starts": "Your first thing starts {when}.",
+    "nothing_yet": "Nothing scheduled yet.",
+    "day_behind": "Everything you planned for today is behind you.",
+    "relative_now": "now",
+    "relative_in": "in {duration}",
+    "relative_ago": "{duration} ago",
+    "minutes_count": "{count, plural, one {# minute} other {# minutes}}",
+    "labels": {
+      "travel_to": "On your way to {name}",
+      "travel": "On your way",
+      "free": "Nothing you need to do right now",
+      "before_day": "Your day hasn't started yet",
+      "day_complete": "Today is complete"
+    }
   },
   "prepare": {
     "documents": {
       "identity_proof": "Carry proof of identity",
       "booking_confirmation": "{count, plural, one {Keep your booking confirmation with you} other {Keep your # booking confirmations with you}}"
+    },
+    "groups": {
+      "bookings": "Bookings & tickets",
+      "documents": "Documents",
+      "carry": "What to carry",
+      "know": "Know before you go",
+      "travelers": "For your travelers",
+      "downloads": "Downloads"
+    },
+    "booking": {
+      "title": "Book {name} in advance",
+      "unnamed": "something you added"
+    },
+    "know": {
+      "dress_code": "What to wear"
+    },
+    "carry": {
+      "entry_requirement": "What to bring to get in"
+    },
+    "travelers": {
+      "check_step_free": "Check step-free access before you go",
+      "confirm_rest_points": "Confirm where you can rest along the way"
+    },
+    "downloads": {
+      "save_offline": "Save your journey for offline"
+    },
+    "fallback_title": "Something to prepare",
+    "field_labels": {
+      "advance_booking_required": "Booking requirement",
+      "entry_requirements_i18n": "Entry requirements",
+      "opening_schedule": "Opening hours"
     }
   },
   "intent": {
@@ -444,5 +552,378 @@
     "show_label": "Show to someone: {phrase}",
     "show_done": "Done",
     "audio_unavailable": "The recording can't play right now, because it needs a signal. The words are all here."
+  },
+  "completeJourney": {
+    "action": "Mark this journey complete",
+    "saving": "Saving…",
+    "hint": "Keeps this record as it stands today. You can still add to your reflection afterwards.",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "draftRecovery": {
+    "title": "You planned a journey before signing in",
+    "body": "It's still saved on this device. You can keep it in your account now.",
+    "keep": "Keep this journey",
+    "keeping": "Keeping it…",
+    "discard": "Discard it"
+  },
+  "planSimilar": {
+    "action": "Plan a similar journey",
+    "setting_up": "Setting it up…",
+    "hint": "Opens the same brief with what you said mattered already ticked. You choose the dates.",
+    "not_set_up": "We couldn't set that up just now. Please try again."
+  },
+  "startToday": {
+    "action": "Start today",
+    "starting": "Starting…",
+    "not_started": "That didn't work. Please try again."
+  },
+  "saveJourney": {
+    "keep": "Keep this journey",
+    "keeping": "Keeping it…",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "printButton": {
+    "action": "Print or save as PDF"
+  },
+  "common": {
+    "not_recorded": "Not recorded",
+    "not_scheduled": "Not scheduled",
+    "something_you_added": "Something you added",
+    "free_time": "Free time"
+  },
+  "signIn": {
+    "title": "Keep your journey",
+    "intro": "Signing in saves what you have planned, so it is here on any device and while you are travelling.",
+    "email_use": "We only use your email to sign you in. No password to remember, and nothing else to fill in.",
+    "email_label": "Your email",
+    "send": "Email me a link",
+    "sending": "Sending…",
+    "check_email": "Check your email",
+    "sent": "We've sent a link to {email}. Opening it on this device signs you in.",
+    "rate_limited": "That's a few links in a short time. Please wait a little and try again.",
+    "not_sent": "We couldn't send that link just now. Please try again in a moment."
+  },
+  "journeysList": {
+    "title": "Your journeys",
+    "empty": "You haven't saved a journey yet."
+  },
+  "notificationsPage": {
+    "signed_out": "Reminders are tied to your journeys, so they start once you have an account.",
+    "empty": "Nothing yet. Mandhira only gets in touch about your own journey — a booking deadline, the morning you set off, or when something changes."
+  },
+  "pushToggle": {
+    "unsupported": "This browser can't receive reminders. You'll still see everything here.",
+    "denied": "Reminders are turned off in your browser settings. You'll still see everything here.",
+    "start": "Send reminders to this device",
+    "stop": "Stop sending reminders to this device",
+    "asking": "Just a moment…",
+    "hint": "Only about your own journey — a booking deadline, the morning you set off, or when something changes."
+  },
+  "notificationPrefs": {
+    "title": "What you hear about",
+    "when": "When?",
+    "types": {
+      "prepare_deadline": {
+        "label": "Booking deadlines",
+        "when": "7 days and 1 day before something needs booking."
+      },
+      "journey_tomorrow": {
+        "label": "Your journey starts tomorrow",
+        "when": "The evening before, with everything saved for offline."
+      },
+      "leave_by": {
+        "label": "Time to set off",
+        "when": "15 minutes before you need to leave. Works without a signal."
+      },
+      "journey_change": {
+        "label": "Something changed",
+        "when": "When a change affects your day, with the options to deal with it."
+      },
+      "report_resolved": {
+        "label": "We checked something you told us",
+        "when": "When a report you sent has been looked at."
+      },
+      "advisory": {
+        "label": "Advisories",
+        "when": "When there's something worth knowing about a place you're going."
+      },
+      "suggestion": {
+        "label": "Suggestions",
+        "when": "Occasional ideas based on where you're going. Off unless you turn it on."
+      }
+    },
+    "email_label": "Also by email",
+    "email_why": "The same messages the switches above allow, sent to the address you sign in with. Off unless you turn it on.",
+    "email_why_label": "What is sent?",
+    "restraint": "Mandhira never sends marketing, and never more than one non-journey message a week.",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "reflection": {
+    "title": "Looking back",
+    "privacy": "Only you can see these. They're not sent anywhere and nobody reviews them — skip any that don't apply.",
+    "questions": {
+      "most_meaningful": "What was most meaningful?",
+      "do_differently": "What would you do differently?",
+      "got_wrong": "Anything we got wrong?"
+    },
+    "report_offer": "If something we published was wrong, you can <link>report it on the place itself</link> so someone can check it. Your note above stays private either way.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved, just for you.",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "shareControls": {
+    "share": "Share a read-only copy",
+    "making": "Making a link…",
+    "share_hint": "Anyone with the link can read the day-by-day plan. It never shows your travellers' details or your notes, and it stops working after 30 days.",
+    "link_label": "Anyone with this link can read your plan",
+    "expires": "It stops working on {date}.",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "copy_problem": "Copying didn't work — you can select the link above instead.",
+    "stop": "Stop sharing",
+    "confirm_stop": "Yes, stop sharing",
+    "stopping": "Stopping…",
+    "stop_hint": "The link stops working for everyone you sent it to, including people who have it open.",
+    "too_many": "That's a lot of links for one journey. Try again tomorrow.",
+    "not_worked": "That didn't work. Please try again."
+  },
+  "reportChange": {
+    "open": "Report a change",
+    "sheet_title": "Report a change — {name}",
+    "what": "What did you notice?",
+    "types": {
+      "timing_changed": "The times are different",
+      "closed": "It's closed",
+      "accessibility_issue": "Getting in is harder than described",
+      "wrong_information": "Something here is wrong",
+      "outdated_guidance": "The advice is out of date",
+      "other": "Something else"
+    },
+    "details": "Anything else worth knowing? (optional)",
+    "characters_left": "{count, plural, one {# character left.} other {# characters left.}}",
+    "send": "Send",
+    "sending": "Sending…",
+    "not_sent": "That didn't send. Please try again.",
+    "thanks": "Thanks — our team will verify this.",
+    "thanks_body": "Nothing changes on the page until someone has checked it against a source. If enough people report the same thing, we'll mark it as worth checking locally in the meantime.",
+    "close": "Close"
+  },
+  "offlineNotice": {
+    "saved": "Showing information saved {when}.",
+    "updated_title": "Some information updated while you were offline",
+    "got_it": "Got it"
+  },
+  "openInMaps": {
+    "action": "Open in Maps",
+    "opens_label": "— opens {label} in your maps app"
+  },
+  "accessibility": {
+    "label": "Accessibility",
+    "features": {
+      "step_free": "Step-free",
+      "wheelchair": "Wheelchair access",
+      "rest_seating": "Somewhere to sit",
+      "queue_assistance": "Queue assistance"
+    },
+    "partly": "partly",
+    "no": "no"
+  },
+  "fieldTrust": {
+    "badge_label": "{field} — where this comes from",
+    "conflict": "Two sources list different information for this. We show the official one."
+  },
+  "prepareList": {
+    "due": "{title} — by {date}",
+    "not_saved": "That didn't save. Please try again."
+  },
+  "meta": {
+    "description": "Plan a pilgrimage around what matters to you."
+  },
+  "search": {
+    "title": "Search",
+    "label": "What are you looking for?",
+    "placeholder": "A place, a ritual, a name…",
+    "submit": "Search",
+    "prompt": "Search published places and experiences, or narrow by the filters above.",
+    "no_filter_match": "Nothing matches those filters. Try removing one.",
+    "no_match": "Nothing matched that. Try a different word — we only search information that has been published and reviewed.",
+    "results": "{count, plural, one {# result} other {# results}}",
+    "experiences": "Experiences",
+    "places": "Places",
+    "fits_journey": "Fits your journey"
+  },
+  "planForm": {
+    "no_destinations": "There are no published destinations yet, so there is nothing to plan around. This screen will do something the moment there is.",
+    "intro": "Tell Mandhira what the journey has to include. It works out whether the days hold together — and tells you when they do not.",
+    "where_when": "Where and when",
+    "where_when_hint": "The only two things Mandhira needs.",
+    "must_hint": "Mandhira never removes these, and never moves them without asking.",
+    "like_hint": "Mandhira may suggest moving these — never without asking.",
+    "getting_home": "Getting home",
+    "getting_home_hint": "If you have a train, flight or booked slot, Mandhira works backwards from it and tells you when the plan stops reaching it.",
+    "return_label": "Return, if you have one",
+    "how_you_travel": "How you travel",
+    "how_you_travel_hint": "Everything here can be skipped.",
+    "mobility_question": "Is anyone travelling with a mobility need?",
+    "mobility_hint": "This changes how much time Mandhira leaves between things.",
+    "mobility_none": "No — everyone walks freely"
+  },
+  "planPreview": {
+    "change_brief": "Change the brief",
+    "title": "Your journey",
+    "nothing_chosen": "You didn't choose anything to do, so there is nothing to work out yet. Go back and pick at least one thing.",
+    "warnings_title": "Worth knowing about this plan",
+    "account_note": "Keeping a journey needs an account, so it is there on any device and while you are travelling. Nothing else changes."
+  },
+  "destinationPage": {
+    "advisories": "Advisories",
+    "empty_experiences": "Nothing here has been published yet.",
+    "empty_places": "No places have been published yet.",
+    "essentials": "Practical essentials"
+  },
+  "notFound": {
+    "title": "This page isn't here",
+    "body": "The link may have changed, or it may have been a shared journey that is no longer being shared.",
+    "home": "Go to the home screen"
+  },
+  "boundary": {
+    "title": "This screen didn't load",
+    "body": "Something on our side didn't answer. Your journey is saved — nothing has been lost.",
+    "retry": "Try again"
+  },
+  "sharedSummary": {
+    "note": "Shared with you. You can read this plan but not change it, and it stays up to date if the plan changes."
+  },
+  "summaryPage": {
+    "back": "Back to your journey"
+  },
+  "preparePage": {
+    "progress": "{done} of {total} done",
+    "empty": "There's nothing to prepare for this journey yet. Once you add something that needs booking or has a dress code, it'll show up here.",
+    "summary_link": "Journey summary"
+  },
+  "journeyPage": {
+    "today": "Today",
+    "summary": "Summary",
+    "record": "Record",
+    "buffer": "{minutes} min to get there",
+    "stale_note": "Last confirmed {months, plural, one {# month} other {# months}} ago — worth checking locally.",
+    "stale_dismiss": "Got it"
+  },
+  "record": {
+    "complete_title": "Your journey is complete",
+    "going_title": "How it's going",
+    "all_done": "You did everything you said mattered most.",
+    "none_done": "The things you said mattered most are still ahead of you.",
+    "some_done": "You've done {done} of the {planned} things you said mattered most.",
+    "done_at": "Done at {time}",
+    "done": "Done",
+    "not_done": "Not marked done"
+  },
+  "dayPlan": {
+    "fixed_commitment": "A fixed commitment",
+    "rest": "A break",
+    "meal": "A meal"
+  },
+  "summarySheet": {
+    "empty": "There's nothing in this journey yet.",
+    "facilities_title": "If you need something",
+    "to_get_in": "To get in: {text}",
+    "what_to_wear": "What to wear: {text}"
+  },
+  "knowledgeFields": {
+    "availability": "Availability",
+    "usually_takes": "Usually takes",
+    "booking": "Booking",
+    "no_access_info_short": "We don't have accessibility information for this place yet.",
+    "back_to_destination": "Back to the destination",
+    "when": "When",
+    "how_long": "How long to allow",
+    "queue": "What the queue is usually like",
+    "about_this": "About this",
+    "what_happens": "What happens",
+    "who_can_take_part": "Who can take part",
+    "how_to_prepare": "How to prepare",
+    "cost": "Cost",
+    "getting_in": "Getting in",
+    "recorded_for": "Recorded for {place}.",
+    "worth_knowing": "Worth knowing",
+    "opening_hours": "Opening hours",
+    "closed": "Closed",
+    "before_you_go": "Before you go",
+    "entry_requirements": "Entry requirements",
+    "dress_code": "Dress code",
+    "closures": "Closures",
+    "dropoff": "About {metres} m from the nearest drop-off.",
+    "no_access_info": "We don't have accessibility information for this place yet. If you find out, you can tell us and we'll check it."
+  },
+  "placeTypes": {
+    "temple": "Temple",
+    "shrine": "Shrine",
+    "sacred_site": "Sacred site",
+    "ghat": "Ghat",
+    "viewpoint": "Viewpoint",
+    "facility": "Facility",
+    "transport_point": "Transport",
+    "accommodation": "Stay",
+    "food": "Food"
+  },
+  "conditions": {
+    "title": "Conditions",
+    "temperature": "{degrees}°C",
+    "rain_chance": "{percent}% chance of rain",
+    "thunderstorm": "There's a thunderstorm forecast around this time.",
+    "heavy_rain": "Heavy rain is forecast around this time.",
+    "hot": "It's forecast to reach {degrees}°C around this time.",
+    "rain": "Rain is likely around this time.",
+    "outdoors": "This one is outdoors.",
+    "live_label": "Live · {provider} · as of {at}",
+    "live_unavailable": "Live update unavailable — showing last known (as of {at})."
+  },
+  "itemActions": {
+    "tier_label": "How much this matters",
+    "tiers": {
+      "fixed": {
+        "label": "Fixed",
+        "help": "A set time. Never moved or removed."
+      },
+      "protected": {
+        "label": "Must do",
+        "help": "Never removed. Moved only if you say so."
+      },
+      "important": {
+        "label": "Important",
+        "help": "May be moved, if you agree."
+      },
+      "optional": {
+        "label": "Optional",
+        "help": "The first thing offered up when time is short."
+      }
+    },
+    "buffer_label": "Time to leave before this",
+    "no_gap": "No gap",
+    "buffer_minutes": "{minutes, plural, one {# minute} other {# minutes}}",
+    "move_label": "Move to another day",
+    "confirm_label": "Confirm removing this",
+    "confirm_question": "Take this out of the journey?",
+    "keep": "Keep it",
+    "remove_confirm": "Remove it",
+    "remove": "Remove this",
+    "fixed_locked": "This has a set time, so it can't be removed. Change how much it matters if that's no longer true.",
+    "protected_locked": "You marked this as something you must do, so Mandhira won't remove it.",
+    "not_through": "That didn't go through."
+  },
+  "present": {
+    "whenever_open": "Whenever the place is open",
+    "daily": "Daily {times}",
+    "minutes": "{minutes} m",
+    "hours": "{hours} h",
+    "hours_minutes": "{hours} h {minutes} m",
+    "booking_required": "Advance booking required",
+    "booking_opens": "{days, plural, one {Advance booking required — opens # day before} other {Advance booking required — opens # days before}}",
+    "usually": "Usually {usual}",
+    "allow_up_to": "Allow up to {max}",
+    "usually_allow": "Usually {usual} — allow up to {max}"
   }
 }

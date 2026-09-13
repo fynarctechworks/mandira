@@ -124,6 +124,11 @@ function isCodeShaped(line: string): boolean {
   // A bare status code on its own line, or inside an ApiError call.
   if (API_ERROR_CODES.test(trimmed)) return true;
 
+  // A module specifier ("@mandhira/providers/errors", "./lib/data-error"): a path, not a sentence.
+  if (/^(@[\w.-]+\/|\.{1,2}\/)?[\w.-]+(\/[\w.-]+)*$/.test(trimmed) && trimmed.includes("/")) {
+    return true;
+  }
+
   return (
     /console\.(error|warn)/.test(line) ||
     /onError|hasError|isError|errorMessage|ErrorBoundary|error\?\.|error\.|error:|\berror\b\s*[,)=]/.test(

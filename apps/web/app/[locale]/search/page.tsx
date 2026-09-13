@@ -1,10 +1,10 @@
 import { Search } from "lucide-react";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ExperienceCard } from "../../../components/experience-card";
 import { FilterBar } from "../../../components/filter-bar";
 import { PlaceCard } from "../../../components/place-card";
-import { listJourneys } from "../../../lib/journeys";
+import { journeyToFit, listJourneys } from "../../../lib/journeys";
 import { getDestinationCards, searchKnowledge } from "../../../lib/knowledge";
 import { searchFiltersFrom, type SearchQuery } from "../../../lib/search-filters";
 import { webSupabase } from "../../../lib/supabase";
@@ -31,12 +31,16 @@ export default async function SearchPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations("search");
   const query = await searchParams;
   const q = query.q ?? "";
   const filters = searchFiltersFrom(query);
 
+  // With a journey under way or ahead, what could go into it is ranked first (PRD-DISC-006).
+  const fit = await fitForSearch();
+
   const [results, destinations, journeys] = await Promise.all([
-    searchKnowledge(q, filters, locale),
+    searchKnowledge(q, filters, locale, fit),
     // Results carry no destination name of their own, so the slug is resolved once here
     // rather than per card.
     getDestinationCards(locale, 20),
@@ -49,11 +53,11 @@ export default async function SearchPage({
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 px-4 py-6">
-      <h1 className="text-h1">Search</h1>
+      <h1 className="text-h1">{t("title")}</h1>
 
       <form method="get" role="search" className="flex flex-col gap-3">
         <label htmlFor="q" className="sr-only">
-          What are you looking for?
+          {t("label")}
         </label>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-surface px-3">
           <Search className="size-5 shrink-0 text-text-secondary" aria-hidden />
@@ -62,7 +66,7 @@ export default async function SearchPage({
             name="q"
             type="search"
             defaultValue={q}
-            placeholder="A place, a ritual, a name…"
+            placeholder={t("placeholder")}
             className="min-h-11 flex-1 bg-transparent text-body outline-none"
           />
         </div>
@@ -73,14 +77,12 @@ export default async function SearchPage({
           type="submit"
           className="focus-ring min-h-11 rounded-lg bg-brand-primary px-4 text-body font-medium text-text-on-primary"
         >
-          Search
+          {t("submit")}
         </button>
       </form>
 
       {!searched ? (
-        <p className="text-body-sm text-text-secondary">
-          Search published places and experiences, or narrow by the filters above.
-        </p>
+        <p className="text-body-sm text-text-secondary">{t("prompt")}</p>
       ) : total === 0 ? (
         /*
          * Two different empty states, because they call for two different next moves. A
@@ -89,20 +91,18 @@ export default async function SearchPage({
          * they set is how a search feels broken.
          */
         <p className="text-body-sm text-text-secondary">
-          {results.filtersApplied
-            ? "Nothing matches those filters. Try removing one."
-            : "Nothing matched that. Try a different word — we only search information that has been published and reviewed."}
+          {results.filtersApplied ? t("no_filter_match") : t("no_match")}
         </p>
       ) : (
         <div className="flex flex-col gap-6">
           <p className="text-caption text-text-secondary" role="status">
-            {total} {total === 1 ? "result" : "results"}
+            {t("results", { count: total })}
           </p>
 
           {results.experiences.length > 0 ? (
             <section aria-labelledby="experiences" className="flex flex-col gap-3">
               <h2 id="experiences" className="text-h2">
-                Experiences
+                {t("experiences")}
               </h2>
               {results.experiences.map((experience) => (
                 <ExperienceCard
@@ -118,7 +118,7 @@ export default async function SearchPage({
           {results.places.length > 0 ? (
             <section aria-labelledby="places" className="flex flex-col gap-3">
               <h2 id="places" className="text-h2">
-                Places
+                {t("places")}
               </h2>
               {results.places.map((place) => (
                 <PlaceCard
@@ -147,4 +147,17 @@ async function journeysForFilter(): Promise<{ id: string; title: string | null }
   return (await listJourneys(supabase))
     .filter((journey) => journey.status !== "completed" && journey.status !== "archived")
     .map((journey) => ({ id: journey.id, title: journey.title }));
+}
+
+/** The signed-in traveler's journey to rank against, or null for a guest or nothing ahead. */
+async function fitForSearch() {
+  const supabase = await webSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Today where every journey is planned (TRD §4.6), not on the server's clock.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  return journeyToFit(supabase, today);
 }

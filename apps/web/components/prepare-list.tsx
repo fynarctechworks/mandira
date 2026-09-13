@@ -1,6 +1,7 @@
 "use client";
 
 import { ChecklistRow } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { PrepareGroupView, PrepareItem } from "../lib/prepare";
@@ -26,6 +27,8 @@ export function PrepareList({
   /** Formatted by the server, which is where the locale lives. */
   dateLabels: Record<string, string>;
 }) {
+  const t = useTranslations("prepareList");
+  const tCommon = useTranslations("common");
   const [done, setDone] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(groups.flatMap((g) => g.tasks.map((t) => [t.key, t.isDone]))),
   );
@@ -45,7 +48,7 @@ export function PrepareList({
 
     if (!payload.ok) {
       setDone((current) => ({ ...current, [task.key]: !next }));
-      setProblem("That didn't save. Please try again.");
+      setProblem(t("not_saved"));
     }
   }
 
@@ -69,7 +72,10 @@ export function PrepareList({
                 key={task.key}
                 label={
                   task.dueDate
-                    ? `${task.title} — by ${dateLabels[task.dueDate] ?? task.dueDate}`
+                    ? t("due", {
+                        title: task.title,
+                        date: dateLabels[task.dueDate] ?? task.dueDate,
+                      })
                     : task.title
                 }
                 checked={done[task.key] ?? false}
@@ -89,7 +95,7 @@ export function PrepareList({
                             task.trust.verified_at
                               ? (dateLabels[task.trust.verified_at.slice(0, 10)] ??
                                 task.trust.verified_at.slice(0, 10))
-                              : "Not recorded"
+                              : tCommon("not_recorded")
                           }
                         />
                       ),

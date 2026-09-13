@@ -2,6 +2,7 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { clearGuestDraft, migrateGuestDraft, readGuestDraft } from "../lib/offline/guest-draft";
@@ -20,6 +21,7 @@ import { clearGuestDraft, migrateGuestDraft, readGuestDraft } from "../lib/offli
  * and on a shared phone it might not even be their journey.
  */
 export function DraftRecovery({ locale }: { locale: string }) {
+  const t = useTranslations("draftRecovery");
   const router = useRouter();
   const [found, setFound] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -63,18 +65,16 @@ export function DraftRecovery({ locale }: { locale: string }) {
       className="flex flex-col gap-3 rounded-card border border-border bg-bg-surface p-4"
     >
       <h2 id="draft-recovery" className="text-h3">
-        You planned a journey before signing in
+        {t("title")}
       </h2>
-      <p className="text-body-sm text-text-secondary">
-        It&apos;s still saved on this device. You can keep it in your account now.
-      </p>
+      <p className="text-body-sm text-text-secondary">{t("body")}</p>
 
       <div className="flex gap-2">
         <Button onClick={() => void keep()} disabled={busy}>
-          {busy ? "Keeping it…" : "Keep this journey"}
+          {busy ? t("keeping") : t("keep")}
         </Button>
         <Button variant="secondary" onClick={() => void discard()} disabled={busy}>
-          Discard it
+          {t("discard")}
         </Button>
       </div>
     </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /**
@@ -18,6 +19,7 @@ import { useEffect, useState } from "react";
 type State = "unsupported" | "denied" | "off" | "on" | "asking";
 
 export function PushToggle() {
+  const t = useTranslations("pushToggle");
   const [state, setState] = useState<State>("off");
 
   useEffect(() => {
@@ -101,19 +103,11 @@ export function PushToggle() {
   }
 
   if (state === "unsupported") {
-    return (
-      <p className="text-body-sm text-text-secondary">
-        This browser can&apos;t receive reminders. You&apos;ll still see everything here.
-      </p>
-    );
+    return <p className="text-body-sm text-text-secondary">{t("unsupported")}</p>;
   }
 
   if (state === "denied") {
-    return (
-      <p className="text-body-sm text-text-secondary">
-        Reminders are turned off in your browser settings. You&apos;ll still see everything here.
-      </p>
-    );
+    return <p className="text-body-sm text-text-secondary">{t("denied")}</p>;
   }
 
   return (
@@ -124,19 +118,10 @@ export function PushToggle() {
         disabled={state === "asking"}
         onClick={() => void (state === "on" ? disable() : enable())}
       >
-        {state === "on"
-          ? "Stop sending reminders to this device"
-          : state === "asking"
-            ? "Just a moment…"
-            : "Send reminders to this device"}
+        {state === "on" ? t("stop") : state === "asking" ? t("asking") : t("start")}
       </Button>
 
-      {state === "on" ? null : (
-        <p className="text-caption text-text-secondary">
-          Only about your own journey — a booking deadline, the morning you set off, or when
-          something changes.
-        </p>
-      )}
+      {state === "on" ? null : <p className="text-caption text-text-secondary">{t("hint")}</p>}
     </div>
   );
 }

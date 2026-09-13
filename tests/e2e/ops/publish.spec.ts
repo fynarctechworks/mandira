@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { seriousViolations } from "../axe-exceptions";
 
 /**
@@ -11,6 +11,22 @@ import { seriousViolations } from "../axe-exceptions";
  * cannot take a draft all the way to published, and should be told exactly why.
  */
 const RUN = `b12-${Date.now().toString(36)}`;
+
+/**
+ * Opens a place from the list and waits for its editor.
+ *
+ * The list grows with every local run and hydrates more slowly as it does, and a click that
+ * lands before hydration can be dropped (the same race as admin.spec O20). The click is
+ * retried until the editor heading is on screen, so a slow list cannot fail a test about
+ * publishing.
+ */
+async function openPlace(page: Page, name: string) {
+  await page.goto("/places");
+  await expect(async () => {
+    await page.getByRole("link", { name }).click();
+    await expect(page.getByRole("heading", { name })).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+}
 
 test.describe.serial("Publishing", () => {
   test("a fresh place lists everything blocking publication, by field", async ({ page }) => {
@@ -40,8 +56,7 @@ test.describe.serial("Publishing", () => {
   });
 
   test("submitting moves it into review", async ({ page }) => {
-    await page.goto("/places");
-    await page.getByRole("link", { name: `Pub Temple ${RUN}` }).click();
+    await openPlace(page, `Pub Temple ${RUN}`);
 
     await page.getByRole("button", { name: "Submit for review" }).click();
     await expect(page.getByRole("region", { name: "Publishing" })).toContainText("in review");
@@ -65,8 +80,7 @@ test.describe.serial("Publishing", () => {
     await page.getByRole("button", { name: "Register source" }).click();
     await expect(page).toHaveURL(/\/sources$/);
 
-    await page.goto("/places");
-    await page.getByRole("link", { name: `Pub Temple ${RUN}` }).click();
+    await openPlace(page, `Pub Temple ${RUN}`);
     // Wait for the edit page before reading the URL — otherwise this captures the list.
     await expect(page.getByRole("heading", { name: `Pub Temple ${RUN}` })).toBeVisible();
     const placeUrl = page.url();
@@ -158,9 +172,7 @@ test.describe.serial("Impact before publish (PRD-OPS-WF-007)", () => {
   test("tells an approver who a publish reaches, and that nothing moves on its own", async ({
     page,
   }) => {
-    await page.goto("/places");
-    await page.getByRole("link", { name: `Impact Temple ${IMPACT}` }).click();
-    await expect(page.getByRole("heading", { name: `Impact Temple ${IMPACT}` })).toBeVisible();
+    await openPlace(page, `Impact Temple ${IMPACT}`);
 
     const panel = page.getByRole("region", { name: "Publishing" });
     await expect(panel.getByRole("heading", { name: "Who this reaches" })).toBeVisible();
@@ -171,9 +183,7 @@ test.describe.serial("Impact before publish (PRD-OPS-WF-007)", () => {
   });
 
   test("the impact panel carries no identity, only counts", async ({ page }) => {
-    await page.goto("/places");
-    await page.getByRole("link", { name: `Impact Temple ${IMPACT}` }).click();
-    await expect(page.getByRole("heading", { name: `Impact Temple ${IMPACT}` })).toBeVisible();
+    await openPlace(page, `Impact Temple ${IMPACT}`);
 
     const text = await page.getByRole("region", { name: "Publishing" }).innerText();
 

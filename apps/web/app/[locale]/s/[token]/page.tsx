@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { PrintButton } from "../../../../components/print-button";
 import { SummarySheet } from "../../../../components/summary-sheet";
@@ -33,7 +33,10 @@ export default async function SharedSummaryPage({
   setRequestLocale(locale);
 
   const supabase = await webSupabase();
-  const summary = await readShared(supabase, token, locale);
+  const [summary, t] = await Promise.all([
+    readShared(supabase, token, locale),
+    getTranslations("sharedSummary"),
+  ]);
 
   // Unknown, expired and revoked are all the same 404 — distinguishing them would confirm
   // that a journey existed behind this token, which is exactly what revoking undid.
@@ -47,10 +50,7 @@ export default async function SharedSummaryPage({
           keeps up if the plan changes — and it stops working the moment the person who
           shared it stops sharing.
         */}
-        <p className="text-caption text-text-secondary">
-          Shared with you. You can read this plan but not change it, and it stays up to date if the
-          plan changes.
-        </p>
+        <p className="text-caption text-text-secondary">{t("note")}</p>
         <PrintButton />
       </div>
 

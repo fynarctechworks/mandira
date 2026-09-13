@@ -1,6 +1,7 @@
 "use client";
 
 import { ChecklistRow } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { NotificationPrefs } from "@mandhira/journey-engine";
@@ -17,45 +18,18 @@ import type { TravelerNotificationPrefs } from "../lib/notifications";
  * Each switch says WHEN it fires, not just what it is called. "Leave-by reminder" tells
  * someone nothing; "15 minutes before you need to set off" tells them whether they want it.
  */
-const TYPES: { key: keyof NotificationPrefs; label: string; when: string }[] = [
-  {
-    key: "prepare_deadline",
-    label: "Booking deadlines",
-    when: "7 days and 1 day before something needs booking.",
-  },
-  {
-    key: "journey_tomorrow",
-    label: "Your journey starts tomorrow",
-    when: "The evening before, with everything saved for offline.",
-  },
-  {
-    key: "leave_by",
-    label: "Time to set off",
-    when: "15 minutes before you need to leave. Works without a signal.",
-  },
-  {
-    key: "journey_change",
-    label: "Something changed",
-    when: "When a change affects your day, with the options to deal with it.",
-  },
-  {
-    key: "report_resolved",
-    label: "We checked something you told us",
-    when: "When a report you sent has been looked at.",
-  },
-  {
-    key: "advisory",
-    label: "Advisories",
-    when: "When there's something worth knowing about a place you're going.",
-  },
-  {
-    key: "suggestion",
-    label: "Suggestions",
-    when: "Occasional ideas based on where you're going. Off unless you turn it on.",
-  },
+const TYPES: (keyof NotificationPrefs)[] = [
+  "prepare_deadline",
+  "journey_tomorrow",
+  "leave_by",
+  "journey_change",
+  "report_resolved",
+  "advisory",
+  "suggestion",
 ];
 
 export function NotificationPreferences({ initial }: { initial: TravelerNotificationPrefs }) {
+  const t = useTranslations("notificationPrefs");
   const [prefs, setPrefs] = useState<TravelerNotificationPrefs>(initial);
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -74,14 +48,14 @@ export function NotificationPreferences({ initial }: { initial: TravelerNotifica
 
     if (!payload.ok) {
       setPrefs((current) => ({ ...current, [key]: !next }));
-      setProblem("That didn't save. Please try again.");
+      setProblem(t("not_saved"));
     }
   }
 
   return (
     <section aria-labelledby="notification-prefs" className="flex flex-col gap-2">
       <h2 id="notification-prefs" className="text-h2">
-        What you hear about
+        {t("title")}
       </h2>
 
       {problem ? (
@@ -91,15 +65,15 @@ export function NotificationPreferences({ initial }: { initial: TravelerNotifica
       ) : null}
 
       <div className="rounded-lg border border-border bg-bg-surface px-4">
-        {TYPES.map(({ key, label, when }) => (
+        {TYPES.map((key) => (
           <ChecklistRow
             key={key}
-            label={label}
+            label={t(`types.${key}.label`)}
             checked={prefs[key] ?? false}
             onCheckedChange={(value) => void toggle(key, value)}
             // The timing behind each switch, on request rather than crowding the row.
-            why={when}
-            whyLabel="When?"
+            why={t(`types.${key}.when`)}
+            whyLabel={t("when")}
           />
         ))}
       </div>
@@ -110,17 +84,15 @@ export function NotificationPreferences({ initial }: { initial: TravelerNotifica
        */}
       <div className="rounded-lg border border-border bg-bg-surface px-4">
         <ChecklistRow
-          label="Also by email"
+          label={t("email_label")}
           checked={prefs.email ?? false}
           onCheckedChange={(value) => void toggle("email", value)}
-          why="The same messages the switches above allow, sent to the address you sign in with. Off unless you turn it on."
-          whyLabel="What is sent?"
+          why={t("email_why")}
+          whyLabel={t("email_why_label")}
         />
       </div>
 
-      <p className="text-caption text-text-secondary">
-        Mandhira never sends marketing, and never more than one non-journey message a week.
-      </p>
+      <p className="text-caption text-text-secondary">{t("restraint")}</p>
     </section>
   );
 }

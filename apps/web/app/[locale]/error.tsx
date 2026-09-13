@@ -3,6 +3,7 @@
 import { reportError } from "@mandhira/db/reporting";
 import { Alert, AlertDescription, AlertTitle, Button } from "@mandhira/ui";
 import { RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 /**
@@ -38,18 +39,18 @@ export default function TravelerError({
     reportError({ route: `render traveler ${error.digest ?? "unknown"}`, error, app: "web" });
   }, [error]);
 
+  const t = useTranslations("boundary");
+
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-10">
       <Alert>
-        <AlertTitle>This screen didn&apos;t load</AlertTitle>
-        <AlertDescription>
-          Something on our side didn&apos;t answer. Your journey is saved — nothing has been lost.
-        </AlertDescription>
+        <AlertTitle>{t("title")}</AlertTitle>
+        <AlertDescription>{t("body")}</AlertDescription>
       </Alert>
 
       <Button onClick={reset} fullWidth>
         <RefreshCw className="size-4" aria-hidden />
-        Try again
+        {t("retry")}
       </Button>
     </main>
   );

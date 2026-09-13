@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { REFLECTION_QUESTIONS, type ReflectionAnswers } from "../lib/reflection";
@@ -27,6 +28,7 @@ export function Reflection({
   initial: ReflectionAnswers | null;
   locale: string;
 }) {
+  const t = useTranslations("reflection");
   const [answers, setAnswers] = useState<ReflectionAnswers>(initial ?? {});
   const [state, setState] = useState<"idle" | "saving" | "saved" | "problem">("idle");
 
@@ -46,18 +48,15 @@ export function Reflection({
   return (
     <section aria-labelledby="reflection" className="flex flex-col gap-3">
       <h2 id="reflection" className="text-h2">
-        Looking back
+        {t("title")}
       </h2>
 
-      <p className="text-body-sm text-text-secondary">
-        Only you can see these. They&apos;re not sent anywhere and nobody reviews them — skip any
-        that don&apos;t apply.
-      </p>
+      <p className="text-body-sm text-text-secondary">{t("privacy")}</p>
 
       {REFLECTION_QUESTIONS.map((item) => (
         <div key={item.key} className="flex flex-col gap-1">
           <label htmlFor={`reflect-${item.key}`} className="text-body-sm font-medium">
-            {item.question}
+            {t(`questions.${item.key}`)}
           </label>
           <textarea
             id={`reflect-${item.key}`}
@@ -77,14 +76,16 @@ export function Reflection({
              * report nothing.
              */
             <p className="text-caption text-text-secondary">
-              If something we published was wrong, you can{" "}
-              <a
-                href={`/${locale}/journeys/${journeyId}`}
-                className="font-medium text-brand-primary-text underline"
-              >
-                report it on the place itself
-              </a>{" "}
-              so someone can check it. Your note above stays private either way.
+              {t.rich("report_offer", {
+                link: (chunks) => (
+                  <a
+                    href={`/${locale}/journeys/${journeyId}`}
+                    className="font-medium text-brand-primary-text underline"
+                  >
+                    {chunks}
+                  </a>
+                ),
+              })}
             </p>
           ) : null}
         </div>
@@ -92,17 +93,17 @@ export function Reflection({
 
       <div className="flex items-center gap-3">
         <Button onClick={() => void save()} disabled={state === "saving"}>
-          {state === "saving" ? "Saving…" : "Save"}
+          {state === "saving" ? t("saving") : t("save")}
         </Button>
 
         {state === "saved" ? (
           <p role="status" className="text-body-sm text-text-secondary">
-            Saved, just for you.
+            {t("saved")}
           </p>
         ) : null}
         {state === "problem" ? (
           <p role="alert" className="text-body-sm text-status-broken">
-            That didn&apos;t save. Please try again.
+            {t("not_saved")}
           </p>
         ) : null}
       </div>

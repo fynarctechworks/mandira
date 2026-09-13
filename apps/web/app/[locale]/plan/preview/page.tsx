@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   buildInitialJourney,
   toInstant,
@@ -52,6 +52,7 @@ export default async function PreviewPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations("planPreview");
   const query = await searchParams;
   if (!query.destination || !query.start) notFound();
 
@@ -93,21 +94,18 @@ export default async function PreviewPage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Change the brief
+        {t("change_brief")}
       </Link>
 
       <header className="flex flex-col gap-2">
         <p className="text-body-sm font-medium text-text-secondary">{page.destination.name.text}</p>
-        <h1 className="text-display">Your journey</h1>
+        <h1 className="text-display">{t("title")}</h1>
       </header>
 
       <JourneyHealth report={health} />
 
       {items.length === 0 ? (
-        <p className="text-body-sm text-text-secondary">
-          You didn&apos;t choose anything to do, so there is nothing to work out yet. Go back and
-          pick at least one thing.
-        </p>
+        <p className="text-body-sm text-text-secondary">{t("nothing_chosen")}</p>
       ) : (
         dayIndexes.map((dayIndex) => (
           <DayPlan
@@ -130,7 +128,7 @@ export default async function PreviewPage({
       {warnings.length > 0 ? (
         <section aria-labelledby="warnings" className="flex flex-col gap-2">
           <h2 id="warnings" className="text-h3">
-            Worth knowing about this plan
+            {t("warnings_title")}
           </h2>
           <ul className="flex flex-col gap-2">
             {warnings.map((warning, index) => (
@@ -165,10 +163,7 @@ export default async function PreviewPage({
            * know an account is coming — finding out at the moment of saving reads as a
            * toll gate rather than as the thing that keeps their journey.
            */}
-          <p className="text-caption text-text-secondary">
-            Keeping a journey needs an account, so it is there on any device and while you are
-            travelling. Nothing else changes.
-          </p>
+          <p className="text-caption text-text-secondary">{t("account_note")}</p>
         </div>
       ) : null}
     </main>

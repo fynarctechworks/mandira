@@ -28,6 +28,12 @@ export const RATE_LIMITS = {
   ops_translate_suggest: [{ limit: 200, windowSeconds: 86_400 }],
   travel_estimate: [{ limit: 1500, windowSeconds: 86_400 }],
   /*
+   * Not in TRD §6.2. PRD-ACCT-005 asks a second device to show a change within 10 seconds, so an
+   * open journey checks its version that often while visible: 360 an hour, doubled for two
+   * tabs. A read of two timestamps, never a write, which is why it is not `journeys_write`.
+   */
+  journey_sync: [{ limit: 720, windowSeconds: 3600 }],
+  /*
    * Not in TRD §6.2, added by D-151 after the audit found every Ops Server Action unlimited.
    * Generous enough that a researcher working through a destination never meets it; tight
    * enough that a stolen session cannot rewrite the knowledge base in a loop.

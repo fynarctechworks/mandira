@@ -1,6 +1,7 @@
 import { ChevronRight, Clock } from "lucide-react";
 import Link from "next/link";
 import { TrustBadge } from "@mandhira/ui";
+import { useTranslations } from "next-intl";
 
 import type { PlaceCard as Place } from "../lib/knowledge";
 import { weakestTrustState } from "../lib/knowledge";
@@ -8,17 +9,6 @@ import { accessibilityIcons, durationLabel } from "../lib/present";
 import { AccessibilityIcons } from "./accessibility-icons";
 
 /** Place types read to a traveler, not to the schema. */
-const PLACE_TYPE_LABELS: Record<string, string> = {
-  temple: "Temple",
-  shrine: "Shrine",
-  sacred_site: "Sacred site",
-  ghat: "Ghat",
-  viewpoint: "Viewpoint",
-  facility: "Facility",
-  transport_point: "Transport",
-  accommodation: "Stay",
-  food: "Food",
-};
 
 export function PlaceCard({
   place,
@@ -29,12 +19,20 @@ export function PlaceCard({
   locale: string;
   destinationSlug: string;
 }) {
-  const duration = durationLabel(place.visitDurationLikelyMinutes);
+  const t = useTranslations("knowledgeFields");
+  const tTypes = useTranslations("placeTypes");
+  const tPresent = useTranslations("present");
+  const tSearch = useTranslations("search");
+  const duration = durationLabel(place.visitDurationLikelyMinutes, tPresent);
   const trust = weakestTrustState(place.trust);
-  const typeLabel = PLACE_TYPE_LABELS[place.placeType] ?? place.placeType;
+  // A type added to the schema before the catalogs shows its raw value rather than a key path.
+  const typeLabel = tTypes.has(place.placeType) ? tTypes(place.placeType) : place.placeType;
 
   return (
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
+      {place.fitsJourney ? (
+        <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <h3 className="text-h3">
@@ -58,7 +56,7 @@ export function PlaceCard({
       {duration ? (
         <p className="flex items-center gap-1.5 text-caption text-text-secondary">
           <Clock className="size-4 shrink-0" aria-hidden />
-          Usually {duration}
+          {tPresent("usually", { usual: duration })}
         </p>
       ) : null}
 
@@ -69,9 +67,7 @@ export function PlaceCard({
        * and "it has none of these" are different answers, and silence reads as the second.
        */}
       {place.accessibility === null ? (
-        <p className="text-caption text-text-secondary">
-          We don&apos;t have accessibility information for this place yet.
-        </p>
+        <p className="text-caption text-text-secondary">{t("no_access_info_short")}</p>
       ) : null}
     </article>
   );

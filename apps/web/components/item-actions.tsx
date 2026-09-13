@@ -3,14 +3,10 @@
 import { Button } from "@mandhira/ui";
 import { checkItemAction, type PriorityTier } from "@mandhira/journey-engine";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
-const TIERS: { value: PriorityTier; label: string; help: string }[] = [
-  { value: "fixed", label: "Fixed", help: "A set time. Never moved or removed." },
-  { value: "protected", label: "Must do", help: "Never removed. Moved only if you say so." },
-  { value: "important", label: "Important", help: "May be moved, if you agree." },
-  { value: "optional", label: "Optional", help: "The first thing offered up when time is short." },
-];
+const TIERS: PriorityTier[] = ["fixed", "protected", "important", "optional"];
 
 /**
  * The item editor (PRD-PLAN-003).
@@ -38,6 +34,8 @@ export function ItemActions({
   dayIndex: number;
   dayCount: number;
 }) {
+  const t = useTranslations("itemActions");
+  const tJourney = useTranslations("addToJourney");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [problem, setProblem] = useState<string | null>(null);
@@ -60,7 +58,7 @@ export function ItemActions({
     if (!payload.ok) {
       // The route's own sentence, not a generic apology — it says which rule refused and
       // what the traveler could do instead.
-      setProblem(payload.error?.message ?? "That didn't go through.");
+      setProblem(payload.error?.message ?? t("not_through"));
       return;
     }
 
@@ -72,7 +70,7 @@ export function ItemActions({
     <div className="flex flex-col gap-3 border-t border-border pt-3">
       <div className="flex flex-col gap-1">
         <label htmlFor={`tier-${itemId}`} className="text-caption font-medium text-text-secondary">
-          How much this matters
+          {t("tier_label")}
         </label>
         <select
           id={`tier-${itemId}`}
@@ -82,8 +80,8 @@ export function ItemActions({
           className="min-h-11 rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
         >
           {TIERS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label} — {option.help}
+            <option key={option} value={option}>
+              {t(`tiers.${option}.label`)} — {t(`tiers.${option}.help`)}
             </option>
           ))}
         </select>
@@ -94,7 +92,7 @@ export function ItemActions({
           htmlFor={`buffer-${itemId}`}
           className="text-caption font-medium text-text-secondary"
         >
-          Time to leave before this
+          {t("buffer_label")}
         </label>
         {/*
          * PRD-PLAN-005: buffers are visible AND editable — including on a fixed item. The
@@ -109,7 +107,7 @@ export function ItemActions({
         >
           {[0, 10, 15, 20, 30, 45, 60].map((minutes) => (
             <option key={minutes} value={minutes}>
-              {minutes === 0 ? "No gap" : `${minutes} minutes`}
+              {minutes === 0 ? t("no_gap") : t("buffer_minutes", { minutes })}
             </option>
           ))}
         </select>
@@ -118,7 +116,7 @@ export function ItemActions({
       {canMove && dayCount > 1 ? (
         <div className="flex flex-col gap-1">
           <label htmlFor={`day-${itemId}`} className="text-caption font-medium text-text-secondary">
-            Move to another day
+            {t("move_label")}
           </label>
           <select
             id={`day-${itemId}`}
@@ -131,7 +129,7 @@ export function ItemActions({
           >
             {Array.from({ length: dayCount }, (_, index) => (
               <option key={index} value={index}>
-                Day {index + 1}
+                {tJourney("day_option", { day: index + 1 })}
               </option>
             ))}
           </select>
@@ -142,26 +140,26 @@ export function ItemActions({
         confirmingRemove ? (
           <div
             role="group"
-            aria-label="Confirm removing this"
+            aria-label={t("confirm_label")}
             className="flex flex-col gap-2 rounded-lg border border-status-broken p-3"
           >
-            <p className="text-body-sm">Take this out of the journey?</p>
+            <p className="text-body-sm">{t("confirm_question")}</p>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setConfirmingRemove(false)}
                 disabled={pending}
               >
-                Keep it
+                {t("keep")}
               </Button>
               <Button onClick={() => void send({ confirmed: true }, "DELETE")} disabled={pending}>
-                Remove it
+                {t("remove_confirm")}
               </Button>
             </div>
           </div>
         ) : (
           <Button variant="secondary" onClick={() => setConfirmingRemove(true)} disabled={pending}>
-            Remove this
+            {t("remove")}
           </Button>
         )
       ) : (
@@ -170,9 +168,7 @@ export function ItemActions({
          * because of what they told Mandhira, and that they can change that.
          */
         <p className="text-caption text-text-secondary">
-          {tier === "fixed"
-            ? "This has a set time, so it can't be removed. Change how much it matters if that's no longer true."
-            : "You marked this as something you must do, so Mandhira won't remove it."}
+          {tier === "fixed" ? t("fixed_locked") : t("protected_locked")}
         </p>
       )}
 

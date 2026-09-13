@@ -9,6 +9,7 @@ import {
 import { getI18n } from "@mandhira/i18n";
 
 import { mustList, mustMaybe } from "./data-error";
+import { rankByJourneyFit, type JourneyToFit } from "./journey-fit";
 import { webSupabase } from "./supabase";
 import type { TrustEntry, TrustMap } from "./trust";
 
@@ -64,6 +65,8 @@ export type PlaceCard = {
   /** Null means unrecorded, which is a different answer from "has none" (D-080). */
   accessibility: Accessibility | null;
   trust: TrustMap;
+  /** Set by search when the traveler has a journey: this could go into it (PRD-DISC-006). */
+  fitsJourney?: boolean;
 };
 
 export type ExperienceCard = {
@@ -81,6 +84,8 @@ export type ExperienceCard = {
   trust: TrustMap;
   /** Resolved from the experience's availability rules, for the plain-language line. */
   availability: AvailabilityWindow[];
+  /** Set by search when the traveler has a journey: this could go into it (PRD-DISC-006). */
+  fitsJourney?: boolean;
 };
 
 export type AvailabilityWindow = { kind: string; start: string | null; end: string | null };
@@ -731,6 +736,8 @@ export async function searchKnowledge(
   query: string,
   filters: SearchFilters,
   locale: string,
+  /** The traveler's journey under way or ahead, when there is one (PRD-DISC-006). */
+  fit: JourneyToFit | null = null,
 ): Promise<SearchResults> {
   const supabase = await webSupabase();
   const trimmed = query.trim();
@@ -840,8 +847,19 @@ export async function searchKnowledge(
     }
   }
 
-  const experienceCards = experienceRows.map((row) => toExperienceCard(row, locale, []));
-  const placeCards = placeRows.map((row) => toPlaceCard(row, locale));
+  /*
+   * "Fits your journey" first (PRD-DISC-006): ranked, never filtered, after every filter has
+   * run, so the cap below keeps the fitting results rather than cutting them.
+   */
+  const fitting = fit ? await journeyFit(supabase, fit, experienceRows, placeRows) : null;
+  const experienceCards = rankIfFitting(
+    experienceRows.map((row) => toExperienceCard(row, locale, [])),
+    fitting?.experiences,
+  );
+  const placeCards = rankIfFitting(
+    placeRows.map((row) => toPlaceCard(row, locale)),
+    fitting?.places,
+  );
 
   return {
     /*
@@ -880,6 +898,64 @@ type Point = { latitude: number | null; longitude: number | null };
 
 /** Roughly a twenty-minute walk: near enough to fit around what is already planned. */
 const NEAR_METRES = 2000;
+
+/** Which results could go into the journey: at its destination, and open or running on one of its days. */
+async function journeyFit(
+  supabase: Client,
+  fit: JourneyToFit,
+  experienceRows: { id: string | null; destination_id: string | null; place_id: string | null }[],
+  placeRows: { id: string | null; destination_id: string | null; opening_schedule: unknown }[],
+): Promise<{ experiences: Set<string>; places: Set<string> }> {
+  const here = experienceRows.filter((row) => row.destination_id === fit.destinationId);
+  const [hosts, rules] = await Promise.all([
+    hostPlaces(
+      supabase,
+      here.map((row) => row.place_id),
+    ),
+    availabilityRulesFor(
+      supabase,
+      here.map((row) => row.id),
+    ),
+  ]);
+
+  const experiences = new Set(
+    here
+      .filter((row) =>
+        fit.dates.some(
+          (date) =>
+            resolveAvailability({
+              rules: rules.filter((rule) => rule.experience_id === row.id),
+              date,
+              openingSchedule: row.place_id
+                ? (hosts.get(row.place_id)?.openingSchedule ?? null)
+                : null,
+            }).available,
+        ),
+      )
+      .map((row) => row.id)
+      .filter((id): id is string => !!id),
+  );
+
+  const places = new Set(
+    placeRows
+      .filter(
+        (row) =>
+          row.destination_id === fit.destinationId &&
+          fit.dates.some((date) => openOn(row.opening_schedule as OpeningSchedule | null, date)),
+      )
+      .map((row) => row.id)
+      .filter((id): id is string => !!id),
+  );
+
+  return { experiences, places };
+}
+
+function rankIfFitting<T extends { id: string }>(
+  cards: T[],
+  fitting: Set<string> | undefined,
+): T[] {
+  return fitting ? rankByJourneyFit(cards, (card) => fitting.has(card.id)) : cards;
+}
 
 async function hostPlaces(
   supabase: Client,
@@ -1015,13 +1091,13 @@ export async function getKnowledgeBundle(
     supabase
       .from("v_published_places")
       .select(
-        "id, opening_schedule, dress_code_i18n, entry_requirements_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, accessibility",
+        "id, opening_schedule, dress_code_i18n, entry_requirements_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, accessibility, trust",
       )
       .eq("destination_id", destinationId),
     supabase
       .from("v_published_experiences")
       .select(
-        "id, place_id, route_id, duration_min_minutes, duration_likely_minutes, duration_max_minutes, is_outdoor, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before",
+        "id, place_id, route_id, duration_min_minutes, duration_likely_minutes, duration_max_minutes, is_outdoor, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before, trust",
       )
       .eq("destination_id", destinationId),
     supabase
@@ -1097,7 +1173,17 @@ export async function getKnowledgeBundle(
       distance_m: row.distance_m,
       duration_seconds: row.duration_seconds,
     })),
-    trust: {},
+    /*
+     * Trust by entity id, from the published views. Journey Health reports low-confidence and
+     * conflicting critical information from this (PRD F5 check 5), and the journey screen notes
+     * stale fields (PRD-TRST-004). It was left empty, so neither ever fired.
+     */
+    trust: Object.fromEntries(
+      [...places, ...experiences].map((row) => [
+        row.id as string,
+        (row.trust as TrustMap | null) ?? {},
+      ]),
+    ),
   };
 }
 

@@ -68,15 +68,6 @@ const GROUP_ORDER: PrepareGroup[] = [
   "downloads",
 ];
 
-const GROUP_HEADING: Record<PrepareGroup, string> = {
-  bookings: "Bookings & tickets",
-  documents: "Documents",
-  carry: "What to carry",
-  know: "Know before you go",
-  travelers: "For your travelers",
-  downloads: "Downloads",
-};
-
 /**
  * The engine's title keys turned into sentences.
  *
@@ -90,29 +81,24 @@ function titleFor(task: PrepareTask, labels: Map<string, string>, t: Translate):
       return engineText(t, task.titleKey, task.params);
     case "prepare.booking.title": {
       const id = String(task.params?.["experienceId"] ?? "");
-      return `Book ${labels.get(id) ?? "something you added"} in advance`;
+      return t("prepare.booking.title", { name: labels.get(id) ?? t("prepare.booking.unnamed") });
     }
     case "prepare.know.dress_code":
-      return "What to wear";
     case "prepare.carry.entry_requirement":
-      return "What to bring to get in";
     case "prepare.travelers.check_step_free":
-      return "Check step-free access before you go";
     case "prepare.travelers.confirm_rest_points":
-      return "Confirm where you can rest along the way";
     case "prepare.downloads.save_offline":
-      return "Save your journey for offline";
+      return t(task.titleKey);
     default:
-      return "Something to prepare";
+      return t("prepare.fallback_title");
   }
 }
 
 /** What a trust badge on this task is ABOUT, read out to a screen reader. */
-const FIELD_LABEL: Record<string, string> = {
-  advance_booking_required: "Booking requirement",
-  entry_requirements_i18n: "Entry requirements",
-  opening_schedule: "Opening hours",
-};
+function fieldLabel(t: Translate, field: string): string | null {
+  const key = `prepare.field_labels.${field}`;
+  return t.has(key) ? t(key) : null;
+}
 
 /**
  * Build the checklist for one journey: regenerate, persist identities, render.
@@ -131,8 +117,9 @@ export async function getPrepareChecklist(
   if (!detail) return null;
 
   const { journey, items, labels } = detail;
+  const t = await getTranslations({ locale });
   const empty = {
-    journeyTitle: journey.title ?? "Your journey",
+    journeyTitle: journey.title ?? t("addToJourney.untitled"),
     startDate: journey.startDate,
     groups: [] as PrepareGroupView[],
     doneCount: 0,
@@ -159,10 +146,9 @@ export async function getPrepareChecklist(
 
   await syncTaskRows(supabase, journeyId, tasks);
 
-  const [doneKeys, trust, t] = await Promise.all([
+  const [doneKeys, trust] = await Promise.all([
     doneKeysFor(supabase, journeyId),
     trustFor(supabase, tasks),
-    getTranslations({ locale }),
   ]);
 
   const rendered: PrepareItem[] = tasks.map((task) => ({
@@ -173,15 +159,15 @@ export async function getPrepareChecklist(
     dueDate: task.dueDate ?? null,
     isDone: doneKeys.has(task.id),
     trust: task.trustRef ? trust.get(task.trustRef.entityId)?.[task.trustRef.field] : undefined,
-    trustFieldLabel: task.trustRef ? (FIELD_LABEL[task.trustRef.field] ?? null) : null,
+    trustFieldLabel: task.trustRef ? fieldLabel(t, task.trustRef.field) : null,
   }));
 
   return {
-    journeyTitle: journey.title ?? "Your journey",
+    journeyTitle: journey.title ?? t("addToJourney.untitled"),
     startDate: journey.startDate,
     groups: GROUP_ORDER.map((group) => ({
       group,
-      heading: GROUP_HEADING[group],
+      heading: t(`prepare.groups.${group}`),
       tasks: rendered.filter((t) => t.group === group),
     })).filter((g) => g.tasks.length > 0),
     doneCount: rendered.filter((t) => t.isDone).length,

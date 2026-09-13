@@ -1,4 +1,4 @@
-import { LOCALES, isLocale } from "@mandhira/i18n";
+import { DEFAULT_LOCALE, LOCALES, isLocale } from "@mandhira/i18n";
 import { fontVariables } from "@mandhira/ui/fonts";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
@@ -12,12 +12,24 @@ import { UpdateToast } from "@/components/update-toast";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
-export const metadata: Metadata = {
-  title: "Mandhira",
-  description: "Plan a pilgrimage around what matters to you.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Mandhira", statusBarStyle: "default" },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({
+    locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+    namespace: "meta",
+  });
+
+  return {
+    title: "Mandhira",
+    description: t("description"),
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "Mandhira", statusBarStyle: "default" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

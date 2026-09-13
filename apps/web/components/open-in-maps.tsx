@@ -1,6 +1,7 @@
 "use client";
 
 import { Navigation } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /**
@@ -34,6 +35,7 @@ export function OpenInMaps({
    * Until it resolves, the geo: URI is used. It is the honest default rather than a
    * placeholder: it is the platform-neutral standard, and Android answers it directly.
    */
+  const t = useTranslations("openInMaps");
   const [platform, setPlatform] = useState<"apple" | "android" | "other">("other");
 
   useEffect(() => {
@@ -55,9 +57,9 @@ export function OpenInMaps({
       }
     >
       <Navigation className="size-4" aria-hidden />
-      Open in Maps
+      {t("action")}
       {/* Says where the link goes, because it leaves the app (WCAG 2.2 AA, PRD §12.8). */}
-      <span className="sr-only">— opens {label} in your maps app</span>
+      <span className="sr-only">{t("opens_label", { label })}</span>
     </a>
   );
 }

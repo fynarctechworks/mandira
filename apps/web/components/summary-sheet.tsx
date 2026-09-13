@@ -1,7 +1,9 @@
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 
 import type { SharedItem, SharedSummary } from "../lib/share";
-import { durationLabel } from "../lib/present";
+import { useTranslations } from "next-intl";
+
+import { durationLabel, type PlainTranslate } from "../lib/present";
 
 /**
  * The Journey Summary (PRD-PREP-004) — day-by-day, read-only, printable.
@@ -23,6 +25,8 @@ const TIER_WORD = {
 } as const;
 
 export function SummarySheet({ summary, locale }: { summary: SharedSummary; locale: string }) {
+  const t = useTranslations();
+  const tPresent = useTranslations("present");
   const { journey, items, facilities } = summary;
   const start = journey.startDate ?? new Date().toISOString().slice(0, 10);
   const dayIndexes = [...new Set(items.map((i) => i.dayIndex))].sort((a, b) => a - b);
@@ -30,7 +34,7 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
   return (
     <article className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-display">{journey.title ?? "Your journey"}</h1>
+        <h1 className="text-display">{journey.title ?? t("addToJourney.untitled")}</h1>
         {journey.startDate ? (
           <p className="text-body-sm text-text-secondary">
             {formatDay(journey.startDate, locale)}
@@ -42,7 +46,7 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
       </header>
 
       {dayIndexes.length === 0 ? (
-        <p className="text-body text-text-secondary">There's nothing in this journey yet.</p>
+        <p className="text-body text-text-secondary">{t("summarySheet.empty")}</p>
       ) : null}
 
       {dayIndexes.map((dayIndex) => {
@@ -51,7 +55,7 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
           .sort((a, b) => a.sortOrder - b.sortOrder);
 
         const date = dateForDay(start, dayIndex);
-        const requirements = requirementsFor(dayItems);
+        const requirements = requirementsFor(dayItems, t);
 
         return (
           <section key={dayIndex} className="summary-day flex flex-col gap-3">
@@ -85,14 +89,14 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
                   className="summary-entry flex flex-col gap-1 border-b border-border-subtle pb-3 last:border-b-0"
                 >
                   <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="text-h3">{item.label ?? "Something you added"}</h3>
+                    <h3 className="text-h3">{item.label ?? t("common.something_you_added")}</h3>
                     <span className="summary-tier rounded-full border border-border px-2 py-0.5 text-caption font-medium">
                       {TIER_WORD[item.tier]}
                     </span>
                   </div>
 
                   <p className="text-body-sm text-text-secondary">
-                    {timing(item, date, journey.timezone, locale)}
+                    {timing(item, date, journey.timezone, locale, t, tPresent)}
                   </p>
                 </li>
               ))}
@@ -103,7 +107,7 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
 
       {facilities.length > 0 ? (
         <section className="summary-entry flex flex-col gap-2">
-          <h2 className="text-h2">If you need something</h2>
+          <h2 className="text-h2">{t("summarySheet.facilities_title")}</h2>
           <ul className="flex flex-col gap-1">
             {facilities.map((facility) => (
               <li key={facility.id} className="text-body-sm">
@@ -125,23 +129,33 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
  * the same rule should say it once, and a traveler does not care which of them it came
  * from — they care what to put in their bag.
  */
-function requirementsFor(dayItems: SharedItem[]): string[] {
+function requirementsFor(dayItems: SharedItem[], t: PlainTranslate): string[] {
   const lines = new Set<string>();
 
   for (const item of dayItems) {
-    if (item.entryRequirements) lines.add(`To get in: ${item.entryRequirements}`);
-    if (item.dressCode) lines.add(`What to wear: ${item.dressCode}`);
+    if (item.entryRequirements) {
+      lines.add(t("summarySheet.to_get_in", { text: item.entryRequirements }));
+    }
+    if (item.dressCode) lines.add(t("summarySheet.what_to_wear", { text: item.dressCode }));
   }
 
   return [...lines];
 }
 
 /** "6:00 AM — 7:30 AM · 1 h 30 m", or an honest "Not scheduled". */
-function timing(item: SharedItem, date: string, timeZone: string, locale: string): string {
-  const duration = durationLabel(item.durationLikelyMinutes);
+function timing(
+  item: SharedItem,
+  date: string,
+  timeZone: string,
+  locale: string,
+  t: PlainTranslate,
+  tPresent: PlainTranslate,
+): string {
+  const duration = durationLabel(item.durationLikelyMinutes, tPresent);
+  const unscheduled = t("common.not_scheduled");
 
   if (!item.plannedStartAt) {
-    return duration ? `Not scheduled · ${duration}` : "Not scheduled";
+    return duration ? `${unscheduled} · ${duration}` : unscheduled;
   }
 
   const from = clock(item.plannedStartAt, date, timeZone, locale);

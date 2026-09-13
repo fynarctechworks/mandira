@@ -1,5 +1,7 @@
 import { CloudRain, Thermometer } from "lucide-react";
 
+import { useTranslations } from "next-intl";
+
 import type { LiveCondition, WeatherHour } from "../lib/live-conditions";
 
 /**
@@ -15,6 +17,7 @@ import type { LiveCondition, WeatherHour } from "../lib/live-conditions";
  * assumption that conditions are fine.
  */
 export function LiveConditions({ conditions }: { conditions: LiveCondition[] }) {
+  const t = useTranslations("conditions");
   const weather = conditions.find((condition) => condition.feedKind === "weather");
   if (!weather) return null;
 
@@ -23,7 +26,7 @@ export function LiveConditions({ conditions }: { conditions: LiveCondition[] }) 
   return (
     <section aria-labelledby="conditions" className="flex flex-col gap-2">
       <h2 id="conditions" className="text-h2">
-        Conditions
+        {t("title")}
       </h2>
 
       <div className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
@@ -38,11 +41,11 @@ export function LiveConditions({ conditions }: { conditions: LiveCondition[] }) 
             {next ? (
               <p className="flex items-center gap-2 text-body">
                 <Thermometer className="size-4" aria-hidden />
-                {Math.round(next.temperatureC)}°C
+                {t("temperature", { degrees: Math.round(next.temperatureC) })}
                 {next.precipitationChance >= 30 ? (
                   <span className="flex items-center gap-1 text-text-secondary">
                     <CloudRain className="size-4" aria-hidden />
-                    {next.precipitationChance}% chance of rain
+                    {t("rain_chance", { percent: next.precipitationChance })}
                   </span>
                 ) : null}
               </p>
@@ -65,18 +68,23 @@ export function LiveConditions({ conditions }: { conditions: LiveCondition[] }) 
  * learn to skim — and then the thunderstorm during the evening aarti gets skimmed with it.
  */
 export function WeatherWarning({ hours }: { hours: WeatherHour[] }) {
+  const t = useTranslations("conditions");
   if (hours.length === 0) return null;
 
   const worst = hours[0]!;
 
   const sentence =
     worst.condition === "thunderstorm"
-      ? "There's a thunderstorm forecast around this time."
+      ? t("thunderstorm")
       : worst.condition === "heavy_rain"
-        ? "Heavy rain is forecast around this time."
+        ? t("heavy_rain")
         : worst.condition === "hot"
-          ? `It's forecast to reach ${Math.round(worst.temperatureC)}°C around this time.`
-          : "Rain is likely around this time.";
+          ? t("hot", { degrees: Math.round(worst.temperatureC) })
+          : t("rain");
 
-  return <p className="text-body-sm text-status-tight">{sentence} This one is outdoors.</p>;
+  return (
+    <p className="text-body-sm text-status-tight">
+      {sentence} {t("outdoors")}
+    </p>
+  );
 }

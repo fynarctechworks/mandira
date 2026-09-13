@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { LiveJourney } from "../../../../../components/live-journey";
 import { StartToday } from "../../../../../components/start-today";
@@ -33,6 +33,7 @@ export default async function LivePage({
 
   const supabase = await webSupabase();
   const view = await getLiveView(supabase, id, locale, new Date().toISOString());
+  const tJourney = await getTranslations("addToJourney");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -77,7 +78,7 @@ export default async function LivePage({
         className="flex min-h-11 items-center gap-2 text-body-sm text-text-secondary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        {view?.journeyTitle ?? "Your journey"}
+        {view?.journeyTitle ?? tJourney("untitled")}
       </Link>
 
       {/*

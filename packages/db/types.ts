@@ -3917,6 +3917,7 @@ export type Database = {
         Returns: Json
       }
       export_my_data: { Args: never; Returns: Json }
+      forget_report_photo: { Args: { p_media_id: string }; Returns: boolean }
       freshness_rows: {
         Args: { p_destination_id?: string; p_filter?: string; p_limit?: number }
         Returns: {
@@ -4102,6 +4103,13 @@ export type Database = {
           p_journey_id: string
         }
         Returns: undefined
+      }
+      report_photos_due: {
+        Args: { p_limit?: number }
+        Returns: {
+          media_id: string
+          storage_path: string
+        }[]
       }
       request_account_deletion: { Args: never; Returns: string }
       request_is_client: { Args: never; Returns: boolean }

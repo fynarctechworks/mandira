@@ -22,12 +22,12 @@ import { prepareReportPhoto, type PreparedReportPhoto } from "../lib/report-phot
  * they have. No copy here implies the app has been corrected.
  */
 const TYPES = [
-  { value: "timing_changed", label: "The times are different" },
-  { value: "closed", label: "It's closed" },
-  { value: "accessibility_issue", label: "Getting in is harder than described" },
-  { value: "wrong_information", label: "Something here is wrong" },
-  { value: "outdated_guidance", label: "The advice is out of date" },
-  { value: "other", label: "Something else" },
+  "timing_changed",
+  "closed",
+  "accessibility_issue",
+  "wrong_information",
+  "outdated_guidance",
+  "other",
 ] as const;
 
 export function ReportAChange({
@@ -44,7 +44,8 @@ export function ReportAChange({
   locale: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [type, setType] = useState<(typeof TYPES)[number]["value"]>("timing_changed");
+  const tReport = useTranslations("reportChange");
+  const [type, setType] = useState<(typeof TYPES)[number]>("timing_changed");
   const [description, setDescription] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "problem">("idle");
 
@@ -137,49 +138,49 @@ export function ReportAChange({
         onClick={() => setOpen(true)}
         className="focus-ring min-h-11 self-start px-2 text-body-sm font-medium text-brand-primary-text"
       >
-        Report a change
+        {tReport("open")}
       </button>
 
-      <BottomSheet open={open} onOpenChange={setOpen} title={`Report a change — ${entityName}`}>
+      <BottomSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={tReport("sheet_title", { name: entityName })}
+      >
         {state === "sent" ? (
           <div className="flex flex-col gap-3">
             {/* PRD F14's exact promise. Not "fixed", not "updated" — verified. */}
-            <p className="text-body">Thanks — our team will verify this.</p>
+            <p className="text-body">{tReport("thanks")}</p>
             {photoAttached ? null : (
               <p className="text-body-sm text-text-secondary">{t("notAttached")}</p>
             )}
-            <p className="text-body-sm text-text-secondary">
-              Nothing changes on the page until someone has checked it against a source. If enough
-              people report the same thing, we&apos;ll mark it as worth checking locally in the
-              meantime.
-            </p>
+            <p className="text-body-sm text-text-secondary">{tReport("thanks_body")}</p>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Close
+              {tReport("close")}
             </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-body-sm font-medium">What did you notice?</legend>
+              <legend className="text-body-sm font-medium">{tReport("what")}</legend>
 
               {TYPES.map((option) => (
-                <label key={option.value} className="flex min-h-11 items-center gap-3">
+                <label key={option} className="flex min-h-11 items-center gap-3">
                   <input
                     type="radio"
                     name="report-type"
-                    value={option.value}
-                    checked={type === option.value}
-                    onChange={() => setType(option.value)}
+                    value={option}
+                    checked={type === option}
+                    onChange={() => setType(option)}
                     className="focus-ring size-5"
                   />
-                  <span className="text-body">{option.label}</span>
+                  <span className="text-body">{tReport(`types.${option}`)}</span>
                 </label>
               ))}
             </fieldset>
 
             <div className="flex flex-col gap-1">
               <label htmlFor="report-description" className="text-body-sm font-medium">
-                Anything else worth knowing? (optional)
+                {tReport("details")}
               </label>
               <textarea
                 id="report-description"
@@ -190,7 +191,7 @@ export function ReportAChange({
                 className="focus-ring rounded-lg border border-border bg-bg-surface p-3 text-body-sm"
               />
               <p className="text-caption text-text-secondary">
-                {500 - description.length} characters left.
+                {tReport("characters_left", { count: 500 - description.length })}
               </p>
             </div>
 
@@ -244,7 +245,7 @@ export function ReportAChange({
 
             {state === "problem" ? (
               <p role="alert" className="text-body-sm text-status-broken">
-                That didn&apos;t send. Please try again.
+                {tReport("not_sent")}
               </p>
             ) : null}
 
@@ -253,7 +254,7 @@ export function ReportAChange({
               disabled={state === "sending" || photoState === "preparing"}
               fullWidth
             >
-              {state === "sending" ? "Sending…" : "Send"}
+              {state === "sending" ? tReport("sending") : tReport("send")}
             </Button>
           </div>
         )}

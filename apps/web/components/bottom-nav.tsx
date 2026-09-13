@@ -27,7 +27,7 @@ export function BottomNav() {
 
   return (
     <nav
-      aria-label="Main"
+      aria-label={t("label")}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border-subtle bg-surface"
     >
       <ul className="mx-auto flex max-w-md">

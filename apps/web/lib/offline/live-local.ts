@@ -1,3 +1,4 @@
+import type { Translate } from "../engine-text";
 import { assembleLiveView, type LivePlace, type LiveView } from "../live-view";
 import { readSnapshot } from "./sync";
 
@@ -18,6 +19,8 @@ export async function readLiveViewLocally(
   journeyId: string,
   locale: string,
   nowAt: string,
+  /** The screen's own translator — the wording is the catalogs', offline as online. */
+  t: Translate,
 ): Promise<LiveView | null> {
   const snapshot = await readSnapshot(journeyId);
   if (!snapshot) return null;
@@ -54,5 +57,6 @@ export async function readLiveViewLocally(
     places,
     nowAt,
     syncedAt: snapshot.syncedAt,
+    t,
   });
 }

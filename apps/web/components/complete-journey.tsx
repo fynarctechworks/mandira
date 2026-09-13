@@ -2,6 +2,7 @@
 
 import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 /**
@@ -15,6 +16,7 @@ import { useState } from "react";
  * whose journey went badly should not meet a celebration on this screen.
  */
 export function CompleteJourney({ journeyId }: { journeyId: string }) {
+  const t = useTranslations("completeJourney");
   const router = useRouter();
   const [state, setState] = useState<"idle" | "saving" | "problem">("idle");
 
@@ -41,14 +43,12 @@ export function CompleteJourney({ journeyId }: { journeyId: string }) {
         onClick={() => void complete()}
         disabled={state === "saving"}
       >
-        {state === "saving" ? "Saving…" : "Mark this journey complete"}
+        {state === "saving" ? t("saving") : t("action")}
       </Button>
-      <p className="text-caption text-text-secondary">
-        Keeps this record as it stands today. You can still add to your reflection afterwards.
-      </p>
+      <p className="text-caption text-text-secondary">{t("hint")}</p>
       {state === "problem" ? (
         <p role="alert" className="text-body-sm text-status-broken">
-          That didn&apos;t save. Please try again.
+          {t("not_saved")}
         </p>
       ) : null}
     </section>
