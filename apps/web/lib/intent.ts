@@ -11,6 +11,7 @@ import {
   type ExtractedBrief,
 } from "@mandhira/providers";
 
+import { closestMatches } from "./closest-matches";
 import { getDestinationCards, getDestinationPage, type ExperienceCard } from "./knowledge";
 
 /** TRD §7.2: the model chooses from at most 200 published experiences. */
@@ -39,6 +40,11 @@ export type IntentResult =
       suggested: string[];
       unclear: ExtractedBrief["unclear"];
       unmatched: string[];
+      /**
+       * PRD-INT-005: each unmatched request with the closest PUBLISHED experiences by name —
+       * never invented, and added only if the traveler taps one.
+       */
+      unmatchedMatches: { text: string; closest: IntentExperience[] }[];
     }
   /** The planner falls back to the structured form (TRD §5.5); never an error screen. */
   | { status: "unavailable"; reason: string };
@@ -129,6 +135,7 @@ export async function extractJourneyBrief(
       suggested: suggestedFields(brief),
       unclear: brief.unclear,
       unmatched: brief.unmatched,
+      unmatchedMatches: unmatchedMatches(brief, candidates),
     };
   } catch (cause) {
     if (cause instanceof AiUnavailableError || cause instanceof NotGroundedError) {
@@ -136,6 +143,22 @@ export async function extractJourneyBrief(
     }
     throw cause;
   }
+}
+
+function unmatchedMatches(
+  brief: ExtractedBrief,
+  candidates: IntentCandidates,
+): { text: string; closest: IntentExperience[] }[] {
+  const picked = new Set([...brief.mustDo, ...brief.wouldLike].map((pick) => pick.experienceId));
+  const named = candidates.experiences.map((experience) => ({
+    id: experience.id,
+    name: experience.name.text,
+    destinationId: experience.destinationId,
+  }));
+  return brief.unmatched.map((text) => ({
+    text,
+    closest: closestMatches(text, named, { exclude: picked }),
+  }));
 }
 
 function defaultProvider(): AiProvider {

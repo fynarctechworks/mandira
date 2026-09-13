@@ -104,6 +104,7 @@ describe("extractJourneyBrief", () => {
       suggested: ["pace", "travelers.0"],
       unclear: brief.unclear,
       unmatched: ["a boat ride"],
+      unmatchedMatches: [{ text: "a boat ride", closest: [] }],
     });
     expect(extractIntent).toHaveBeenCalledWith(
       expect.objectContaining({

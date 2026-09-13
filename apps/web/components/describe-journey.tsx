@@ -16,7 +16,7 @@ import {
   type Mobility,
   type Pace,
 } from "../lib/brief-to-preview";
-import type { IntentResult } from "../lib/intent";
+import type { IntentExperience, IntentResult } from "../lib/intent";
 
 type Destination = { id: string; slug: string; name: string };
 type Extracted = Extract<IntentResult, { status: "extracted" }>;
@@ -193,6 +193,8 @@ function BriefReview({
   const [pace, setPace] = useState<Pace | "">(brief.pace?.value ?? "");
   const [mobilityChoice, setMobilityChoice] = useState<Mobility | null>(null);
   const [returnIndex, setReturnIndex] = useState<number | null>(null);
+  // Closest matches the traveler tapped for something Mandhira did not know (PRD-INT-005).
+  const [addedLikes, setAddedLikes] = useState<IntentExperience[]>([]);
 
   const decide = (key: string, decision: Decision) =>
     setDecisions((current) => ({ ...current, [key]: decision }));
@@ -211,7 +213,11 @@ function BriefReview({
    * carry experiences across — an id from Srisailam in a Tirumala plan is nothing the engine
    * can place.
    */
-  const names = new Map(result.experiences.map((experience) => [experience.id, experience]));
+  const names = new Map(
+    [...result.experiences, ...result.unmatchedMatches.flatMap((match) => match.closest)].map(
+      (experience) => [experience.id, experience],
+    ),
+  );
   const picksFor = (
     picks: { experienceId: string }[],
     prefix: "mustDo" | "wouldLike",
@@ -223,7 +229,10 @@ function BriefReview({
         : [];
     });
   const mustPicks = picksFor(brief.mustDo, "mustDo");
-  const likePicks = picksFor(brief.wouldLike, "wouldLike");
+  const likePicks = picksFor(
+    [...brief.wouldLike, ...addedLikes.map((experience) => ({ experienceId: experience.id }))],
+    "wouldLike",
+  );
 
   const travelers = brief.travelers.map((traveler, index) => ({
     ...traveler,
@@ -500,10 +509,52 @@ function BriefReview({
             {t("unmatched_title")}
           </h3>
           <p className="text-body-sm text-text-secondary">{t("unmatched_body")}</p>
-          <ul className="list-disc pl-5 text-body-sm">
-            {result.unmatched.map((item, index) => (
-              <li key={`${item}-${index}`}>{item}</li>
-            ))}
+          <ul className="flex flex-col gap-3">
+            {result.unmatchedMatches.map((match, index) => {
+              // Only matches at the chosen destination can go into this plan.
+              const here = match.closest.filter(
+                (experience) => experience.destinationId === destinationId,
+              );
+              return (
+                <li key={`${match.text}-${index}`} className="flex flex-col gap-2 text-body-sm">
+                  <p>{t("no_verified", { name: match.text })}</p>
+                  {here.length === 0 ? (
+                    <p className="text-text-secondary">{t("no_closest")}</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-caption font-medium text-text-secondary">
+                        {t("closest_title")}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {here.map((experience) => {
+                          const added = addedLikes.some((like) => like.id === experience.id);
+                          return (
+                            <Button
+                              key={experience.id}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={added}
+                              onClick={() =>
+                                setAddedLikes((current) =>
+                                  current.some((like) => like.id === experience.id)
+                                    ? current
+                                    : [...current, experience],
+                                )
+                              }
+                            >
+                              {added
+                                ? `${experience.name} — ${t("added_closest")}`
+                                : t("add_closest", { name: experience.name })}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

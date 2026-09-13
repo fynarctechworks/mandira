@@ -364,6 +364,11 @@
     "needs_basics": "Choose a destination and a start date to build the plan.",
     "build": "Build my journey",
     "edit_description": "Change the description",
-    "adjust_in_form": "Adjust with the questions instead"
+    "adjust_in_form": "Adjust with the questions instead",
+    "no_verified": "No verified information yet about “{name}”.",
+    "closest_title": "Closest published",
+    "add_closest": "Add {name}",
+    "added_closest": "Added to what you would like to do",
+    "no_closest": "Nothing published is close to this yet."
   }
 }
