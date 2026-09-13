@@ -1,7 +1,8 @@
 import { resolveAvailability } from "./availability";
 import { computeHealth, type HealthState, type TrustCause } from "./health";
+import { checkItemAction } from "./item-rules";
 import { scheduleDay } from "./schedule";
-import { dateForDay, toMinutes } from "./time";
+import { dateForDay, fromInstant, toMinutes } from "./time";
 import type {
   Journey,
   JourneyItem,
@@ -53,6 +54,22 @@ export type ItemChange =
   | { op: "move_day"; itemId: string; toDayIndex: number }
   | { op: "remove"; itemId: string };
 
+/**
+ * One item an option changes, with where it was and where it would be (PRD F6: "each option
+ * lists affected items with before/after times"). Instants, not strings to display — the
+ * caller formats them in the traveler's timezone and language.
+ */
+export type AffectedItem = {
+  itemId: string;
+  beforeDayIndex: number;
+  beforeStartAt: string | null;
+  beforeEndAt: string | null;
+  /** Null when the option removes the item. */
+  afterDayIndex: number | null;
+  afterStartAt: string | null;
+  afterEndAt: string | null;
+};
+
 export type ChangeOption = {
   id: string;
   step: LadderStep;
@@ -63,6 +80,8 @@ export type ChangeOption = {
   params?: Record<string, string | number>;
   changes: ItemChange[];
   resultingState: HealthState;
+  /** Every item whose time or day this option changes, including knock-on shifts. */
+  affected: AffectedItem[];
   removedItemIds: string[];
   movedItemIds: string[];
   /** PRD F6: moving a PROTECTED item is always the traveler's explicit call. */
@@ -88,6 +107,8 @@ type Context = {
   travelers: TravelerProfile[];
   dependencies: JourneyItemDependency[];
   dayIndex: number;
+  /** The plan as scheduled once the trigger is applied — what every option is compared to. */
+  baseline: JourneyItem[];
 };
 
 /**
@@ -117,11 +138,13 @@ export function evaluateChange(input: {
     travelers: input.travelers ?? [],
     dependencies: input.dependencies ?? [],
     dayIndex: input.trigger.dayIndex,
+    baseline: [],
   };
 
   // The journey as it stands once the trigger is taken into account, before any option.
   const afterTrigger = applyTrigger(input.items, input.trigger);
   const baseline = evaluate(afterTrigger, context);
+  context.baseline = baseline.scheduled;
   const outcome = classify(baseline, afterTrigger, context);
 
   const card: ChangeCard = {
@@ -243,7 +266,9 @@ function absorbIntoBuffers(items: JourneyItem[], context: Context): ChangeOption
     .filter((i) => (i.buffer_minutes ?? 0) > 0)
     .map((i) => ({ itemId: i.id, minutes: i.buffer_minutes ?? 0 }));
 
-  const freeTime = day.filter((i) => i.item_type === "free_time");
+  const freeTime = day.filter(
+    (i) => i.item_type === "free_time" && checkItemAction(i.tier, "remove").allowed,
+  );
 
   if (slack.length === 0 && freeTime.length === 0) return [];
 
@@ -272,29 +297,52 @@ function absorbIntoBuffers(items: JourneyItem[], context: Context): ChangeOption
   ];
 }
 
-/** (b) Shorten an OPTIONAL item, or move it later in the day. */
+/** (b) Shorten an OPTIONAL item, or move it to another day it can actually happen on. */
 function shortenOrMoveOptional(items: JourneyItem[], context: Context): ChangeOption[] {
+  const dayCount = new Set(items.map((i) => i.day_index)).size;
+
   return ofDay(items, context.dayIndex)
-    .filter((i) => i.tier === "optional" && (i.duration_likely_minutes ?? 0) > 0)
+    .filter((i) => i.tier === "optional")
     .flatMap((item) => {
-      const current = item.duration_likely_minutes!;
+      const options: ChangeOption[] = [];
+      const current = item.duration_likely_minutes ?? 0;
       const floor = minimumDuration(item, context.knowledge);
 
       // Shortening below what the place actually takes is not shortening, it is pretending.
-      if (floor >= current) return [];
+      if (current > 0 && floor < current) {
+        options.push(
+          option({
+            id: `opt-b-shorten-${item.id}`,
+            step: "b",
+            labelKey: "change.option.shorten_item",
+            becauseKey: "change.because.keeps_everything",
+            params: { itemId: item.id, fromMinutes: current, toMinutes: floor },
+            changes: [{ op: "shorten", itemId: item.id, toMinutes: floor }],
+            items,
+            context,
+          }),
+        );
+      }
 
-      return [
-        option({
-          id: `opt-b-shorten-${item.id}`,
-          step: "b",
-          labelKey: "change.option.shorten_item",
-          becauseKey: "change.because.keeps_everything",
-          params: { itemId: item.id, fromMinutes: current, toMinutes: floor },
-          changes: [{ op: "shorten", itemId: item.id, toMinutes: floor }],
-          items,
-          context,
-        }),
-      ];
+      const target = checkItemAction(item.tier, "move").allowed
+        ? feasibleDayFor(item, context, dayCount)
+        : null;
+      if (target !== null) {
+        options.push(
+          option({
+            id: `opt-b-move-${item.id}`,
+            step: "b",
+            labelKey: "change.option.move_optional_to_day",
+            becauseKey: "change.because.nothing_removed",
+            params: { itemId: item.id, toDayIndex: target },
+            changes: [{ op: "move_day", itemId: item.id, toDayIndex: target }],
+            items,
+            context,
+          }),
+        );
+      }
+
+      return options;
     });
 }
 
@@ -303,7 +351,7 @@ function moveImportantToAnotherDay(items: JourneyItem[], context: Context): Chan
   const dayCount = new Set(items.map((i) => i.day_index)).size;
 
   return ofDay(items, context.dayIndex)
-    .filter((i) => i.tier === "important")
+    .filter((i) => i.tier === "important" && checkItemAction(i.tier, "move").allowed)
     .flatMap((item) => {
       const target = feasibleDayFor(item, context, dayCount);
       if (target === null) return [];
@@ -334,17 +382,26 @@ function moveProtectedWithinAvailability(items: JourneyItem[], context: Context)
   const date = dateForDay(context.journey.start_date, context.dayIndex);
 
   return ofDay(items, context.dayIndex)
-    .filter((i) => i.tier === "protected" && i.experience_id)
+    .filter(
+      (i) => i.tier === "protected" && i.experience_id && checkItemAction(i.tier, "move").allowed,
+    )
     .flatMap((item) => {
-      const windows = availabilityWindows(item, context, date);
-      if (windows.length < 2) return [];
+      const duration = item.duration_likely_minutes ?? 0;
+      const current = currentStartOf(item, context, date);
 
-      const currentStart = item.preferred_window_start
-        ? toMinutes(item.preferred_window_start)
-        : null;
-
-      const later = windows.find((w) => currentStart === null || w > currentStart);
-      if (later === undefined || later === currentStart) return [];
+      /*
+       * Candidate starts: each window's opening, and the latest start that still finishes
+       * inside it. The second is what makes a single long window useful — "go at 16:30
+       * instead of 15:00" is a real option when a temple is open all afternoon, and requiring
+       * two separate windows hid it in the most common case.
+       */
+      const later = availabilityWindows(item, context, date)
+        .flatMap((w) =>
+          [w.start, w.end - duration].filter((s) => s >= w.start && s + duration <= w.end),
+        )
+        .sort((a, b) => a - b)
+        .find((s) => current === null || s > current);
+      if (later === undefined) return [];
 
       return [
         option({
@@ -365,7 +422,7 @@ function moveProtectedWithinAvailability(items: JourneyItem[], context: Context)
 /** (e) Remove an OPTIONAL item. Always proposed, never applied on its own (PRD F4). */
 function removeOptional(items: JourneyItem[], context: Context): ChangeOption[] {
   return ofDay(items, context.dayIndex)
-    .filter((i) => i.tier === "optional")
+    .filter((i) => i.tier === "optional" && checkItemAction(i.tier, "remove").allowed)
     .map((item) =>
       option({
         id: `opt-e-remove-${item.id}`,
@@ -383,7 +440,7 @@ function removeOptional(items: JourneyItem[], context: Context): ChangeOption[] 
 /** (f) Last resort: propose removing an IMPORTANT item. Never PROTECTED, never FIXED. */
 function removeImportant(items: JourneyItem[], context: Context): ChangeOption[] {
   return ofDay(items, context.dayIndex)
-    .filter((i) => i.tier === "important")
+    .filter((i) => i.tier === "important" && checkItemAction(i.tier, "remove").allowed)
     .map((item) =>
       option({
         id: `opt-f-remove-${item.id}`,
@@ -440,7 +497,10 @@ function option(input: {
   requiresConfirmation?: boolean;
 }): ChangeOption {
   const applied = input.changes.reduce(applyChange, input.items);
-  const { state } = evaluate(applied, input.context);
+  // A move is judged on the day it leaves AND the day it lands on: relieving today by
+  // breaking tomorrow is not an improvement, it is the same problem somewhere else.
+  const touchedDays = input.changes.flatMap((c) => (c.op === "move_day" ? [c.toDayIndex] : []));
+  const after = evaluate(applied, input.context, touchedDays);
 
   return {
     id: input.id,
@@ -449,7 +509,8 @@ function option(input: {
     becauseKey: input.becauseKey,
     ...(input.params ? { params: input.params } : {}),
     changes: input.changes,
-    resultingState: state,
+    resultingState: after.state,
+    affected: affectedItems(input.context, after.scheduled, touchedDays),
     removedItemIds: input.changes.filter((c) => c.op === "remove").map((c) => c.itemId),
     movedItemIds: input.changes
       .filter((c) => c.op === "move_day" || c.op === "set_window")
@@ -458,8 +519,49 @@ function option(input: {
   };
 }
 
-/** Re-schedule and re-run health, which is the only way to know what an option achieves. */
-function evaluate(items: JourneyItem[], context: Context) {
+/** PRD F6: the items an option changes, each with its before and after times. */
+function affectedItems(
+  context: Context,
+  afterScheduled: JourneyItem[],
+  touchedDays: number[],
+): AffectedItem[] {
+  const involved = new Set([context.dayIndex, ...touchedDays]);
+  const after = new Map(afterScheduled.map((item) => [item.id, item]));
+
+  return context.baseline
+    .filter((item) => involved.has(item.day_index))
+    .flatMap<AffectedItem>((before) => {
+      const now = after.get(before.id);
+      const unchanged =
+        now !== undefined &&
+        now.day_index === before.day_index &&
+        now.planned_start_at === before.planned_start_at &&
+        now.planned_end_at === before.planned_end_at;
+      if (unchanged) return [];
+
+      return [
+        {
+          itemId: before.id,
+          beforeDayIndex: before.day_index,
+          beforeStartAt: before.planned_start_at ?? null,
+          beforeEndAt: before.planned_end_at ?? null,
+          afterDayIndex: now?.day_index ?? null,
+          afterStartAt: now?.planned_start_at ?? null,
+          afterEndAt: now?.planned_end_at ?? null,
+        },
+      ];
+    });
+}
+
+/**
+ * Re-schedule and re-run health, which is the only way to know what an option achieves.
+ *
+ * The state is judged on the trigger's day plus any day an option moves something onto —
+ * never the whole journey. A card about a delay today must not be decided by an unrelated
+ * problem next week: that suppressed every option whenever some other day was already
+ * Broken, leaving the traveler with no card at all.
+ */
+function evaluate(items: JourneyItem[], context: Context, touchedDays: number[] = []) {
   const dayIndexes = [...new Set(items.map((i) => i.day_index))];
   const scheduled: JourneyItem[] = [];
 
@@ -484,11 +586,20 @@ function evaluate(items: JourneyItem[], context: Context) {
   });
 
   const day = report.days.find((d) => d.dayIndex === context.dayIndex);
+  const judged = new Set([context.dayIndex, ...touchedDays]);
+
+  const state = report.days
+    .filter((d) => judged.has(d.dayIndex))
+    .reduce<HealthState>(
+      (worst, d) => (SEVERITY.indexOf(d.state) > SEVERITY.indexOf(worst) ? d.state : worst),
+      "comfortable",
+    );
 
   return {
-    state: report.journeyState,
+    state,
     causes: day?.causes ?? [],
     trustExposure: day?.trustExposure ?? [],
+    scheduled,
   };
 }
 
@@ -598,7 +709,19 @@ function feasibleDayFor(item: JourneyItem, context: Context, dayCount: number): 
   return null;
 }
 
-function availabilityWindows(item: JourneyItem, context: Context, date: string): number[] {
+/** Where an item currently starts: the traveler's preferred time, else where it is scheduled. */
+function currentStartOf(item: JourneyItem, context: Context, date: string): number | null {
+  if (item.preferred_window_start) return toMinutes(item.preferred_window_start);
+  const scheduled =
+    context.baseline.find((i) => i.id === item.id)?.planned_start_at ?? item.planned_start_at;
+  return scheduled ? fromInstant(scheduled, date, context.journey.timezone) : null;
+}
+
+function availabilityWindows(
+  item: JourneyItem,
+  context: Context,
+  date: string,
+): { start: number; end: number }[] {
   if (!item.experience_id) return [];
 
   const rules = context.knowledge.availability_rules.filter(
@@ -617,7 +740,9 @@ function availabilityWindows(item: JourneyItem, context: Context, date: string):
     ...(place?.opening_schedule ? { openingSchedule: place.opening_schedule } : {}),
   });
 
-  return availability.available ? availability.windows.map((w) => toMinutes(w.start)) : [];
+  return availability.available
+    ? availability.windows.map((w) => ({ start: toMinutes(w.start), end: toMinutes(w.end) }))
+    : [];
 }
 
 function asTime(minutes: number): string {

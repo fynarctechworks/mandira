@@ -52,15 +52,21 @@ select ok(
  * have excluded, and it does — the query dies on `vault.decrypted_secrets`. An OID cannot
  * be resolved to the wrong relation.
  */
+/*
+ * Two deliberate exceptions, both from 0029: `traveler_profiles` (CLAUDE.md §5 — the one
+ * identity RLS does not bind must not hold it) and `audit_ip_salts` (a salt the backend
+ * could read would make every ip_hash reversible).
+ */
 select is(
   (select count(*)::int
      from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
       and c.relkind = 'r'
+      and c.relname not in ('traveler_profiles', 'audit_ip_salts')
       and not has_table_privilege('service_role', c.oid, 'insert')),
   0,
-  'there is no table in public that service_role cannot write');
+  'there is no other table in public that service_role cannot write');
 
 select is(
   (select count(*)::int
@@ -68,6 +74,7 @@ select is(
      join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
       and c.relkind = 'r'
+      and c.relname not in ('traveler_profiles', 'audit_ip_salts')
       and not has_table_privilege('service_role', c.oid, 'select')),
   0,
   'nor one it cannot read');

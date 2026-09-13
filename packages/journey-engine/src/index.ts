@@ -35,6 +35,7 @@ export { buildInitialJourney, type BuildResult } from "./build";
 export {
   evaluateChange,
   applyOption,
+  type AffectedItem,
   type ChangeCard,
   type ChangeOption,
   type ChangeOutcome,

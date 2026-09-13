@@ -42,6 +42,15 @@ const ALLOWANCES = {
     kb: 190,
     why: "Carries the engine, the Dexie read path and the offline outbox because it must compute a plan with no network (PRD-OFFL-002/005). Deferring any of it means the airplane-mode screen cannot do the one thing it exists for.",
   },
+  /*
+   * Not a traveler route. `/design-system` sits outside `[locale]`, is `noindex`, and exists
+   * so the team can see every preset component in both themes at once (D-148). Rendering the
+   * whole library IS its job, so its first load is the library; a traveler never requests it.
+   */
+  "/design-system": {
+    kb: 540,
+    why: "Staff-only component reference outside the traveler route tree (D-148); it renders the entire preset library by design and is never loaded by a traveler.",
+  },
 };
 
 const appDir = process.argv[2];

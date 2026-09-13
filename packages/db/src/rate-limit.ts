@@ -27,6 +27,15 @@ export const RATE_LIMITS = {
   ops_ai_extract: [{ limit: 60, windowSeconds: 86_400 }],
   ops_translate_suggest: [{ limit: 200, windowSeconds: 86_400 }],
   travel_estimate: [{ limit: 1500, windowSeconds: 86_400 }],
+  /*
+   * Not in TRD §6.2, added by D-151 after the audit found every Ops Server Action unlimited.
+   * Generous enough that a researcher working through a destination never meets it; tight
+   * enough that a stolen session cannot rewrite the knowledge base in a loop.
+   */
+  ops_action: [
+    { limit: 60, windowSeconds: 60 },
+    { limit: 1500, windowSeconds: 3600 },
+  ],
 } as const satisfies Record<string, readonly { limit: number; windowSeconds: number }[]>;
 
 export type RateLimitScope = keyof typeof RATE_LIMITS;

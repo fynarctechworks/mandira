@@ -523,6 +523,7 @@ describe("applyOption", () => {
     becauseKey: "change.because.protects_the_rest",
     changes,
     resultingState: "comfortable",
+    affected: [],
     removedItemIds: [],
     movedItemIds: [],
     requiresConfirmation: false,

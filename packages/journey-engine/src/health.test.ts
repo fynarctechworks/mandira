@@ -221,6 +221,8 @@ describe("computeHealth", () => {
     });
 
     it("passes an item that sits inside its window", () => {
+      // 04:00–05:00 exactly fills the 04:00–05:00 window. A 04:30 start would run past
+      // closing, which audit-fixes.test.ts asserts is a problem.
       const report = computeHealth({
         journey,
         knowledge,
@@ -231,7 +233,7 @@ describe("computeHealth", () => {
             tier: "protected",
             experience_id: "e1",
             duration_likely_minutes: 60,
-            planned_start_at: on(4, 30),
+            planned_start_at: on(4, 0),
           }),
         ],
       });

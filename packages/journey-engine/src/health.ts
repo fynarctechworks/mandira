@@ -1,7 +1,7 @@
-import { checkReturnGuard } from "./return-guard";
+import { checkReturnGuard, type ReturnGuardResult } from "./return-guard";
 import { resolveAvailability } from "./availability";
 import { travelMinutes } from "./schedule";
-import { dateForDay, fromInstant, toMinutes } from "./time";
+import { dateForDay, fromInstant, toMinutes, toTimeOfDay } from "./time";
 import type {
   Journey,
   JourneyItem,
@@ -33,7 +33,7 @@ export type TrustCause = { key: string; params?: Record<string, string | number>
 export type DayHealth = {
   dayIndex: number;
   state: HealthState;
-  /** Time load as a percentage of the day's usable window. */
+  /** Time load as a percentage of the tightest usable window in the day. */
   timeLoadPct: number;
   causes: Cause[];
   trustExposure: TrustCause[];
@@ -68,6 +68,9 @@ const REST_INTERVAL_MINUTES = 90;
 /** What counts as a break rather than a pause between two things. */
 const REST_MINIMUM_MINUTES = 10;
 
+/** A guard against a malformed end date turning one report into thousands of empty days. */
+const MAX_REPORTED_DAYS = 60;
+
 const STATE_ORDER: HealthState[] = ["comfortable", "tight", "at_risk", "broken"];
 
 /**
@@ -91,17 +94,35 @@ export function computeHealth(input: {
   const travelers = input.travelers ?? [];
   const dependencies = input.dependencies ?? [];
 
-  const dayIndexes = [...new Set(items.map((i) => i.day_index))].sort((a, b) => a - b);
+  // Every day of the journey is reported, including one with nothing planned yet: a
+  // three-day journey whose report lists two days reads as a two-day journey.
+  const dayIndexes = [
+    ...new Set([
+      ...Array.from({ length: journeyDayCount(journey) }, (_, index) => index),
+      ...items.map((i) => i.day_index),
+    ]),
+  ].sort((a, b) => a - b);
+
+  /*
+   * The return guard is one question about the whole journey, so it is asked once — and
+   * its answer belongs to the day that holds the anchor. A train missed on day 3 does not
+   * make day 1 unworkable, and saying it does sends the traveler to fix the wrong day.
+   */
+  const guard = checkReturnGuard({ journey, items, knowledge });
+  const guardDay = guard.anchorItemId
+    ? (items.find((i) => i.id === guard.anchorItemId)?.day_index ?? null)
+    : null;
 
   const days = dayIndexes.map((dayIndex) =>
     computeDayHealth({
       journey,
       dayIndex,
       items: items.filter((i) => i.day_index === dayIndex),
-      allItems: items,
       knowledge,
       travelers,
       dependencies,
+      guard: dayIndex === guardDay ? guard : null,
+      returnAnchorId: guard.anchorItemId,
     }),
   );
 
@@ -120,35 +141,78 @@ function computeDayHealth(input: {
   journey: Journey;
   dayIndex: number;
   items: JourneyItem[];
-  allItems: JourneyItem[];
   knowledge: KnowledgeBundle;
   travelers: TravelerProfile[];
   dependencies: JourneyItemDependency[];
+  guard: ReturnGuardResult | null;
+  returnAnchorId: string | null;
 }): DayHealth {
-  const { journey, dayIndex, items, knowledge, travelers, dependencies } = input;
+  const { journey, dayIndex, items, knowledge, travelers, dependencies, guard } = input;
   const date = dateForDay(journey.start_date, dayIndex);
   const causes: Cause[] = [];
 
-  const windowMinutes = toMinutes(journey.day_end_time) - toMinutes(journey.day_start_time);
+  const dayStart = toMinutes(journey.day_start_time);
+  const dayEnd = toMinutes(journey.day_end_time);
+  const windowMinutes = dayEnd - dayStart;
 
   // ── 1. Time load ────────────────────────────────────────────────────────────
+  //
+  // PRD F5 measures load against "day start → day end, or → the next FIXED item". A FIXED
+  // item splits the day: what comes before it has to fit before it, and room after the
+  // train does not help a morning that cannot reach the station. So each stretch between
+  // anchors is judged on its own window, and the tightest one sets the day's load.
   const ordered = [...items].sort((a, b) => a.sort_order - b.sort_order);
 
-  let itemMinutes = 0;
-  let travelTotal = 0;
-  let bufferTotal = 0;
+  let load = 0;
+  let segmentStart = dayStart;
+  let segmentLoad = 0;
+  let worstRatio = 0;
+  let fixedUnreachable = false;
 
   ordered.forEach((item, index) => {
-    itemMinutes += item.duration_likely_minutes ?? 0;
-    if (index > 0) {
-      travelTotal += travelMinutes(ordered[index - 1]!, item, knowledge);
-      bufferTotal += item.buffer_minutes ?? 0;
+    const lead =
+      index > 0
+        ? travelMinutes(ordered[index - 1]!, item, knowledge) + (item.buffer_minutes ?? 0)
+        : 0;
+    const duration = loadDuration(item);
+    load += lead + duration;
+
+    if (item.tier !== "fixed" || !item.fixed_start_at) {
+      segmentLoad += lead + duration;
+      return;
     }
+
+    const anchor = fromInstant(item.fixed_start_at, date, journey.timezone);
+    const available = Math.max(0, anchor - segmentStart);
+    const needed = segmentLoad + lead;
+    if (available > 0) worstRatio = Math.max(worstRatio, needed / available);
+
+    const shortBy = needed - available;
+    // The journey's return anchor is the return guard's to report; saying it twice is noise.
+    if (shortBy > 0 && item.id !== input.returnAnchorId) {
+      causes.push({
+        check: "time_load",
+        key: "health.cause.fixed_unreachable",
+        params: { minutes: shortBy },
+        itemId: item.id,
+      });
+      fixedUnreachable = true;
+    }
+
+    segmentStart = Math.max(segmentStart, anchor + duration);
+    segmentLoad = 0;
   });
 
-  const load = itemMinutes + travelTotal + bufferTotal;
-  const timeLoadPct = windowMinutes > 0 ? Math.round((load / windowMinutes) * 100) : 0;
-  const overrunMinutes = Math.max(0, load - windowMinutes);
+  const tailWindow = Math.max(0, dayEnd - segmentStart);
+  if (windowMinutes > 0) worstRatio = Math.max(worstRatio, load / windowMinutes);
+  if (tailWindow > 0) worstRatio = Math.max(worstRatio, segmentLoad / tailWindow);
+
+  const overrunMinutes = Math.max(0, load - windowMinutes, segmentLoad - tailWindow);
+
+  // Rounded for display only. The state is decided on the unrounded value, so 80.4% is
+  // Tight rather than quietly rounding down into Comfortable.
+  const timeLoadExact = worstRatio * 100;
+  const timeLoadPct = Math.round(timeLoadExact);
 
   if (overrunMinutes > 0) {
     causes.push({
@@ -159,6 +223,9 @@ function computeDayHealth(input: {
   }
 
   // ── 2. Availability fit ─────────────────────────────────────────────────────
+  //
+  // The whole visit must fit inside one window, not just its first minute: arriving five
+  // minutes before closing is not a visit.
   let protectedInfeasible = false;
   let lesserInfeasible = false;
 
@@ -176,24 +243,40 @@ function computeDayHealth(input: {
       : undefined;
 
     const startMinutes = fromInstant(item.planned_start_at, date, journey.timezone);
-    const at = `${String(Math.floor(startMinutes / 60) % 24).padStart(2, "0")}:${String(
-      startMinutes % 60,
-    ).padStart(2, "0")}`;
+    const endMinutes = item.planned_end_at
+      ? fromInstant(item.planned_end_at, date, journey.timezone)
+      : startMinutes + (item.duration_likely_minutes ?? 0);
+    const at = toTimeOfDay(startMinutes);
 
     const availability = resolveAvailability({
       rules,
       date,
-      time: at,
       ...(place?.opening_schedule ? { openingSchedule: place.opening_schedule } : {}),
     });
 
-    if (!availability.available) {
-      causes.push({
+    const window = (availability.available ? availability.windows : []).find(
+      (w) => startMinutes >= toMinutes(w.start) && startMinutes < toMinutes(w.end),
+    );
+
+    let problem: Cause | null = null;
+    if (!window) {
+      problem = {
         check: "availability",
         key: "health.cause.outside_availability",
         params: { at },
         itemId: item.id,
-      });
+      };
+    } else if (endMinutes > toMinutes(window.end)) {
+      problem = {
+        check: "availability",
+        key: "health.cause.runs_past_availability",
+        params: { at, closes: window.end },
+        itemId: item.id,
+      };
+    }
+
+    if (problem) {
+      causes.push(problem);
       if (item.tier === "protected" || item.tier === "fixed") protectedInfeasible = true;
       else lesserInfeasible = true;
     }
@@ -229,9 +312,9 @@ function computeDayHealth(input: {
   // ── 5. Trust exposure ───────────────────────────────────────────────────────
   const trustExposure = trustExposureFor(ordered, knowledge);
 
-  // ── Return guard ────────────────────────────────────────────────────────────
-  const guard = checkReturnGuard({ journey, items: input.allItems, knowledge });
-  if (!guard.ok) {
+  // ── Return guard, on the anchor's own day ───────────────────────────────────
+  const returnBreached = guard !== null && !guard.ok;
+  if (returnBreached) {
     causes.push({
       check: "return_guard",
       key: "health.cause.return_guard_breached",
@@ -241,12 +324,12 @@ function computeDayHealth(input: {
   }
 
   const state = decideState({
-    timeLoadPct,
+    timeLoadPct: timeLoadExact,
     overrunMinutes,
-    protectedInfeasible,
+    protectedInfeasible: protectedInfeasible || fixedUnreachable,
     lesserInfeasible,
     physicalWarning,
-    returnBreached: !guard.ok,
+    returnBreached,
   });
 
   return { dayIndex, state, timeLoadPct, causes, trustExposure };
@@ -272,6 +355,25 @@ export function decideState(input: {
   if (input.overrunMinutes > 0 || input.lesserInfeasible) return "at_risk";
   if (input.timeLoadPct > 80 || input.physicalWarning) return "tight";
   return "comfortable";
+}
+
+/** Days from start to end inclusive; 0 when the journey has no end date yet. */
+function journeyDayCount(journey: Journey): number {
+  if (!journey.end_date) return 0;
+  const span =
+    Date.parse(`${journey.end_date}T00:00:00Z`) - Date.parse(`${journey.start_date}T00:00:00Z`);
+  if (!Number.isFinite(span) || span < 0) return 0;
+  return Math.min(MAX_REPORTED_DAYS, Math.floor(span / 86_400_000) + 1);
+}
+
+/** The minutes an item occupies — its likely duration, or a FIXED item's booked span. */
+function loadDuration(item: JourneyItem): number {
+  if (item.duration_likely_minutes != null) return item.duration_likely_minutes;
+  if (item.fixed_start_at && item.fixed_end_at) {
+    const span = Date.parse(item.fixed_end_at) - Date.parse(item.fixed_start_at);
+    if (Number.isFinite(span) && span > 0) return Math.round(span / 60_000);
+  }
+  return 0;
 }
 
 /**

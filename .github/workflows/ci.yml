@@ -22,13 +22,57 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      # CLAUDE.md §5 — Ops, analytics and export code never reference traveler_profiles.
+      - run: node scripts/check-privacy-boundary.mjs
       - run: pnpm test
       # The engine carries a 90% coverage gate (TESTING_STRATEGY): a wrong schedule looks
       # exactly like a right one until a traveler misses something.
       - run: pnpm test:engine
       - run: pnpm build
+      # TRD-PERF-001. Previously deploy-only, which is how a 513 kB route reached main.
+      - run: pnpm check:bundle
+
+  e2e:
+    name: Playwright · axe
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [verify, database]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase with seed data
+        run: supabase start && supabase db reset
+      # The apps read their Supabase endpoint and keys from the environment. Locally these
+      # live in .env.local; here they come from the stack that was just started.
+      - name: Export local Supabase environment
+        run: |
+          supabase status -o env \
+            --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+            --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY \
+            --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+            | grep -E '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=' \
+            >> "$GITHUB_ENV"
+          echo "MANDHIRA_MAILPIT_URL=http://127.0.0.1:54424" >> "$GITHUB_ENV"
+          echo "CRON_SECRET=ci-only-cron-secret-not-a-real-credential" >> "$GITHUB_ENV"
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
 
   database:
     name: Migrations · db lint · pgTAP
