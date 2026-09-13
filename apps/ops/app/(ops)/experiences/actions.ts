@@ -157,7 +157,12 @@ export const deleteAvailabilityRule = opsAction({
     // A hard delete is right here: an availability rule carries no history worth keeping
     // once it is wrong, and leaving a stale rule in place would let the engine schedule
     // against it.
-    const { error } = await supabase.from("availability_rules").delete().eq("id", input.id);
+    // Through SQL (0042): RLS keeps hard deletes for admins, so an editor's delete used to
+    // match nothing and report success, leaving the wrong rule for the engine to schedule by.
+    const { error } = await supabase.rpc("delete_knowledge_row", {
+      p_table: "availability_rules",
+      p_id: input.id,
+    });
     if (error) throw error;
 
     revalidatePath(`/experiences/${input.experience_id}`);

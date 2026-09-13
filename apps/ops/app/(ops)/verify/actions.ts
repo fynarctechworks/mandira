@@ -39,7 +39,7 @@ export const claimVerification = opsAction({
       const existing = supabase
         .from("review_tasks")
         .select("id")
-        .eq("task_type", "verify")
+        .in("task_type", ["verify", "reverify"])
         .eq("entity_table", input.entity_table)
         .eq("entity_id", input.entity_id)
         .in("status", ["open", "in_progress"]);
@@ -99,16 +99,16 @@ export const completeVerification = opsAction({
   handler: async ({ input, supabase, userId }) => {
     const { data: task, error } = await supabase
       .from("review_tasks")
-      .select("id, entity_table, entity_id, field_name, status")
+      .select("id, task_type, entity_table, entity_id, field_name, status, created_at")
       .eq("id", input.task_id)
-      .eq("task_type", "verify")
+      .in("task_type", ["verify", "reverify"])
       .maybeSingle();
     if (error) throw error;
     if (!task || !task.entity_table || !task.entity_id) throw refuse("That task no longer exists.");
 
     const trust = supabase
       .from("trust_records")
-      .select("verification_status")
+      .select("verification_status, verified_at")
       .eq("entity_table", task.entity_table)
       .eq("entity_id", task.entity_id);
     const { data: record, error: trustError } = await (
@@ -121,6 +121,19 @@ export const completeVerification = opsAction({
     if (!clearsVerification(record?.verification_status)) {
       throw refuse(
         "Record what you checked in the trust panel first. The field needs to be reviewed by a person or verified before this can close.",
+      );
+    }
+
+    /*
+     * A re-verification exists because the field went stale, and staleness runs from
+     * `verified_at`. Closing it on a status that was already "verified" would clear the
+     * task and leave the field exactly as stale as it was.
+     */
+    const rechecked =
+      !!record?.verified_at && Date.parse(record.verified_at) > Date.parse(task.created_at);
+    if (task.task_type === "reverify" && !rechecked) {
+      throw refuse(
+        "This field is due for a fresh check. Record it in the trust panel with the date you checked it, then close this.",
       );
     }
 

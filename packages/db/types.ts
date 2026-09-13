@@ -3893,6 +3893,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_knowledge_row: {
+        Args: { p_id: string; p_table: string }
+        Returns: boolean
+      }
       derive_confidence: {
         Args: {
           p_conflict_flag: boolean
@@ -4068,6 +4072,7 @@ export type Database = {
       publish_scheduled_entities: { Args: never; Returns: Json }
       purge_deleted_accounts: { Args: { p_grace?: string }; Returns: Json }
       recompute_freshness: { Args: never; Returns: Json }
+      reconcile_app_cron_responses: { Args: never; Returns: Json }
       record_audit: {
         Args: {
           p_action: string
@@ -4145,6 +4150,10 @@ export type Database = {
         Args: { p_entity_id: string; p_entity_table: string; p_version: number }
         Returns: Json
       }
+      return_to_draft: {
+        Args: { p_id: string; p_table: string }
+        Returns: boolean
+      }
       roll_journey_statuses: { Args: never; Returns: Json }
       route_stops_for: { Args: { p_route_id: string }; Returns: Json }
       run_scheduled_job: { Args: { p_name: string }; Returns: Json }
@@ -4156,6 +4165,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_route_stops: {
+        Args: { p_route_id: string; p_stops: Json }
+        Returns: number
+      }
       share_summary: {
         Args: { p_locale?: string; p_token: string }
         Returns: Json
@@ -4163,6 +4176,12 @@ export type Database = {
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string
+      }
+      trust_status_roles: {
+        Args: {
+          p_status: Database["public"]["Enums"]["verification_status_enum"]
+        }
+        Returns: Database["public"]["Enums"]["ops_role_enum"][]
       }
       validate_for_publish: {
         Args: { p_entity_id: string; p_entity_table: string }

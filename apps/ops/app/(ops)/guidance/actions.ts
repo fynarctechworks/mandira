@@ -3,7 +3,7 @@
 import { i18nText, uuid } from "@mandhira/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { asRow, opsAction } from "@/lib/action";
+import { asRow, opsAction, requireDrafter } from "@/lib/action";
 
 /**
  * Guidance blocks (O07, OPS-EDIT-06) — the practical notes attached to a destination,
@@ -45,6 +45,8 @@ export const saveGuidanceBlock = opsAction({
       revalidatePath("/guidance");
       return { id };
     }
+
+    await requireDrafter(supabase, "Adding new guidance");
 
     const { data, error } = await supabase
       .from("guidance_blocks")

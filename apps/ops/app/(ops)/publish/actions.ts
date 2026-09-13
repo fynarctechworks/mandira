@@ -67,13 +67,21 @@ export const returnToDraft = opsAction({
   roles: ["reviewer", "editor", "approver", "admin"],
   input: target,
   handler: async ({ input, supabase }) => {
-    const { error } = await supabase
-      .from(input.entity_table)
-      .update({ status: "draft" })
-      .eq("id", input.entity_id);
+    // A reviewer's reject (PRD F18). Through SQL (0042) because reviewers hold no UPDATE on
+    // knowledge tables, and must not gain one just to say "not yet".
+    const { data: moved, error } = await supabase.rpc("return_to_draft", {
+      p_table: input.entity_table,
+      p_id: input.entity_id,
+    });
     if (error) throw error;
+    if (!moved) {
+      throw Object.assign(new Error("refused"), {
+        userMessage: "This is no longer in review, so there is nothing to return.",
+      });
+    }
 
     revalidatePath("/publish");
+    revalidatePath(`/${input.entity_table}`);
     return { status: "draft" as const };
   },
 });

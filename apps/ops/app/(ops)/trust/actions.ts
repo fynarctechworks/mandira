@@ -54,7 +54,9 @@ const STATUS_ROLES: Record<string, readonly string[]> = {
   unverified: ["researcher", "reviewer", "verifier", "editor", "admin"],
   ai_extracted: ["researcher", "editor", "admin"],
   human_reviewed: ["reviewer", "verifier", "editor", "admin"],
-  verified: ["verifier", "approver", "admin"],
+  // PRD F18: verifiers verify. Approvers approve what has been verified; they do not
+  // verify it themselves. The same table is enforced in SQL (0042, trust_status_roles).
+  verified: ["verifier", "admin"],
   disputed: ["reviewer", "verifier", "editor", "admin"],
 };
 
@@ -107,6 +109,8 @@ export const saveTrustRecord = opsAction({
 
     revalidatePath("/places");
     revalidatePath("/experiences");
+    revalidatePath("/trust");
+    revalidatePath("/verify");
     return {
       id: data.id,
       freshness: data.freshness,

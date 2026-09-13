@@ -176,11 +176,13 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
                         disabled={pending}
                         onClick={() =>
                           startTransition(async () => {
-                            await triageReport({ id: row.id });
+                            setProblem(null);
+                            const result = await triageReport({ id: row.id });
+                            if (!result.ok) setProblem(result.error.message);
                           })
                         }
                       >
-                        Mark as looked at
+                        Send to Verify
                       </Button>
                     ) : null}
                   </div>

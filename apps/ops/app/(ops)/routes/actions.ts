@@ -3,7 +3,7 @@
 import { i18nText, uuid } from "@mandhira/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { asRow, opsAction } from "@/lib/action";
+import { asRow, opsAction, requireDrafter } from "@/lib/action";
 
 /**
  * Routes, their stops, transport connections and accessibility records
@@ -92,23 +92,14 @@ export const setRouteStops = opsAction({
     stops: z.array(z.object({ place_id: uuid, is_rest_point: z.boolean().default(false) })),
   }),
   handler: async ({ input, supabase }) => {
-    const { error: clearError } = await supabase
-      .from("route_places")
-      .delete()
-      .eq("route_id", input.route_id);
-    if (clearError) throw clearError;
-
-    if (input.stops.length > 0) {
-      const { error } = await supabase.from("route_places").insert(
-        input.stops.map((stop, index) => ({
-          route_id: input.route_id,
-          place_id: stop.place_id,
-          sort_order: index,
-          is_rest_point: stop.is_rest_point,
-        })),
-      );
-      if (error) throw error;
-    }
+    // One transaction in SQL (0042). As a delete then an insert from here, the delete
+    // needed the admin-only hard delete: for everyone else it removed nothing, and the
+    // insert then doubled every stop.
+    const { error } = await supabase.rpc("set_route_stops", {
+      p_route_id: input.route_id,
+      p_stops: input.stops,
+    });
+    if (error) throw error;
 
     revalidatePath(`/routes/${input.route_id}`);
     return { count: input.stops.length };
@@ -168,6 +159,8 @@ export const saveTransportConnection = opsAction({
       return { id };
     }
 
+    await requireDrafter(supabase, "Adding a new connection");
+
     const { data, error } = await supabase
       .from("transport_connections")
       .insert(asRow(fields))
@@ -184,7 +177,12 @@ export const deleteTransportConnection = opsAction({
   roles: ["editor", "admin"],
   input: z.object({ id: uuid }),
   handler: async ({ input, supabase }) => {
-    const { error } = await supabase.from("transport_connections").delete().eq("id", input.id);
+    // Through SQL (0042): the hard delete is admin-only in RLS, so an editor's delete used to
+    // match nothing and report success. This removes it, its trust records, and audits it.
+    const { error } = await supabase.rpc("delete_knowledge_row", {
+      p_table: "transport_connections",
+      p_id: input.id,
+    });
     if (error) throw error;
 
     revalidatePath("/transport");
@@ -219,6 +217,15 @@ export const saveAccessibility = opsAction({
     // One record per place/route (both columns are unique), so upsert on whichever
     // target is set rather than asking callers to know if one already exists.
     const target = input.place_id ? "place_id" : "route_id";
+
+    const { data: existing, error: existingError } = await supabase
+      .from("accessibility_records")
+      .select("id")
+      .eq(target, (input.place_id ?? input.route_id) as string)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (!existing) await requireDrafter(supabase, "Adding an accessibility record");
+
     const { data, error } = await supabase
       .from("accessibility_records")
       .upsert(asRow(input), { onConflict: target })

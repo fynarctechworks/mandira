@@ -141,3 +141,22 @@ export function opsAction<TSchema extends z.ZodType, TResult>(config: {
  */
 export const asRow = (value: unknown): any => value;
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * Creating knowledge is drafting (permission map: "Draft knowledge: researcher/editor").
+ *
+ * Several save actions both edit and create, and approvers may edit — but the insert
+ * policies in 0008 do not let an approver create, so without this an approver's "Add" was
+ * refused by the database with a message about nothing in particular.
+ */
+export async function requireDrafter(
+  supabase: Awaited<ReturnType<typeof opsSupabase>>,
+  what: string,
+): Promise<void> {
+  const held = await getOpsRoles(supabase);
+  if (!held.some((role) => role === "researcher" || role === "editor" || role === "admin")) {
+    throw Object.assign(new Error("refused"), {
+      userMessage: `${what} is for researchers and editors. You can still edit what is already here.`,
+    });
+  }
+}

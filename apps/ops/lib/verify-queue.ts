@@ -5,7 +5,7 @@ import { rankVerifyRows, type VerifyRow, type VerifyTrust } from "./verify-rows"
 
 /**
  * Loads the Verify queue (O11, PRD-OPS-WF-002): critical-field trust records still short of
- * `verified` on entities in review or published, plus every open `verify` task — including
+ * `verified` on entities in review or published, plus every open `verify` and `reverify` task — including
  * ones on fields already verified, because those are the fields whose source changed.
  */
 
@@ -46,7 +46,8 @@ export async function loadVerifyQueue(): Promise<{
     supabase
       .from("review_tasks")
       .select("id, entity_table, entity_id, field_name, status, assigned_to, notes, created_at")
-      .eq("task_type", "verify")
+      // A nightly re-verification of a stale field is verification work too (TRD §5.4).
+      .in("task_type", ["verify", "reverify"])
       .in("status", ["open", "in_progress"])
       .order("created_at")
       .limit(500),

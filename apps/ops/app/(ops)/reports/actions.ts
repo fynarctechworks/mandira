@@ -82,12 +82,48 @@ export const triageReport = opsAction({
   handler: async ({ input, supabase }) => {
     // `triaged` means somebody has read it and it is real enough to look into — not that
     // anything has been decided.
-    const { error } = await supabase
+    const { data: report, error } = await supabase
       .from("user_reports")
       .update({ status: "triaged" })
-      .eq("id", input.id);
+      .eq("id", input.id)
+      .select("entity_table, entity_id, field_name")
+      .maybeSingle();
 
-    if (error) throw new Error("That report could not be updated.");
+    if (error || !report) throw new Error("That report could not be updated.");
+
+    /*
+     * PRD F18 Reports: "triage to Verify". A report is a T5 signal, never a fact, so what
+     * it earns is a person checking the field against a real source — one open task per
+     * field, matching the guard every other task producer uses.
+     */
+    const open = supabase
+      .from("review_tasks")
+      .select("id")
+      .in("task_type", ["verify", "reverify"])
+      .eq("entity_table", report.entity_table)
+      .eq("entity_id", report.entity_id)
+      .in("status", ["open", "in_progress"]);
+    const { data: existing, error: existingError } = await (
+      report.field_name === null
+        ? open.is("field_name", null)
+        : open.eq("field_name", report.field_name)
+    ).limit(1);
+    if (existingError) throw new Error("That report could not be updated.");
+
+    if (!existing?.length) {
+      const { error: taskError } = await supabase.from("review_tasks").insert({
+        task_type: "verify",
+        entity_table: report.entity_table,
+        entity_id: report.entity_id,
+        field_name: report.field_name,
+        status: "open",
+        priority: 2,
+        notes: "From a traveler report.",
+      });
+      if (taskError) throw new Error("That report could not be sent to Verify.");
+    }
+
+    revalidatePath("/verify");
 
     revalidatePath("/reports");
     return { id: input.id };
