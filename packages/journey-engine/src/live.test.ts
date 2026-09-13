@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getNowNextLater } from "./live";
 import { scheduleDay } from "./schedule";
 import { fromInstant, toInstant } from "./time";
-import type { Journey, JourneyItem, KnowledgeBundle } from "./types";
+import type { Journey, JourneyItem, KnowledgeBundle, TravelerProfile } from "./types";
 
 const TZ = "Asia/Kolkata";
 const START = "2026-10-12";
@@ -137,6 +137,13 @@ describe("getNowNextLater", () => {
       expect(local(live.leaveByAt)).toBe(7 * 60);
     });
 
+    it("still counts the travel between two items, not only while one is under way", () => {
+      // 08:15 is the gap after a; b starts 08:45, less 30 travel, less its 15-minute buffer.
+      const live = getNowNextLater({ journey, items: day(), knowledge, nowAt: at(8, 15) });
+
+      expect(local(live.leaveByAt)).toBe(8 * 60);
+    });
+
     it("is absent once there is nothing left to leave for", () => {
       const live = getNowNextLater({ journey, items: day(), knowledge, nowAt: at(20) });
 
@@ -186,6 +193,29 @@ describe("getNowNextLater", () => {
     const live = getNowNextLater({ journey, items, knowledge, nowAt: at(7) });
 
     expect(live.dayState).toBe("broken");
+  });
+
+  it("counts the travelers' physical load in the day's state when it is given them", () => {
+    const steps: KnowledgeBundle = { ...knowledge, places: [{ id: "p1", step_free: "no" }] };
+    const items = scheduled([
+      item({ id: "a", sort_order: 0, place_id: "p1", duration_likely_minutes: 30 }),
+    ]);
+    const travelers: TravelerProfile[] = [{ id: "t1", mobility: "wheelchair", age_band: "adult" }];
+
+    // Offline there are no profiles, and the check is simply not run.
+    expect(getNowNextLater({ journey, items, knowledge: steps, nowAt: at(7) }).dayState).toBe(
+      "comfortable",
+    );
+    expect(
+      getNowNextLater({
+        journey,
+        items,
+        knowledge: steps,
+        nowAt: at(7),
+        travelers,
+        dependencies: [],
+      }).dayState,
+    ).toBe("tight");
   });
 
   it("works out which day it is from the instant it was given", () => {

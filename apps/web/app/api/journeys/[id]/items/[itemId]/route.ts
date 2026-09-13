@@ -6,6 +6,7 @@ import { z } from "zod";
 import { withApi } from "../../../../../../lib/api";
 import { getJourney } from "../../../../../../lib/journeys";
 import { resyncNotifications } from "../../../../../../lib/notifications";
+import { rescheduleDays } from "../../../../../../lib/replan";
 
 /**
  * Item mutations (TRD §5.2, PRD-PLAN-003).
@@ -70,6 +71,18 @@ export const PATCH = withApi({
       }
     }
 
+    /*
+     * FIXED means "at this time". An item with no time made FIXED is ignored by the scheduler
+     * as an anchor, while the item rules would still refuse to move or remove it — a lock
+     * with nothing behind it. So it needs its time first.
+     */
+    if (input.tier === "fixed" && item.tier !== "fixed" && !item.fixed_start_at) {
+      throw new ApiError(
+        "invalid",
+        "Give this a set time before marking it fixed — a fixed item is planned around its time.",
+      );
+    }
+
     // Typed as the table's Update row so a column name typo is a compile error rather than
     // a PATCH that silently changes nothing.
     const patch: Database["public"]["Tables"]["journey_items"]["Update"] = {};
@@ -89,10 +102,28 @@ export const PATCH = withApi({
 
     if (error) throw error;
 
+    /*
+     * A new day, window, buffer or tier changes where things land on the clock. Without
+     * rescheduling, an item moved to day 2 kept day 1's planned times — Live placed it at
+     * an hour on the wrong date and the leave-by reminders followed. Both the day it left
+     * and the day it joined are rescheduled; a note moves nothing.
+     */
+    const onTheClock =
+      input.dayIndex !== undefined ||
+      input.preferredWindowStart !== undefined ||
+      input.bufferMinutes !== undefined ||
+      input.tier !== undefined;
+    const rescheduled = onTheClock
+      ? await rescheduleDays(supabase, journeyId, [
+          item.day_index,
+          input.dayIndex ?? item.day_index,
+        ])
+      : null;
+
     // Fresh items AND fresh health. Returning one without the other lets a screen show
-    // yesterday's verdict on today's plan.
+    // yesterday's verdict on today's plan. After rescheduling, so reminders follow it.
     await resyncNotifications(supabase, journeyId, user!.id, "journey item change");
-    const updated = await getJourney(supabase, journeyId, "en");
+    const updated = rescheduled ?? (await getJourney(supabase, journeyId, "en"));
     return { items: updated?.items ?? [], health: updated?.health ?? null };
   },
 });

@@ -61,6 +61,10 @@ function endpointFor(action: PendingAction): { url: string; method: string } | n
         : null;
 
     case "change_decision":
+      // Decided on a card computed OFFLINE: there is no event to answer yet (see `deliver`).
+      if (payload["journeyId"] && !payload["eventId"] && action.payload["trigger"]) {
+        return { url: `/api/journeys/${payload["journeyId"]}/changes`, method: "POST" };
+      }
       return payload["journeyId"] && payload["eventId"]
         ? {
             url: `/api/journeys/${payload["journeyId"]}/changes/${payload["eventId"]}`,
@@ -87,6 +91,57 @@ function bodyFor(action: PendingAction): Record<string, unknown> {
   void itemId;
   void eventId;
   return body;
+}
+
+/**
+ * One action, sent.
+ *
+ * A decision on a card computed offline (`replanLocally`) has no server event to answer.
+ * It is replayed the only honest way: the server evaluates the same trigger against the
+ * journey as it now is — after everything queued before it — and the traveler's choice is
+ * applied only if the server's card still offers that same option (option ids name the
+ * ladder step, so they are stable). If it does not, the day has changed under the choice
+ * and it is dropped as no longer applicable; nothing is applied that the traveler was not
+ * shown. "Keep as is" needs nothing sent at all.
+ */
+async function deliver(
+  action: PendingAction,
+  target: { url: string; method: string },
+): Promise<Response> {
+  const payload = action.payload as Record<string, unknown>;
+  const offlineDecision = action.action_type === "change_decision" && !payload["eventId"];
+
+  if (!offlineDecision) {
+    return fetch(target.url, {
+      method: target.method,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(bodyFor(action)),
+    });
+  }
+
+  if (payload["optionId"] === null || payload["optionId"] === undefined) {
+    return new Response(null, { status: 204 });
+  }
+
+  const evaluated = await fetch(target.url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload["trigger"]),
+  });
+  if (!evaluated.ok) return evaluated;
+
+  const answer = (await evaluated.json().catch(() => null)) as {
+    data?: { id?: string; card?: { options?: { id: string }[] } };
+  } | null;
+  const eventId = answer?.data?.id;
+  const offered = answer?.data?.card?.options?.some((option) => option.id === payload["optionId"]);
+  if (!eventId || !offered) return new Response(null, { status: 409 });
+
+  return fetch(`${target.url}/${eventId}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ optionId: payload["optionId"] }),
+  });
 }
 
 export async function enqueue(
@@ -127,7 +182,22 @@ export async function pendingCount(): Promise<number> {
  * could not reach the server, the next will not either, and burning four more attempts on
  * each queued action would empty the queue by exhausting it instead of by delivering it.
  */
-export async function flushOutbox(): Promise<{ sent: number; dropped: number }> {
+let flushing: Promise<{ sent: number; dropped: number }> | null = null;
+
+/**
+ * One flush at a time. Live flushes after each tap and the connection check flushes when
+ * the network answers; two flushes reading the same queue would each send its first
+ * action, and a "done" or a report would arrive twice. A caller that arrives mid-flush
+ * shares the flush already under way.
+ */
+export function flushOutbox(): Promise<{ sent: number; dropped: number }> {
+  flushing ??= flushOnce().finally(() => {
+    flushing = null;
+  });
+  return flushing;
+}
+
+async function flushOnce(): Promise<{ sent: number; dropped: number }> {
   if (!offlineAvailable()) return { sent: 0, dropped: 0 };
 
   let sent = 0;
@@ -150,11 +220,7 @@ export async function flushOutbox(): Promise<{ sent: number; dropped: number }> 
       let response: Response;
 
       try {
-        response = await fetch(target.url, {
-          method: target.method,
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(bodyFor(action)),
-        });
+        response = await deliver(action, target);
       } catch {
         // Still offline. Leave everything where it is and stop — see the comment above.
         return { sent, dropped };
@@ -177,6 +243,11 @@ export async function flushOutbox(): Promise<{ sent: number; dropped: number }> 
         continue;
       }
 
+      /*
+       * A 5xx or a 429: the server is there but cannot take it now. Stop, exactly as for no
+       * network. Carrying on would send a Change Card decision ahead of the "done" it
+       * followed — and spend an attempt of every queued action on one bad minute.
+       */
       const attempts = action.attempts + 1;
 
       if (attempts >= MAX_ATTEMPTS) {
@@ -185,6 +256,7 @@ export async function flushOutbox(): Promise<{ sent: number; dropped: number }> 
       } else {
         await database.pending_actions.update(action.id, { attempts });
       }
+      return { sent, dropped };
     }
   } catch {
     return { sent, dropped };

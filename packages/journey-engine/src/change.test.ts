@@ -196,6 +196,25 @@ describe("evaluateChange", () => {
       expect(card.recommended?.removedItemIds).toEqual([]);
     });
 
+    it("offers a day with nothing planned on it yet as somewhere to move to", () => {
+      // A three-day journey with everything on day 0: days 1 and 2 are empty, not absent.
+      const items = [
+        item({ id: "a", sort_order: 0, tier: "protected", duration_likely_minutes: 500 }),
+        item({ id: "b", sort_order: 1, tier: "important", duration_likely_minutes: 500 }),
+      ];
+
+      const card = evaluateChange({
+        journey: { ...journey, end_date: "2026-10-14" },
+        items,
+        knowledge: emptyKnowledge,
+        trigger: { kind: "user_late", dayIndex: 0, itemId: "a", deltaMinutes: 100 },
+      });
+
+      expect(card.options.some((o) => o.changes.some((c) => c.op === "move_day"))).toBe(true);
+      expect(card.recommended?.changes).toEqual([{ op: "move_day", itemId: "b", toDayIndex: 1 }]);
+      expect(card.recommended?.removedItemIds).toEqual([]);
+    });
+
     it("will not move an item to a day it cannot happen on", () => {
       const knowledge: KnowledgeBundle = {
         ...emptyKnowledge,

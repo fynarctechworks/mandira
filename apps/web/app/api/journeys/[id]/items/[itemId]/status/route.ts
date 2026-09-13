@@ -33,7 +33,15 @@ const schema = z.object({
    * their day, and the honest move is to edit the plan rather than stretch one item.
    */
   extraMinutes: z.number().int().min(5).max(240).optional(),
+  /**
+   * When the traveler tapped it, for an action replayed from the offline outbox
+   * (PRD-OFFL-004). "Done" at 7:10 on a hillside that reaches us at 11:00 finished at 7:10.
+   */
+  occurredAt: z.string().datetime({ offset: true }).optional(),
 });
+
+/** How far back a replayed tap is believed; older than this, the server's clock is used. */
+const REPLAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const PATCH = withApi({
   schema,
@@ -50,7 +58,7 @@ export const PATCH = withApi({
     const item = detail.items.find((i) => i.id === itemId);
     if (!item) throw new ApiError("not_found");
 
-    const now = new Date().toISOString();
+    const now = whenItHappened(input.occurredAt);
     const patch: Database["public"]["Tables"]["journey_items"]["Update"] = {};
 
     switch (input.action) {
@@ -119,6 +127,17 @@ export const PATCH = withApi({
 function shiftedEnd(plannedEnd: string | null, now: string, extraMinutes: number): string {
   const base = Math.max(Date.parse(plannedEnd ?? now), Date.parse(now));
   return new Date(base + extraMinutes * 60_000).toISOString();
+}
+
+/**
+ * The moment the action happened: the device's own time for a replayed tap, when that is
+ * believable — not in the future (beyond a little clock drift) and not older than a week.
+ */
+function whenItHappened(occurredAt: string | undefined): string {
+  const serverNow = Date.now();
+  const at = occurredAt ? Date.parse(occurredAt) : Number.NaN;
+  const believable = at <= serverNow + 2 * 60_000 && at >= serverNow - REPLAY_WINDOW_MS;
+  return new Date(believable ? Math.min(at, serverNow) : serverNow).toISOString();
 }
 
 /** Route params, read from the URL because `withApi` hands the raw request through. */

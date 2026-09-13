@@ -74,6 +74,9 @@ export function SignOutButton({ locale }: { locale: string }) {
     setPending(true);
     const { createBrowserSupabase } = await import("@mandhira/db/client/browser");
     await createBrowserSupabase().auth.signOut();
+    // The offline copy is this traveler's journey, on what is often a shared family phone.
+    const { clearDeviceData } = await import("../lib/offline/device-data");
+    await clearDeviceData();
     router.replace(`/${locale}`);
     router.refresh();
   }

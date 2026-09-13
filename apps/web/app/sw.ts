@@ -117,6 +117,20 @@ const serwist = new Serwist({
         plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 60 })],
       }),
     },
+    {
+      /*
+       * Our own API, never from cache.
+       *
+       * `defaultCache` below caches same-origin GET `/api/*` network-first with a ten-second
+       * timeout. On a weak link that hands `syncJourneyOffline` a snapshot cached a day ago,
+       * which it then writes over newer data on the device — the offline copy moving
+       * BACKWARDS. The app already keeps its own offline copy in IndexedDB, deliberately, so
+       * an API answer is either live or not at all, and "not at all" falls through to that
+       * copy.
+       */
+      matcher: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith("/api/"),
+      handler: new NetworkOnly(),
+    },
     ...defaultCache,
   ],
 });
@@ -174,12 +188,23 @@ self.addEventListener("notificationclick", (event) => {
       const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
 
       if (open) {
-        // A tap is the traveler asking to go there, so moving an open window is not the
-        // unprompted reload TRD-DEPL-002 forbids.
+        /*
+         * A tap is the traveler asking to go there, so moving an open window is not the
+         * unprompted reload TRD-DEPL-002 forbids.
+         *
+         * `navigate()` rejects for a window this worker does not control — one opened before
+         * it activated, which `includeUncontrolled` deliberately finds. That window is still
+         * focused when it is already on the right page; otherwise a new one is opened on
+         * the same same-origin path rather than the tap doing nothing.
+         */
         const here = new URL(open.url);
-        if (here.pathname + here.search !== url) await open.navigate(url);
-        await open.focus();
-        return;
+        try {
+          if (here.pathname + here.search !== url) await open.navigate(url);
+          await open.focus();
+          return;
+        } catch {
+          // Fall through to opening a window.
+        }
       }
 
       await self.clients.openWindow(url);

@@ -1,7 +1,14 @@
+import { projectActuals } from "./actuals";
 import { computeHealth, type HealthState } from "./health";
 import { travelMinutes } from "./schedule";
 import { dateForDay, fromInstant, toInstant, toMinutes } from "./time";
-import type { Journey, JourneyItem, KnowledgeBundle } from "./types";
+import type {
+  Journey,
+  JourneyItem,
+  JourneyItemDependency,
+  KnowledgeBundle,
+  TravelerProfile,
+} from "./types";
 
 /**
  * What the traveler is doing, or on their way to doing.
@@ -60,8 +67,17 @@ export function getNowNextLater(input: {
   nowAt: string;
   /** Defaults to the day `nowAt` falls on. */
   dayIndex?: number;
+  /**
+   * Who is travelling, so the day's state includes PRD-HLTH-005's physical load. Optional
+   * because the offline snapshot carries no traveler profiles; without them that one check
+   * is simply not run, exactly as `computeHealth` does.
+   */
+  travelers?: TravelerProfile[];
+  dependencies?: JourneyItemDependency[];
 }): LiveProjection {
-  const { journey, items, knowledge, nowAt } = input;
+  const { journey, knowledge, nowAt } = input;
+  // "Running late" moves what is ahead on the screen without moving the plan (actuals.ts).
+  const items = projectActuals(input.items);
 
   const dayIndex = input.dayIndex ?? dayIndexOf(nowAt, journey);
   const date = dateForDay(journey.start_date, dayIndex);
@@ -71,7 +87,13 @@ export function getNowNextLater(input: {
     .filter((i) => i.day_index === dayIndex)
     .sort((a, b) => a.sort_order - b.sort_order);
 
-  const health = computeHealth({ journey, items, knowledge });
+  const health = computeHealth({
+    journey,
+    items,
+    knowledge,
+    ...(input.travelers ? { travelers: input.travelers } : {}),
+    ...(input.dependencies ? { dependencies: input.dependencies } : {}),
+  });
   const dayState = health.days.find((d) => d.dayIndex === dayIndex)?.state ?? "comfortable";
 
   const timed = day.filter((i) => i.planned_start_at && i.planned_end_at);
@@ -88,7 +110,16 @@ export function getNowNextLater(input: {
   const now = currentCard({ current, upNext, day, date, journey, knowledge, nowMinutes });
   const next = upNext && upNext !== current ? itemCard(upNext, date, journey, nowMinutes) : null;
 
-  const leg = current && upNext ? travelMinutes(current, upNext, knowledge) : 0;
+  /*
+   * The leg to NEXT starts from wherever the traveler is: the item they are in, or the one
+   * they just left. Counting travel only while an item was under way meant that between two
+   * items the departure-by quietly dropped the drive and said to leave half an hour late.
+   */
+  const from =
+    current ??
+    [...day]
+      .filter((i) => i.planned_end_at && minutesOf(i.planned_end_at, date, journey) <= nowMinutes)
+      .pop();
 
   return {
     now,
@@ -101,7 +132,18 @@ export function getNowNextLater(input: {
     })),
     dayIndex,
     dayState,
-    leaveByAt: upNext ? leaveBy(upNext, leg, date, journey) : null,
+    leaveByAt: upNext?.planned_start_at
+      ? toInstant(
+          date,
+          leaveByMinutes({
+            startMinutes: minutesOf(upNext.planned_start_at, date, journey),
+            from,
+            to: upNext,
+            knowledge,
+          }),
+          journey.timezone,
+        )
+      : null,
   };
 }
 
@@ -172,16 +214,16 @@ function itemCard(item: JourneyItem, date: string, journey: Journey, nowMinutes:
  * settling in, and a leave-by that spends it is a leave-by that arrives exactly on time
  * with nothing left over, which is not what "leave by" means to anyone standing in a queue.
  */
-function leaveBy(
-  next: JourneyItem,
-  legMinutes: number,
-  date: string,
-  journey: Journey,
-): string | null {
-  if (!next.planned_start_at) return null;
-
-  const start = minutesOf(next.planned_start_at, date, journey);
-  return toInstant(date, start - legMinutes - (next.buffer_minutes ?? 0), journey.timezone);
+export function leaveByMinutes(input: {
+  /** The next item's start, in minutes from the day's local midnight. */
+  startMinutes: number;
+  /** Where the traveler sets off from; nothing to travel from means no leg. */
+  from: JourneyItem | undefined;
+  to: JourneyItem;
+  knowledge: KnowledgeBundle;
+}): number {
+  const leg = input.from ? travelMinutes(input.from, input.to, input.knowledge) : 0;
+  return input.startMinutes - leg - (input.to.buffer_minutes ?? 0);
 }
 
 function empty(kind: LiveKind): LiveCard {

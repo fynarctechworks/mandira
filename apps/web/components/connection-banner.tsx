@@ -4,6 +4,7 @@ import { OfflineBanner } from "@mandhira/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { flushOutbox } from "../lib/offline/outbox";
 import { lastSyncAt } from "../lib/offline/sync";
 
 /**
@@ -44,6 +45,12 @@ export function ConnectionBanner() {
         if (cancelled) return;
         setOnline(true);
         setLastReachable(new Date());
+        /*
+         * Something answered, so what the traveler did with no signal goes now
+         * (PRD-OFFL-004) — from whichever page they are on. A report filed at a closed gate
+         * was otherwise only sent the next time they happened to open Live.
+         */
+        void flushOutbox();
       } catch {
         if (!cancelled) setOnline(false);
       } finally {

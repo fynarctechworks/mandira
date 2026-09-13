@@ -7,6 +7,8 @@ import {
   type LiveCard,
   type LiveProjection,
   type PriorityTier,
+  type JourneyItemDependency,
+  type TravelerProfile,
 } from "@mandhira/journey-engine";
 
 import { engineText, type Translate } from "./engine-text";
@@ -65,18 +67,29 @@ export function assembleLiveView(input: {
   syncedAt?: string | null;
   /** The reader's language: the server passes its request translator, the browser its own. */
   t: Translate;
+  /**
+   * Who is travelling, for PRD-HLTH-005's physical load. The server has them; the offline
+   * snapshot deliberately carries no traveler profiles, so there the check is not run.
+   */
+  travelers?: TravelerProfile[];
+  dependencies?: JourneyItemDependency[];
 }): LiveView {
   const { journey, items, bundle, labels, places, nowAt, t } = input;
   const engineJourney = toEngineJourney(journey);
+  const people = {
+    ...(input.travelers ? { travelers: input.travelers } : {}),
+    ...(input.dependencies ? { dependencies: input.dependencies } : {}),
+  };
 
   const projection = getNowNextLater({
     journey: engineJourney,
     items,
     knowledge: bundle,
     nowAt,
+    ...people,
   });
 
-  const health = computeHealth({ journey: engineJourney, items, knowledge: bundle });
+  const health = computeHealth({ journey: engineJourney, items, knowledge: bundle, ...people });
   const byId = new Map(items.map((item) => [item.id, item]));
 
   const view = (card: LiveCard | null): LiveItemView | null => {

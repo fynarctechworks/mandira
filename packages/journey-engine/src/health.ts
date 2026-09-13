@@ -1,3 +1,4 @@
+import { projectActuals } from "./actuals";
 import { checkReturnGuard, type ReturnGuardResult } from "./return-guard";
 import { resolveAvailability } from "./availability";
 import { travelMinutes } from "./schedule";
@@ -90,7 +91,9 @@ export function computeHealth(input: {
   travelers?: TravelerProfile[];
   dependencies?: JourneyItemDependency[];
 }): HealthReport {
-  const { journey, items, knowledge } = input;
+  const { journey, knowledge } = input;
+  // Judged on the day as it is going, not as it was planned: an overrun is load.
+  const items = projectActuals(input.items);
   const travelers = input.travelers ?? [];
   const dependencies = input.dependencies ?? [];
 
@@ -358,7 +361,7 @@ export function decideState(input: {
 }
 
 /** Days from start to end inclusive; 0 when the journey has no end date yet. */
-function journeyDayCount(journey: Journey): number {
+export function journeyDayCount(journey: Journey): number {
   if (!journey.end_date) return 0;
   const span =
     Date.parse(`${journey.end_date}T00:00:00Z`) - Date.parse(`${journey.start_date}T00:00:00Z`);

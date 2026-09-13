@@ -1,5 +1,5 @@
 import { resolveAvailability } from "./availability";
-import { computeHealth, type HealthState, type TrustCause } from "./health";
+import { computeHealth, journeyDayCount, type HealthState, type TrustCause } from "./health";
 import { checkItemAction } from "./item-rules";
 import { scheduleDay } from "./schedule";
 import { dateForDay, fromInstant, toMinutes } from "./time";
@@ -299,7 +299,7 @@ function absorbIntoBuffers(items: JourneyItem[], context: Context): ChangeOption
 
 /** (b) Shorten an OPTIONAL item, or move it to another day it can actually happen on. */
 function shortenOrMoveOptional(items: JourneyItem[], context: Context): ChangeOption[] {
-  const dayCount = new Set(items.map((i) => i.day_index)).size;
+  const dayCount = dayCountOf(items, context.journey);
 
   return ofDay(items, context.dayIndex)
     .filter((i) => i.tier === "optional")
@@ -348,7 +348,7 @@ function shortenOrMoveOptional(items: JourneyItem[], context: Context): ChangeOp
 
 /** (c) Move an IMPORTANT item to another day it can actually happen on. */
 function moveImportantToAnotherDay(items: JourneyItem[], context: Context): ChangeOption[] {
-  const dayCount = new Set(items.map((i) => i.day_index)).size;
+  const dayCount = dayCountOf(items, context.journey);
 
   return ofDay(items, context.dayIndex)
     .filter((i) => i.tier === "important" && checkItemAction(i.tier, "move").allowed)
@@ -694,6 +694,18 @@ function minimumDuration(item: JourneyItem, knowledge: KnowledgeBundle): number 
 
   const place = item.place_id ? knowledge.places.find((p) => p.id === item.place_id) : undefined;
   return place?.visit_duration_min_minutes ?? item.duration_likely_minutes ?? 0;
+}
+
+/**
+ * How many days an item could move between: the journey's own dates, or as far as its items
+ * reach when it has no end date yet.
+ *
+ * NOT the number of days that already hold something. An empty day is the best place to move
+ * something to, and counting only occupied days meant it was never offered — so a card for
+ * an overloaded first day of a three-day journey recommended a removal instead.
+ */
+function dayCountOf(items: JourneyItem[], journey: Journey): number {
+  return Math.max(journeyDayCount(journey), 0, ...items.map((i) => i.day_index + 1));
 }
 
 /** A day the item can actually happen on — availability first, capacity second. */

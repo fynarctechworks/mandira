@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { mustList } from "./data-error";
 import { assembleLiveView, type LivePlace, type LiveView } from "./live-view";
-import { getJourney } from "./journeys";
+import { getJourney, healthInputsFor } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
 
@@ -47,6 +47,7 @@ export async function getLiveView(
     places: await placesFor(supabase, items, locale),
     nowAt,
     t: await getTranslations({ locale }),
+    ...(await healthInputsFor(supabase, journeyId, items)),
   });
 }
 

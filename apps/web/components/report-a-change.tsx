@@ -4,6 +4,8 @@ import { BottomSheet, Button } from "@mandhira/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { enqueue } from "../lib/offline/outbox";
+
 import { prepareReportPhoto, type PreparedReportPhoto } from "../lib/report-photo";
 
 /**
@@ -47,7 +49,7 @@ export function ReportAChange({
   const tReport = useTranslations("reportChange");
   const [type, setType] = useState<(typeof TYPES)[number]>("timing_changed");
   const [description, setDescription] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "problem">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "queued" | "problem">("idle");
 
   /*
    * One optional photo (PRD F14, D-016). It is redrawn through a canvas on the device
@@ -98,24 +100,38 @@ export function ReportAChange({
   async function send() {
     setState("sending");
 
-    const response = await fetch("/api/reports", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        reportType: type,
-        entityTable,
-        entityId,
-        locale,
-        ...(fieldName ? { fieldName } : {}),
-        ...(description.trim() ? { description: description.trim() } : {}),
-        ...(photo ? { photo: photo.base64 } : {}),
-        /*
-         * No journeyId. PRD F14 attaches journey context WITH CONSENT, and nobody has been
-         * asked here — so it is left off rather than quietly included because it would be
-         * useful to us.
-         */
-      }),
-    });
+    const report = {
+      reportType: type,
+      entityTable,
+      entityId,
+      locale,
+      ...(fieldName ? { fieldName } : {}),
+      ...(description.trim() ? { description: description.trim() } : {}),
+      ...(photo ? { photo: photo.base64 } : {}),
+      /*
+       * No journeyId. PRD F14 attaches journey context WITH CONSENT, and nobody has been
+       * asked here — so it is left off rather than quietly included because it would be
+       * useful to us.
+       */
+    };
+
+    let response: Response;
+    try {
+      response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(report),
+      });
+    } catch {
+      /*
+       * No signal — the usual state of someone standing at a closed gate (PRD F14). Held on
+       * the device and sent on reconnect (PRD-OFFL-004), and said plainly: the report is
+       * waiting, not lost, and nothing went wrong on their side.
+       */
+      await enqueue("report_create", report);
+      setState("queued");
+      return;
+    }
 
     const payload = await response.json().catch(() => ({ ok: false }));
 
@@ -146,14 +162,16 @@ export function ReportAChange({
         onOpenChange={setOpen}
         title={tReport("sheet_title", { name: entityName })}
       >
-        {state === "sent" ? (
+        {state === "sent" || state === "queued" ? (
           <div className="flex flex-col gap-3">
             {/* PRD F14's exact promise. Not "fixed", not "updated" — verified. */}
             <p className="text-body">{tReport("thanks")}</p>
             {photoAttached ? null : (
               <p className="text-body-sm text-text-secondary">{t("notAttached")}</p>
             )}
-            <p className="text-body-sm text-text-secondary">{tReport("thanks_body")}</p>
+            <p className="text-body-sm text-text-secondary">
+              {tReport(state === "queued" ? "queued_body" : "thanks_body")}
+            </p>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               {tReport("close")}
             </Button>

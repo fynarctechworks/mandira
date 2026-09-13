@@ -185,3 +185,100 @@ describe("flushing", () => {
     expect(await pendingCount()).toBe(0);
   });
 });
+
+/** A fetch answering each call with the next response, recording URL and body. */
+function answering(...responses: (() => Response)[]) {
+  return vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+    void url;
+    void init;
+    const next = responses.shift();
+    return Promise.resolve(next ? next() : new Response("{}", { status: 200 }));
+  });
+}
+
+const json =
+  (body: unknown, status = 200) =>
+  () =>
+    new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+describe("outbox: order and offline decisions", () => {
+  it("stops at a server error, so what came after keeps its place", async () => {
+    await enqueue("item_status_update", { journeyId: "j1", itemId: "i1", action: "done" });
+    await enqueue("change_decision", { journeyId: "j1", eventId: "e1", optionId: "o1" });
+
+    const fetchImpl = answering(() => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await flushOutbox();
+
+    // The decision is not sent ahead of the "done" it followed.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(await pendingCount()).toBe(2);
+  });
+
+  it("replays a decision made offline by asking for the card again, then answering it", async () => {
+    const trigger = { kind: "user_late", dayIndex: 0, deltaMinutes: 15 };
+    await enqueue("change_decision", { journeyId: "j1", trigger, optionId: "opt-a-absorb" });
+
+    const fetchImpl = answering(
+      json({ ok: true, data: { id: "e9", card: { options: [{ id: "opt-a-absorb" }] } } }),
+      json({ ok: true, data: {} }),
+    );
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await flushOutbox();
+
+    expect(result.sent).toBe(1);
+    expect(fetchImpl.mock.calls.map(([url]) => String(url))).toEqual([
+      "/api/journeys/j1/changes",
+      "/api/journeys/j1/changes/e9",
+    ]);
+    expect(JSON.parse(String(fetchImpl.mock.calls[0]![1]!.body))).toEqual(trigger);
+    expect(JSON.parse(String(fetchImpl.mock.calls[1]![1]!.body))).toEqual({
+      optionId: "opt-a-absorb",
+    });
+    expect(await pendingCount()).toBe(0);
+  });
+
+  it("applies nothing when the server no longer offers the option chosen offline", async () => {
+    await enqueue("change_decision", {
+      journeyId: "j1",
+      trigger: { kind: "user_late", dayIndex: 0, deltaMinutes: 15 },
+      optionId: "opt-c-move",
+    });
+
+    const fetchImpl = answering(json({ ok: true, data: { id: "e9", card: { options: [] } } }));
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await flushOutbox();
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result.dropped).toBe(1);
+    expect(await pendingCount()).toBe(0);
+  });
+
+  it("sends nothing for a keep-as-is decided offline", async () => {
+    await enqueue("change_decision", {
+      journeyId: "j1",
+      trigger: { kind: "user_late", dayIndex: 0 },
+      optionId: null,
+    });
+
+    const fetchImpl = succeeding();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    expect((await flushOutbox()).sent).toBe(1);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("never runs two flushes over the same queue at once", async () => {
+    await enqueue("report_create", { entityId: "p1" });
+
+    const fetchImpl = succeeding();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await Promise.all([flushOutbox(), flushOutbox()]);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});

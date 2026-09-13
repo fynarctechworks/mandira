@@ -152,6 +152,13 @@ export type JourneyItem = {
   duration_max_minutes?: number | null;
   travel_mode?: TravelMode | null;
   buffer_minutes?: number | null;
+  /**
+   * What actually happened, recorded by Live's actions (PRD-LIVE-002). Optional: a plan
+   * still being made has none, and every reader behaves as before without them.
+   */
+  status?: "planned" | "in_progress" | "done" | "skipped" | "moved";
+  actual_start_at?: string | null;
+  actual_end_at?: string | null;
 };
 
 export type JourneyItemDependency = { item_id: string; after_item_id: string };

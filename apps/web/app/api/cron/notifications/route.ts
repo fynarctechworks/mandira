@@ -1,3 +1,4 @@
+import type { Json } from "@mandhira/db/types";
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { createWebPushProvider, getEmailProvider, shouldDisable } from "@mandhira/providers";
 
@@ -65,6 +66,8 @@ export async function GET(request: Request): Promise<Response> {
     .eq("status", "scheduled")
     .in("channel", channels)
     .lte("scheduled_for", new Date().toISOString())
+    // Oldest first, so a backlog drains in order and nothing waits behind newer rows forever.
+    .order("scheduled_for", { ascending: true })
     .limit(BATCH);
 
   /*
@@ -122,8 +125,28 @@ export async function GET(request: Request): Promise<Response> {
       } else if (outcome === "failed") {
         await supabase.from("notifications").update({ status: "failed" }).eq("id", row.id);
         failed += 1;
+      } else if (outcome === "retry") {
+        /*
+         * Stays scheduled, but not for the very next run: an email provider that is down is
+         * rarely back ten minutes later, and retrying every run would spend the batch on it.
+         * 5, 10, 20, 40, then every 60 minutes, inside the 24 hours `deliverEmail` allows —
+         * measured from the first due time, which is kept in the payload.
+         */
+        const payload = (row.payload ?? {}) as Record<string, unknown>;
+        const attempts = Number(payload["email_attempts"] ?? 0) + 1;
+        const waitMinutes = Math.min(60, 5 * 2 ** (attempts - 1));
+        await supabase
+          .from("notifications")
+          .update({
+            scheduled_for: new Date(Date.now() + waitMinutes * 60_000).toISOString(),
+            payload: {
+              ...payload,
+              email_attempts: attempts,
+              first_due_at: payload["first_due_at"] ?? row.scheduled_for,
+            } as Json,
+          })
+          .eq("id", row.id);
       }
-      // "retry" stays scheduled; the next run picks it up.
       continue;
     }
 

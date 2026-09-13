@@ -707,7 +707,8 @@
     "not_sent": "That didn't send. Please try again.",
     "thanks": "Thanks — our team will verify this.",
     "thanks_body": "Nothing changes on the page until someone has checked it against a source. If enough people report the same thing, we'll mark it as worth checking locally in the meantime.",
-    "close": "Close"
+    "close": "Close",
+    "queued_body": "There's no signal right now, so this is saved on your phone and will be sent as soon as you're back online."
   },
   "offlineNotice": {
     "saved": "Showing information saved {when}.",

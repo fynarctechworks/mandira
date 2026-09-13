@@ -1,4 +1,10 @@
-import { computeHealth, type HealthReport, type JourneyItem } from "@mandhira/journey-engine";
+import {
+  computeHealth,
+  type HealthReport,
+  type JourneyItem,
+  type JourneyItemDependency,
+  type TravelerProfile,
+} from "@mandhira/journey-engine";
 
 import { mustList, mustMaybe } from "./data-error";
 import { dayCountOf, toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
@@ -154,6 +160,7 @@ export async function getJourney(
     journey: toEngineJourney(journey),
     items,
     knowledge,
+    ...(await healthInputsFor(supabase, journeyId, items)),
   });
 
   return {
@@ -164,6 +171,49 @@ export async function getJourney(
     // Built from the published views' TrustMap rows in getKnowledgeBundle.
     trust: (knowledge.trust ?? {}) as Record<string, TrustMap>,
   };
+}
+
+/**
+ * What Journey Health needs beyond the plan: who is travelling (PRD-HLTH-005's physical
+ * load) and what must come after what (PRD F5 check 3). Without them those two checks
+ * silently passed for every journey read here — a wheelchair user's day with a flight of
+ * steps in it read Comfortable.
+ */
+export async function healthInputsFor(
+  supabase: Client,
+  journeyId: string,
+  items: readonly { id: string }[],
+): Promise<{ travelers: TravelerProfile[]; dependencies: JourneyItemDependency[] }> {
+  const [travelers, dependencies] = await Promise.all([
+    travelersFor(supabase, journeyId),
+    items.length === 0
+      ? Promise.resolve([] as JourneyItemDependency[])
+      : supabase
+          .from("journey_item_dependencies")
+          .select("item_id, after_item_id")
+          .in(
+            "item_id",
+            items.map((item) => item.id),
+          )
+          .then((result) => mustList(result, "journey_item_dependencies")),
+  ]);
+
+  return { travelers: travelers as TravelerProfile[], dependencies };
+}
+
+/** The journey's travelers, for the engine's buffer and physical-load rules. */
+export async function travelersFor(supabase: Client, journeyId: string) {
+  const data = mustList(
+    await supabase
+      .from("journey_travelers")
+      .select("traveler_profiles(id, mobility, age_band)")
+      .eq("journey_id", journeyId),
+    "journey_travelers",
+  );
+
+  return data
+    .map((row) => row.traveler_profiles)
+    .filter((profile): profile is NonNullable<typeof profile> => !!profile);
 }
 
 const EMPTY_KNOWLEDGE = {

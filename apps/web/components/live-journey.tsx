@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import type { ChangeCard } from "@mandhira/journey-engine";
+import type { ChangeCard, ChangeTrigger } from "@mandhira/journey-engine";
 
 import { useLeaveByReminder } from "../lib/leave-by-reminder";
 import type { LiveItemView, LiveView } from "../lib/live-view";
@@ -76,6 +76,7 @@ export function LiveJourney({
     id: string | null;
     card: ChangeCard;
     offline: boolean;
+    trigger: ChangeTrigger;
   } | null>(null);
   const [quiet, setQuiet] = useState<string | null>(null);
   /** How many actions are waiting to be sent (PRD-OFFL-004). */
@@ -159,6 +160,8 @@ export function LiveJourney({
     setProblem(null);
 
     const body = { action, ...(extraMinutes ? { extraMinutes } : {}) };
+    // Taken now, so a tap replayed from the outbox hours later still says when it happened.
+    const occurredAt = new Date().toISOString();
 
     try {
       const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}/status`, {
@@ -175,7 +178,7 @@ export function LiveJourney({
        * problem, because from the traveler's side nothing went wrong: they marked
        * something done on a hillside and it will reach us when there is signal.
        */
-      await enqueue("item_status_update", { journeyId, itemId, ...body });
+      await enqueue("item_status_update", { journeyId, itemId, ...body, occurredAt });
       setQueued(await pendingCount());
     }
 
@@ -275,7 +278,7 @@ export function LiveJourney({
      * yet. The decision is queued instead (see `decide`), and the card says so — a
      * traveler should know their choice is waiting rather than applied.
      */
-    setChange({ id: eventId, card, offline: eventId === null });
+    setChange({ id: eventId, card, offline: eventId === null, trigger });
   }
 
   /** The tap. The only thing in this product that rearranges a journey. */
@@ -291,7 +294,9 @@ export function LiveJourney({
        * replayed in order on reconnect — after the item-status update that triggered it,
        * which is precisely why the outbox preserves the order actions were taken in.
        */
-      await enqueue("change_decision", { journeyId, eventId: change.id ?? "", optionId });
+      // No event id: the outbox re-asks the server with this trigger and applies the choice
+      // only if the same option is still offered (outbox `deliver`).
+      await enqueue("change_decision", { journeyId, trigger: change.trigger, optionId });
       setQueued(await pendingCount());
     } else {
       try {

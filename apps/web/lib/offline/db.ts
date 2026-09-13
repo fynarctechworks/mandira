@@ -114,6 +114,9 @@ export type MandhiraDb = Dexie & {
  */
 export const SNAPSHOT_VERSION = 3;
 
+/** The IndexedDB database name. One per origin, shared by every journey on this device. */
+export const DB_NAME = "mandhira";
+
 let instance: MandhiraDb | undefined;
 let opening: Promise<MandhiraDb> | undefined;
 
@@ -139,7 +142,7 @@ export async function db(): Promise<MandhiraDb> {
 
   opening = (async () => {
     const { default: Dexie } = await import("dexie");
-    const dexie = new Dexie("mandhira") as MandhiraDb;
+    const dexie = new Dexie(DB_NAME) as MandhiraDb;
 
     const stores = {
       journeys: "id",
@@ -167,6 +170,21 @@ export async function db(): Promise<MandhiraDb> {
   })();
 
   return opening;
+}
+
+/**
+ * Deletes the whole offline database — every journey, the outbox and the guest draft.
+ *
+ * Closes this tab's own connection first: an open connection holds a delete back until it
+ * goes. The handle is forgotten, so the next `db()` starts from an empty database.
+ */
+export async function deleteDb(): Promise<void> {
+  const open = instance ?? (opening ? await opening.catch(() => undefined) : undefined);
+  open?.close();
+  resetDb();
+
+  const { default: Dexie } = await import("dexie");
+  await Dexie.delete(DB_NAME);
 }
 
 /** Test seam — `fake-indexeddb` gives each test a fresh backing store. */

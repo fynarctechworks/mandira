@@ -44,7 +44,10 @@ export async function middleware(request: NextRequest) {
   ensureDeviceCookie(request, response as NextResponse);
 
   if (!user && needsAccount(request.nextUrl.pathname)) {
-    const target = new URL(`/${localeOf(request.nextUrl.pathname)}/sign-in`, request.url);
+    // A locale-less `/journeys/…` has no locale to keep, and `//sign-in` is a URL for the
+    // host "sign-in" rather than a path — so it falls back to the default locale.
+    const locale = localeOf(request.nextUrl.pathname) || routing.defaultLocale;
+    const target = new URL(`/${locale}/sign-in`, request.url);
     // `next` carries them back to the page they asked for, rather than to a home screen
     // they did not want (the same contract B-019's save flow relies on).
     target.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);

@@ -62,7 +62,10 @@ export async function deliverEmail(
   // Rejected or unconfigured will answer the same way next time; retrying only repeats it.
   if (result.reason !== "unavailable") return "failed";
 
-  const due = row.scheduled_for ? Date.parse(row.scheduled_for) : Number.NaN;
+  // A retried row has been rescheduled; the window runs from when it was first due.
+  const firstDue =
+    ((row.payload ?? {}) as { first_due_at?: string }).first_due_at ?? row.scheduled_for;
+  const due = firstDue ? Date.parse(firstDue) : Number.NaN;
   const now = (deps.now ?? new Date()).getTime();
   return Number.isFinite(due) && now - due < RETRY_WINDOW_MS ? "retry" : "failed";
 }

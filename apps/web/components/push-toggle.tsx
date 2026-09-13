@@ -89,11 +89,12 @@ export function PushToggle() {
         return;
       }
 
-      await fetch("/api/notifications/subscribe", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ endpoint: subscription.endpoint }),
-      });
+      // A DELETE's input is its query string (`withApi`); a body never arrived, so the row
+      // stayed and the cron kept pushing to a browser that had said stop.
+      await fetch(
+        `/api/notifications/subscribe?endpoint=${encodeURIComponent(subscription.endpoint)}`,
+        { method: "DELETE" },
+      );
 
       await subscription.unsubscribe();
       setState("off");

@@ -108,6 +108,8 @@ export async function syncJourneyNotifications(
     items,
     prepareTasks,
     prefs,
+    // So a leave-by counts the travel to reach each item, exactly as Live's departure-by does.
+    knowledge,
     // The engine has no clock (D-005), so the caller says what "now" is.
     now: new Date().toISOString(),
   }).flatMap((draft): NotificationDraft[] => {

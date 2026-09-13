@@ -5,6 +5,7 @@ import {
   scheduleNotifications,
   type NotificationDraft,
 } from "./notify";
+import { getNowNextLater } from "./live";
 import type { PrepareTask } from "./prepare";
 import { scheduleDay } from "./schedule";
 import { fromInstant, toInstant } from "./time";
@@ -66,14 +67,38 @@ describe("scheduleNotifications", () => {
     expect(localMinutes(tomorrow.scheduledFor, "2026-10-11")).toBe(18 * 60);
   });
 
-  it("counts back from each item through its buffer and 15 minutes", () => {
-    const drafts = scheduleNotifications({ journey, items: day(), now: WELL_BEFORE });
+  it("counts back from each item through travel, its buffer and 15 minutes", () => {
+    const drafts = scheduleNotifications({ journey, items: day(), knowledge, now: WELL_BEFORE });
     const leaveBy = drafts.filter((d) => d.type === "leave_by");
 
-    // b starts 08:45; less its 15-minute buffer, less 15 minutes' notice.
+    // b starts 08:45; less 30 minutes' travel, less its 15-minute buffer, less 15 minutes' notice.
     expect(leaveBy).toHaveLength(1);
-    expect(localMinutes(leaveBy[0]!.scheduledFor)).toBe(8 * 60 + 15);
+    expect(localMinutes(leaveBy[0]!.scheduledFor)).toBe(7 * 60 + 45);
     expect(leaveBy[0]!.itemId).toBe("b");
+  });
+
+  it("reminds 15 minutes before the leave-by Live shows, never after it", () => {
+    const items = day();
+    const drafts = scheduleNotifications({ journey, items, knowledge, now: WELL_BEFORE });
+    const reminder = drafts.find((d) => d.type === "leave_by")!;
+
+    // Live, standing in item a, departs for b at 08:00.
+    const live = getNowNextLater({
+      journey,
+      items,
+      knowledge,
+      nowAt: toInstant(START, 7 * 60, TZ),
+    });
+
+    expect(Date.parse(live.leaveByAt!) - Date.parse(reminder.scheduledFor)).toBe(15 * 60_000);
+  });
+
+  it("counts no travel when it is not given the knowledge to count it", () => {
+    const drafts = scheduleNotifications({ journey, items: day(), now: WELL_BEFORE });
+    const leaveBy = drafts.find((d) => d.type === "leave_by")!;
+
+    // b starts 08:45; less its 15-minute buffer, less 15 minutes' notice.
+    expect(localMinutes(leaveBy.scheduledFor)).toBe(8 * 60 + 15);
   });
 
   it("does not tell anyone to leave for where they already are", () => {

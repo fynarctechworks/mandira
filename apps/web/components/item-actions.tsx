@@ -44,15 +44,32 @@ export function ItemActions({
   const canRemove = checkItemAction(tier, "remove").allowed;
   const canMove = checkItemAction(tier, "move").allowed;
 
-  async function send(body: Record<string, unknown>, method: "PATCH" | "DELETE" = "PATCH") {
+  async function send(body: Record<string, unknown>) {
     setProblem(null);
+    await respond(
+      await fetch(`/api/journeys/${journeyId}/items/${itemId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+  }
 
-    const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}`, {
-      method,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+  /*
+   * A DELETE carries its input in the query string — `withApi` reads nothing else for it —
+   * so the confirmation goes there. Sent as a body it never arrived, and every removal was
+   * refused as unconfirmed.
+   */
+  async function remove() {
+    setProblem(null);
+    await respond(
+      await fetch(`/api/journeys/${journeyId}/items/${itemId}?confirmed=true`, {
+        method: "DELETE",
+      }),
+    );
+  }
 
+  async function respond(response: Response) {
     const payload = await response.json();
 
     if (!payload.ok) {
@@ -152,7 +169,7 @@ export function ItemActions({
               >
                 {t("keep")}
               </Button>
-              <Button onClick={() => void send({ confirmed: true }, "DELETE")} disabled={pending}>
+              <Button onClick={() => void remove()} disabled={pending}>
                 {t("remove_confirm")}
               </Button>
             </div>

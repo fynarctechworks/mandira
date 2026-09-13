@@ -8,8 +8,8 @@ import {
 
 import type { Database, Json } from "@mandhira/db/types";
 
-import { mustList, mustMaybe, mustWrite } from "./data-error";
-import { getJourney, toEngineJourney } from "./journeys";
+import { mustMaybe, mustWrite } from "./data-error";
+import { getJourney, toEngineJourney, travelersFor } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
 
@@ -26,6 +26,8 @@ import type { webSupabase } from "./supabase";
  * one they were shown, not a recomputation against a journey that moved underneath them.
  */
 type Client = Awaited<ReturnType<typeof webSupabase>>;
+
+export { travelersFor };
 
 export type ChangeEvent = {
   id: string;
@@ -100,7 +102,7 @@ export async function decideChange(
   eventId: string,
   optionId: string | null,
   locale: string,
-): Promise<{ applied: ItemChange[]; outcome: "applied" | "kept" } | null> {
+): Promise<{ applied: ItemChange[]; outcome: "applied" | "kept"; days: number[] } | null> {
   const event = mustMaybe(
     await supabase
       .from("journey_change_events")
@@ -128,7 +130,7 @@ export async function decideChange(
       "journey_change_events update",
     );
 
-    return { applied: [], outcome: "kept" };
+    return { applied: [], outcome: "kept", days: [] };
   }
 
   const index = card.options.findIndex((option) => option.id === optionId);
@@ -146,7 +148,7 @@ export async function decideChange(
    */
   const { appliedChanges } = applyOption({ items: detail.items, option });
 
-  await writeChanges(supabase, journeyId, appliedChanges);
+  await writeChanges(supabase, journeyId, appliedChanges, detail.items);
 
   mustWrite(
     await supabase
@@ -160,7 +162,18 @@ export async function decideChange(
     "journey_change_events update",
   );
 
-  return { applied: appliedChanges, outcome: "applied" };
+  // Every day an item left or arrived on, so the caller puts exactly those back on the clock.
+  const dayOf = new Map(detail.items.map((item) => [item.id, item.day_index]));
+  const days = [
+    ...new Set(
+      appliedChanges.flatMap((change) => [
+        ...(dayOf.has(change.itemId) ? [dayOf.get(change.itemId)!] : []),
+        ...(change.op === "move_day" ? [change.toDayIndex] : []),
+      ]),
+    ),
+  ];
+
+  return { applied: appliedChanges, outcome: "applied", days };
 }
 
 /**
@@ -175,7 +188,10 @@ async function writeChanges(
   supabase: Client,
   journeyId: string,
   changes: ItemChange[],
+  current: readonly { id: string; buffer_minutes?: number | null }[],
 ): Promise<void> {
+  const bufferOf = new Map(current.map((item) => [item.id, item.buffer_minutes ?? 0]));
+
   for (const change of changes) {
     // Typed as the table's Update row, so a column-name typo is a compile error rather
     // than an update that silently changes nothing.
@@ -188,7 +204,13 @@ async function writeChanges(
         patch.deleted_at = new Date().toISOString();
         break;
       case "absorb_buffer":
-        patch.buffer_minutes = Math.max(0, change.byMinutes);
+        /*
+         * `byMinutes` is how much of the buffer is spent, not what is left of it — the engine
+         * applies it as `buffer − byMinutes` (applyOption). Writing it as the new buffer
+         * turned "use 10 of this 25-minute buffer" into a 10-minute buffer here and a
+         * 15-minute one on the card the traveler accepted.
+         */
+        patch.buffer_minutes = Math.max(0, (bufferOf.get(change.itemId) ?? 0) - change.byMinutes);
         break;
       case "set_window":
         patch.preferred_window_start = change.startTime;
@@ -210,20 +232,6 @@ async function writeChanges(
       "journey_items update",
     );
   }
-}
-
-export async function travelersFor(supabase: Client, journeyId: string) {
-  const data = mustList(
-    await supabase
-      .from("journey_travelers")
-      .select("traveler_profiles(id, mobility, age_band)")
-      .eq("journey_id", journeyId),
-    "journey_travelers",
-  );
-
-  return data
-    .map((row) => row.traveler_profiles)
-    .filter((profile): profile is NonNullable<typeof profile> => !!profile);
 }
 
 const EMPTY_BUNDLE = {

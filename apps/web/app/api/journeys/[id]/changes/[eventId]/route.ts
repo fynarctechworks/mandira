@@ -5,6 +5,7 @@ import { withApi } from "../../../../../../lib/api";
 import { decideChange } from "../../../../../../lib/changes";
 import { getJourney } from "../../../../../../lib/journeys";
 import { resyncNotifications } from "../../../../../../lib/notifications";
+import { rescheduleDays } from "../../../../../../lib/replan";
 
 /**
  * The traveler's decision on a Change Card (PRD-ADPT-005).
@@ -43,9 +44,19 @@ export const POST = withApi({
       throw new ApiError("not_found");
     }
 
-    // Fresh items AND fresh health, like every other mutation — a screen showing the old
-    // verdict beside the new plan is the failure this guards against.
-    if (result.applied) {
+    /*
+     * An applied option changed days, windows, durations or buffers — not the clock. Every
+     * day it touched is put back on the clock before anything reads the plan, so Live, the
+     * health verdict and the leave-by reminders all answer for where things now are rather
+     * than where they were before the tap. Keeping things as they are moves nothing.
+     */
+    const applied = result.outcome === "applied";
+    const updated = applied
+      ? await rescheduleDays(supabase, journeyId, result.days)
+      : await getJourney(supabase, journeyId, "en");
+
+    if (applied) {
+      // After rescheduling, so the reminders follow the new times.
       await resyncNotifications(
         supabase,
         journeyId,
@@ -53,8 +64,9 @@ export const POST = withApi({
         "POST /api/journeys/:id/changes/:eventId",
       );
     }
-    const updated = await getJourney(supabase, journeyId, "en");
 
+    // Fresh items AND fresh health, like every other mutation — a screen showing the old
+    // verdict beside the new plan is the failure this guards against.
     return {
       outcome: result.outcome,
       applied: result.applied,

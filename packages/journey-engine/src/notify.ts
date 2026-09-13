@@ -1,6 +1,8 @@
+import { projectActuals } from "./actuals";
+import { leaveByMinutes } from "./live";
 import type { PrepareTask } from "./prepare";
 import { dateForDay, fromInstant, toInstant } from "./time";
-import type { Journey, JourneyItem } from "./types";
+import type { Journey, JourneyItem, KnowledgeBundle } from "./types";
 
 /** The `notification_type_enum` vocabulary, verbatim (TRD §4.1). */
 export type NotificationType =
@@ -41,6 +43,15 @@ const LEAVE_BY_LEAD_MINUTES = 15;
 /** PRD F15: "journey starts tomorrow" goes out at 18:00 the day before. */
 const TOMORROW_HOUR = 18;
 
+/** No places, so no travel: what a leave-by counts when the caller gives no knowledge. */
+const NO_KNOWLEDGE: KnowledgeBundle = {
+  places: [],
+  experiences: [],
+  availability_rules: [],
+  routes: [],
+  transport_connections: [],
+};
+
 /** PRD F15's defaults. Only suggestions are off, and only they are marketing-adjacent. */
 const DEFAULT_ON: Record<NotificationType, boolean> = {
   prepare_deadline: true,
@@ -69,9 +80,17 @@ export function scheduleNotifications(input: {
   items: JourneyItem[];
   prepareTasks?: PrepareTask[];
   prefs?: NotificationPrefs;
+  /**
+   * The knowledge the plan was made on, so a leave-by counts the travel to reach the item
+   * exactly as Live's departure-by does. Without it travel counts as zero.
+   */
+  knowledge?: KnowledgeBundle;
   now: string;
 }): NotificationDraft[] {
-  const { journey, items, now } = input;
+  const { journey, now } = input;
+  // A traveler running late gets the leave-by for where the day now is (actuals.ts).
+  const items = projectActuals(input.items);
+  const knowledge = input.knowledge ?? NO_KNOWLEDGE;
   const prefs = input.prefs ?? {};
   const nowMs = Date.parse(now);
 
@@ -138,14 +157,22 @@ export function scheduleNotifications(input: {
         if (Number.isNaN(Date.parse(item.planned_start_at))) return;
         const startMinutes = fromInstant(item.planned_start_at, date, journey.timezone);
 
+        /*
+         * The same departure-by Live shows (start − travel − buffer), reminded 15 minutes
+         * ahead of it. Counting only the buffer put the push after the moment Live said to
+         * leave, whenever there was any travel at all.
+         */
+        const leaveBy = leaveByMinutes({
+          startMinutes,
+          from: ordered[index - 1],
+          to: item,
+          knowledge,
+        });
+
         drafts.push({
           dedupeKey: `leaveby:${item.id}`,
           type: "leave_by",
-          scheduledFor: toInstant(
-            date,
-            startMinutes - (item.buffer_minutes ?? 0) - LEAVE_BY_LEAD_MINUTES,
-            journey.timezone,
-          ),
+          scheduledFor: toInstant(date, leaveBy - LEAVE_BY_LEAD_MINUTES, journey.timezone),
           titleKey: "notify.leave_by.title",
           bodyKey: "notify.leave_by.body",
           params: { itemId: item.id, minutes: LEAVE_BY_LEAD_MINUTES },

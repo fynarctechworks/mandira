@@ -2,6 +2,7 @@ import { ApiError } from "@mandhira/db/api";
 import { z } from "zod";
 
 import { withApi } from "../../../../lib/api";
+import { isAllowedPushEndpoint } from "./endpoint";
 
 /**
  * Registering and removing a Web Push subscription (TRD §5.2, NOTF-01).
@@ -16,7 +17,11 @@ import { withApi } from "../../../../lib/api";
  * of every reminder.
  */
 const subscribeSchema = z.object({
-  endpoint: z.string().url().max(2048),
+  endpoint: z
+    .string()
+    .url()
+    .max(2048)
+    .refine(isAllowedPushEndpoint, "That is not a push service address."),
   keys: z.object({
     p256dh: z.string().min(1).max(256),
     auth: z.string().min(1).max(256),
