@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { FirstRunLanguage } from "../../components/first-run-language";
 import { LanguageSwitcher } from "../../components/language-switcher";
+import { listJourneys } from "../../lib/journeys";
 import { getDestinationCards } from "../../lib/knowledge";
 import { webSupabase } from "../../lib/supabase";
 
@@ -21,16 +22,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, tSearch, tHub, destinations, supabase] = await Promise.all([
+  const [t, tSearch, tHub, tJourney, destinations, supabase] = await Promise.all([
     getTranslations("home"),
     getTranslations("search"),
     getTranslations("prepareHub"),
+    getTranslations("addToJourney"),
     getDestinationCards(locale),
     webSupabase(),
   ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  /*
+   * PRD A02: "Continue your journey" when there is one to continue — the journey under way,
+   * or else the next one ahead (the list is ordered by start date). Signed in only: a guest's
+   * unsaved draft is offered where it was made, on the plan screen.
+   */
+  const journeys = user ? await listJourneys(supabase) : [];
+  const continuing =
+    journeys.find((journey) => journey.status === "active") ??
+    journeys.find((journey) => journey.status === "upcoming") ??
+    null;
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -71,6 +84,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           {tSearch("submit")}
         </button>
       </form>
+
+      {continuing ? (
+        <Link
+          href={
+            continuing.status === "active"
+              ? `/${locale}/journeys/${continuing.id}/live`
+              : `/${locale}/journeys/${continuing.id}`
+          }
+          className="focus-ring flex min-h-11 items-center justify-between gap-3 rounded-lg border border-brand-primary bg-brand-primary-soft p-4"
+        >
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-caption font-medium text-brand-primary-text">
+              {t("continue_title")}
+            </span>
+            <span className="text-h3">{continuing.title ?? tJourney("untitled")}</span>
+            <span className="text-body-sm text-text-secondary">
+              {continuing.status === "active"
+                ? t("continue_active")
+                : continuing.startDate
+                  ? t("continue_upcoming", {
+                      date: new Intl.DateTimeFormat(locale, {
+                        day: "numeric",
+                        month: "long",
+                        timeZone: "UTC",
+                      }).format(new Date(`${continuing.startDate}T00:00:00Z`)),
+                    })
+                  : t("continue_undated")}
+            </span>
+          </span>
+          <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+        </Link>
+      ) : null}
 
       {/* PRD A02: the primary action on the home screen. */}
       <Link

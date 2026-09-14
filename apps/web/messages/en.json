@@ -25,7 +25,11 @@
     "intro": "Tell Mandhira what your journey has to include, and it works out whether the days hold together.",
     "search_label": "Search places and experiences",
     "destinations_title": "Where you could go",
-    "no_destinations": "No destinations have been published yet."
+    "no_destinations": "No destinations have been published yet.",
+    "continue_title": "Continue your journey",
+    "continue_active": "It’s under way — open today’s plan",
+    "continue_upcoming": "Starts {date}",
+    "continue_undated": "No date yet"
   },
   "health": {
     "title": "How this journey holds together",

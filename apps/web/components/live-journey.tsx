@@ -17,6 +17,7 @@ import { replanLocally } from "../lib/offline/replan-local";
 import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
 import { FieldTrust } from "./field-trust";
+import { ReportAChange } from "./report-a-change";
 import { OfflineNotice } from "./offline-notice";
 import { OpenInMaps } from "./open-in-maps";
 import { PhraseShortcut } from "./phrase-shortcut";
@@ -459,6 +460,19 @@ export function LiveJourney({
       {/* PRD-LIVE-002's phrase shortcut — beside the NOW card, never one of its three actions. */}
       {view.destinationId ? (
         <PhraseShortcut destinationId={view.destinationId} locale={locale} />
+      ) : null}
+
+      {/*
+        PRD F14 from where it matters most: the gate in front of the traveler says something
+        other than the plan. Queued with no signal, like every other Live action.
+      */}
+      {kind === "item" && nowView.entity ? (
+        <ReportAChange
+          entityTable={nowView.entity.table}
+          entityId={nowView.entity.id}
+          entityName={nowView.label}
+          locale={locale}
+        />
       ) : null}
 
       {/* ── NEXT ────────────────────────────────────────────────────────────── */}

@@ -44,6 +44,8 @@ export type LiveItemView = {
    * no badge is shown rather than a neutral one.
    */
   trust: TrustEntry | null;
+  /** What a report from Live is about: the experience, or the place for a visit. */
+  entity: { table: "experiences" | "places"; id: string } | null;
 };
 
 export type LiveView = {
@@ -104,6 +106,12 @@ export function assembleLiveView(input: {
 
   const health = computeHealth({ journey: engineJourney, items, knowledge: bundle, ...people });
   const byId = new Map(items.map((item) => [item.id, item]));
+  const entityOf = (item: StoredItem | undefined): LiveItemView["entity"] =>
+    item?.experience_id
+      ? { table: "experiences", id: item.experience_id }
+      : item?.place_id
+        ? { table: "places", id: item.place_id }
+        : null;
   const trustOf = (item: StoredItem | undefined): TrustEntry | null => {
     const map = (bundle.trust ?? {}) as Record<string, TrustMap>;
     const own = item?.experience_id ? map[item.experience_id] : undefined;
@@ -124,6 +132,7 @@ export function assembleLiveView(input: {
       tier: item?.tier ?? null,
       isDone: item?.status === "done",
       trust: trustOf(item),
+      entity: entityOf(item),
     };
   };
 
@@ -138,6 +147,7 @@ export function assembleLiveView(input: {
           tier: item.tier,
           isDone: item.status === "done",
           trust: trustOf(item),
+          entity: entityOf(item),
         }
       : null;
 
