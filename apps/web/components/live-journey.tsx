@@ -16,6 +16,7 @@ import { enqueue, flushOutbox, pendingCount } from "../lib/offline/outbox";
 import { replanLocally } from "../lib/offline/replan-local";
 import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
+import { FieldTrust } from "./field-trust";
 import { OfflineNotice } from "./offline-notice";
 import { OpenInMaps } from "./open-in-maps";
 import { PhraseShortcut } from "./phrase-shortcut";
@@ -406,12 +407,17 @@ export function LiveJourney({
         title={nowView.label}
         detail={nowDetail(view, now, t, tPresent)}
         trailing={
-          nowView.tier ? (
-            <TierChip
-              tier={TIER_CHIP[nowView.tier]}
-              label={tTier(`${nowView.tier}.label`)}
-              readOnly
-            />
+          nowView.tier || nowView.trust ? (
+            <div className="flex flex-col items-end gap-1">
+              {nowView.tier ? (
+                <TierChip
+                  tier={TIER_CHIP[nowView.tier]}
+                  label={tTier(`${nowView.tier}.label`)}
+                  readOnly
+                />
+              ) : null}
+              <LiveTrust item={nowView} locale={locale} />
+            </div>
           ) : undefined
         }
         /*
@@ -469,6 +475,9 @@ export function LiveJourney({
                 {view.next.place ? (
                   <p className="text-body-sm text-text-secondary">{view.next.place.name}</p>
                 ) : null}
+                <div className="mt-1 flex">
+                  <LiveTrust item={view.next} locale={locale} />
+                </div>
               </div>
               {view.next.tier ? (
                 <TierChip
@@ -531,7 +540,14 @@ export function LiveJourney({
                     {window_(row, locale, tAll("common.not_scheduled"))}
                   </p>
                 </div>
-                <TierChip tier={TIER_CHIP[row.tier]} label={tTier(`${row.tier}.label`)} readOnly />
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <TierChip
+                    tier={TIER_CHIP[row.tier]}
+                    label={tTier(`${row.tier}.label`)}
+                    readOnly
+                  />
+                  <LiveTrust item={row} locale={locale} />
+                </div>
               </li>
             ))}
           </ul>
@@ -637,4 +653,31 @@ function window_(row: LiveItemView, locale: string, unscheduled: string): string
   if (!row.startAt) return unscheduled;
   const from = clock(row.startAt, locale);
   return row.endAt ? `${from} — ${clock(row.endAt, locale)}` : from;
+}
+
+/**
+ * The trust badge for a Live timing (PRD F9): the same badge and sheet as everywhere else,
+ * so a traveler standing at the gate is one tap from the source and the date it was checked.
+ */
+function LiveTrust({ item, locale }: { item: LiveItemView; locale: string }) {
+  if (!item.trust) return null;
+  const confirmed = item.trust.verified_at
+    ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(item.trust.verified_at),
+      )
+    : "";
+  const validUntil = item.trust.valid_until
+    ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(item.trust.valid_until),
+      )
+    : undefined;
+
+  return (
+    <FieldTrust
+      entry={item.trust}
+      fieldLabel={item.label}
+      lastConfirmed={confirmed}
+      validUntil={validUntil}
+    />
+  );
 }

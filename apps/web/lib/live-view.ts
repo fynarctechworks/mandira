@@ -12,6 +12,7 @@ import {
 } from "@mandhira/journey-engine";
 
 import { engineText, type Translate } from "./engine-text";
+import { weakestTrustEntry, type TrustEntry, type TrustMap } from "./trust";
 import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 
 /**
@@ -37,6 +38,12 @@ export type LiveItemView = {
   endAt: string | null;
   tier: PriorityTier | null;
   isDone: boolean;
+  /**
+   * The weakest trust entry behind this item's timing (PRD F9 "trust on Live"): the
+   * experience's, or the place's when it is a visit. Null when nothing is recorded, and then
+   * no badge is shown rather than a neutral one.
+   */
+  trust: TrustEntry | null;
 };
 
 export type LiveView = {
@@ -97,6 +104,12 @@ export function assembleLiveView(input: {
 
   const health = computeHealth({ journey: engineJourney, items, knowledge: bundle, ...people });
   const byId = new Map(items.map((item) => [item.id, item]));
+  const trustOf = (item: StoredItem | undefined): TrustEntry | null => {
+    const map = (bundle.trust ?? {}) as Record<string, TrustMap>;
+    const own = item?.experience_id ? map[item.experience_id] : undefined;
+    const place = item?.place_id ? map[item.place_id] : undefined;
+    return weakestTrustEntry(own ?? place ?? {}) ?? null;
+  };
 
   const view = (card: LiveCard | null): LiveItemView | null => {
     if (!card) return null;
@@ -110,6 +123,7 @@ export function assembleLiveView(input: {
       endAt: card.endAt,
       tier: item?.tier ?? null,
       isDone: item?.status === "done",
+      trust: trustOf(item),
     };
   };
 
@@ -123,6 +137,7 @@ export function assembleLiveView(input: {
           endAt: item.planned_end_at ?? null,
           tier: item.tier,
           isDone: item.status === "done",
+          trust: trustOf(item),
         }
       : null;
 

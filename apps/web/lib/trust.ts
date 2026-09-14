@@ -59,3 +59,21 @@ export function weakestTrustState(trust: TrustMap): TrustState | null {
 
   return worst;
 }
+
+/**
+ * The entry behind the weakest badge, so a badge that summarises an item can still open the
+ * sheet for the field it is warning about (PRD F9: one tap from any badge to its source).
+ */
+export function weakestTrustEntry(trust: TrustMap): TrustEntry | undefined {
+  const order: TrustState[] = ["verified", "verified_earlier", "check_locally"];
+  let worst: { entry: TrustEntry; rank: number } | undefined;
+
+  for (const entry of Object.values(trust)) {
+    const state = trustStateOf(entry);
+    if (!state) continue;
+    const rank = order.indexOf(state);
+    if (!worst || rank > worst.rank) worst = { entry, rank };
+  }
+
+  return worst?.entry;
+}
