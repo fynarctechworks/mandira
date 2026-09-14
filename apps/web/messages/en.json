@@ -999,5 +999,13 @@
     "title": "If everything runs long",
     "intro": "Using the longest times on record, these days would get harder:",
     "still_fits": "Even if everything takes its longest recorded time, every day still fits."
+  },
+  "advisoryNotice": {
+    "label": "Advisories for this journey",
+    "dismiss": "Dismiss",
+    "source": "Source: {source}",
+    "between": "{from} to {to}",
+    "from": "From {date}",
+    "until": "Until {date}"
   }
 }

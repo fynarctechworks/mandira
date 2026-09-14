@@ -1347,3 +1347,52 @@ function stepFreeOf(value: unknown): "yes" | "no" | "partial" | null {
   const step = (value as Record<string, unknown>)["step_free"];
   return step === "yes" || step === "no" || step === "partial" ? step : null;
 }
+
+/** An advisory as a journey shows it (PRD A25): with its dates and its source. */
+export type JourneyAdvisory = Advisory & {
+  startsAt: string | null;
+  endsAt: string | null;
+  sourceName: string | null;
+};
+
+/**
+ * Published advisories for a journey's destination whose window touches its days (PRD A25,
+ * PRD F15). The same set 0045 notifies about, so the notice a traveler taps through to is
+ * on the journey they land on.
+ */
+export async function getJourneyAdvisories(
+  destinationId: string,
+  startDate: string | null,
+  endDate: string | null,
+  locale: string,
+): Promise<JourneyAdvisory[]> {
+  const supabase = await webSupabase();
+  const rows = mustList(
+    await supabase
+      .from("v_published_advisories")
+      .select("id, title_i18n, body_i18n, severity, starts_at, ends_at, trust")
+      .eq("destination_id", destinationId)
+      .order("starts_at", { ascending: true, nullsFirst: true }),
+    "v_published_advisories",
+  );
+
+  const last = endDate ?? startDate;
+  return rows
+    .filter((row) => {
+      if (!startDate || !last) return true;
+      const ends = (row.ends_at as string | null)?.slice(0, 10);
+      const starts = (row.starts_at as string | null)?.slice(0, 10);
+      return (!ends || ends >= startDate) && (!starts || starts <= last);
+    })
+    .map((row) => ({
+      id: row.id as string,
+      title: text(row.title_i18n, locale),
+      body: text(row.body_i18n, locale),
+      severity: (row.severity as Advisory["severity"] | null) ?? "info",
+      startsAt: (row.starts_at as string | null) ?? null,
+      endsAt: (row.ends_at as string | null) ?? null,
+      sourceName:
+        Object.values((row.trust ?? {}) as TrustMap).find((entry) => entry?.source_name)
+          ?.source_name ?? null,
+    }));
+}

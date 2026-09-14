@@ -7,6 +7,8 @@ import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 
 import { DayHealthSheet } from "../../../../components/day-health-sheet";
 import { ItemActions } from "../../../../components/item-actions";
+import { AdvisoryNotices } from "../../../../components/advisory-notices";
+import { getJourneyAdvisories } from "../../../../lib/knowledge";
 import { JourneyDetailsSheet } from "../../../../components/journey-details-sheet";
 import { JourneySync } from "../../../../components/journey-sync";
 import { KnowledgeWatch } from "../../../../components/knowledge-watch";
@@ -67,6 +69,41 @@ export default async function JourneyPage({
     getTranslations("itemActions.tiers"),
   ]);
   const { journey, items, health, labels, trust, dependencies } = detail;
+
+  // PRD A25: the destination's advisories that touch this journey's days.
+  const advisoryDate = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: journey.timezone,
+  });
+  const advisories = (
+    journey.destinationId
+      ? await getJourneyAdvisories(
+          journey.destinationId,
+          journey.startDate,
+          journey.endDate,
+          locale,
+        )
+      : []
+  ).map((advisory) => {
+    const from = advisory.startsAt ? advisoryDate.format(new Date(advisory.startsAt)) : null;
+    const to = advisory.endsAt ? advisoryDate.format(new Date(advisory.endsAt)) : null;
+    return {
+      id: advisory.id,
+      title: advisory.title.text,
+      body: advisory.body.text,
+      severity: advisory.severity,
+      sourceName: advisory.sourceName,
+      dates:
+        from && to
+          ? t("advisoryNotice.between", { from, to })
+          : from
+            ? t("advisoryNotice.from", { date: from })
+            : to
+              ? t("advisoryNotice.until", { date: to })
+              : null,
+    };
+  });
   // What another device may change underneath this page (PRD-ACCT-005).
   const version = await journeyVersion(supabase, journey.id);
 
@@ -118,6 +155,8 @@ export default async function JourneyPage({
           }}
         />
       </header>
+
+      <AdvisoryNotices advisories={advisories} />
 
       <JourneyHealth report={health} />
 
