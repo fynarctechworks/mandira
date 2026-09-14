@@ -142,7 +142,6 @@ export function LocalesAdmin({ locales, canEdit }: { locales: LocaleRow[]; canEd
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
-                      size="sm"
                       disabled={pending}
                       onClick={() =>
                         act(
@@ -154,7 +153,7 @@ export function LocalesAdmin({ locales, canEdit }: { locales: LocaleRow[]; canEd
                     >
                       Save
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                    <Button variant="ghost" onClick={() => setEditing(null)}>
                       Cancel
                     </Button>
                   </div>
@@ -189,7 +188,6 @@ export function LocalesAdmin({ locales, canEdit }: { locales: LocaleRow[]; canEd
                 {canEdit ? (
                   <TableCell>
                     <Button
-                      size="sm"
                       variant="ghost"
                       aria-label={`Edit ${locale.name_en}`}
                       onClick={() =>

@@ -124,7 +124,6 @@ export function TranslationsGrid({
                         />
                         <div className="flex flex-wrap items-center gap-2">
                           <NativeSelect
-                            size="sm"
                             aria-label="Status"
                             value={editing.status}
                             onChange={(e) =>
@@ -138,20 +137,15 @@ export function TranslationsGrid({
                             <NativeSelectOption value="confirmed">Confirmed</NativeSelectOption>
                           </NativeSelect>
                           {locale.code !== "en" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={pending}
-                              onClick={suggest}
-                            >
+                            <Button variant="outline" disabled={pending} onClick={suggest}>
                               <BotIcon aria-hidden="true" />
                               Suggest
                             </Button>
                           ) : null}
-                          <Button size="sm" disabled={pending} onClick={save}>
+                          <Button disabled={pending} onClick={save}>
                             Save
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                          <Button variant="ghost" onClick={() => setEditing(null)}>
                             Cancel
                           </Button>
                         </div>
@@ -177,7 +171,6 @@ export function TranslationsGrid({
                           )}
                           {canEdit ? (
                             <Button
-                              size="xs"
                               variant="ghost"
                               aria-label={`Edit ${row.key} in ${locale.label}`}
                               onClick={() =>

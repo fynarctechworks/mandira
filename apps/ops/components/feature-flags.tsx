@@ -89,7 +89,6 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
                     />
                     <div className="flex gap-2">
                       <Button
-                        size="sm"
                         disabled={pending}
                         onClick={() =>
                           act(
@@ -100,7 +99,7 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
                       >
                         Save
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                      <Button variant="ghost" onClick={() => setEditing(null)}>
                         Cancel
                       </Button>
                     </div>
@@ -111,7 +110,6 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
                       {flag.description ?? "No description yet"}
                     </span>
                     <Button
-                      size="sm"
                       variant="ghost"
                       aria-label={`Edit the description of ${flag.key}`}
                       onClick={() => {

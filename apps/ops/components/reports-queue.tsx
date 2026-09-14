@@ -3,7 +3,9 @@
 import { Button } from "@mandhira/ui";
 import { useState, useTransition } from "react";
 
+import Link from "next/link";
 import { resolveReport, triageReport } from "@/app/(ops)/reports/actions";
+import { editorPath, entityNoun } from "@/lib/entities";
 
 /*
  * Pinned locale and zone. `toLocaleDateString()` used the server's defaults on the server
@@ -60,6 +62,14 @@ const OUTCOMES = [
   { value: "resolved_unverifiable", label: "Couldn't verify" },
 ] as const;
 
+/** A report's state in words. */
+const STATUS_LABEL: Record<string, string> = {
+  new: "New",
+  triaged: "Sent to Verify",
+  closed: "Closed",
+  ...Object.fromEntries(OUTCOMES.map((outcome) => [outcome.value, outcome.label])),
+};
+
 export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
   const [pending, startTransition] = useTransition();
   const [note, setNote] = useState<Record<string, string>>({});
@@ -94,16 +104,25 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
                 <div className="min-w-0">
                   <h2 className="text-h3">{TYPE_LABEL[row.report_type] ?? row.report_type}</h2>
                   <p className="text-caption text-text-secondary">
-                    {row.entity_table} · {row.entity_id.slice(0, 8)}
+                    {entityNoun(row.entity_table)}
                     {row.field_name ? ` · ${row.field_name}` : ""} ·{" "}
                     {FILED.format(new Date(row.created_at))}
                     {row.locale ? ` · ${row.locale}` : ""}
                   </p>
                 </div>
                 <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption">
-                  {row.status}
+                  {STATUS_LABEL[row.status] ?? row.status}
                 </span>
               </div>
+
+              {editorPath(row.entity_table, row.entity_id) ? (
+                <Link
+                  href={editorPath(row.entity_table, row.entity_id)!}
+                  className="focus-ring self-start text-body-sm font-medium text-brand-primary-text underline"
+                >
+                  Open the record this is about
+                </Link>
+              ) : null}
 
               {row.description ? (
                 /*

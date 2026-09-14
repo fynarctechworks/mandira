@@ -48,18 +48,19 @@ export function ChecklistRow({
           id={checkboxId}
           checked={checked}
           onCheckedChange={(value) => onCheckedChange(value === true)}
-          className="focus-ring flex size-6 shrink-0 items-center justify-center rounded-[6px] border border-border-subtle bg-surface data-[state=checked]:border-brand-primary data-[state=checked]:bg-brand-primary"
+          className="focus-ring flex size-6 shrink-0 items-center justify-center rounded-[6px] border-2 border-text-secondary bg-surface data-[state=checked]:border-brand-primary data-[state=checked]:bg-brand-primary"
         >
           <Checkbox.Indicator className="text-text-on-primary">
             <Check aria-hidden="true" className="size-4" />
           </Checkbox.Indicator>
         </Checkbox.Root>
 
-        <label htmlFor={checkboxId} className="flex-1 cursor-pointer text-body">
-          {label}
-        </label>
-
-        {badge}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 py-2.5">
+          <label htmlFor={checkboxId} className="cursor-pointer text-body">
+            {label}
+          </label>
+          {badge ? <div className="flex">{badge}</div> : null}
+        </div>
 
         {why ? (
           <button

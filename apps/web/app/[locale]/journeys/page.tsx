@@ -16,6 +16,8 @@ import { webSupabase } from "../../../lib/supabase";
  */
 export const dynamic = "force-dynamic";
 
+const STATUS_ORDER = ["active", "upcoming", "draft", "completed", "archived"] as const;
+
 export default async function JourneysPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -33,6 +35,29 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
     getTranslations("addToJourney"),
     getTranslations("prepareHub"),
   ]);
+
+  /*
+   * Grouped by where each journey stands, the one under way first. A flat list of cards
+   * that all read "Your journey · a date" gave no way to tell a finished pilgrimage from
+   * next month's (design review; PRD F13 journeys list).
+   */
+  const groups = STATUS_ORDER.map((status) => ({
+    status,
+    journeys: journeys.filter((journey) => journey.status === status),
+  })).filter((group) => group.journeys.length > 0);
+
+  const day = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const datesOf = (journey: (typeof journeys)[number]) => {
+    if (!journey.startDate) return tHub("no_date");
+    const first = new Date(`${journey.startDate}T00:00:00Z`);
+    if (!journey.endDate || journey.endDate === journey.startDate) return day.format(first);
+    return day.formatRange(first, new Date(`${journey.endDate}T00:00:00Z`));
+  };
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -57,30 +82,38 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
           </Link>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {journeys.map((journey) => (
-            <li key={journey.id}>
-              <Link
-                href={`/${locale}/journeys/${journey.id}`}
-                className="focus-ring flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-bg-surface p-4"
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => (
+            <section
+              key={group.status}
+              aria-labelledby={`group-${group.status}`}
+              className="flex flex-col gap-3"
+            >
+              <h2
+                id={`group-${group.status}`}
+                className="text-body-sm font-medium text-text-secondary"
               >
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-h3">{journey.title ?? tJourney("untitled")}</span>
-                  {journey.startDate ? (
-                    <span className="text-caption text-text-secondary">
-                      {new Intl.DateTimeFormat(locale, {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      }).format(new Date(`${journey.startDate}T00:00:00Z`))}
-                    </span>
-                  ) : null}
-                </span>
-                <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
-              </Link>
-            </li>
+                {t(`groups.${group.status}`)}
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {group.journeys.map((journey) => (
+                  <li key={journey.id}>
+                    <Link
+                      href={`/${locale}/journeys/${journey.id}`}
+                      className="focus-ring flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-bg-surface p-4"
+                    >
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-h3">{journey.title ?? tJourney("untitled")}</span>
+                        <span className="text-caption text-text-secondary">{datesOf(journey)}</span>
+                      </span>
+                      <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );

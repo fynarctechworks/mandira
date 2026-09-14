@@ -171,7 +171,7 @@ export function TeamRoles({ team, userId }: { team: TeamRow[]; userId: string })
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon-xs"
+                                    size="icon"
                                     disabled={pending}
                                     aria-label={`Remove ${held} from ${member.email}`}
                                   />

@@ -111,7 +111,6 @@ export function PublishQueue({
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
-                      size="sm"
                       disabled={!canPublish || (pending && busy === key)}
                       onClick={() =>
                         run(
@@ -195,7 +194,6 @@ export function PublishQueue({
                   </p>
                 </div>
                 <Button
-                  size="sm"
                   variant="outline"
                   disabled={!canPublish || (pending && busy === schedule.id)}
                   onClick={() =>
@@ -323,7 +321,7 @@ function ScheduleControl({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button size="sm" variant="outline" disabled={disabled} />}>
+      <PopoverTrigger render={<Button variant="outline" disabled={disabled} />}>
         Schedule…
       </PopoverTrigger>
       <PopoverContent className="w-auto" align="start">
@@ -346,9 +344,7 @@ function ScheduleControl({
               onChange={(e) => setTime(e.target.value)}
             />
           </div>
-          <Button size="sm" onClick={confirm}>
-            Schedule
-          </Button>
+          <Button onClick={confirm}>Schedule</Button>
         </div>
         {problem ? (
           <p role="alert" className="text-body-sm text-destructive">

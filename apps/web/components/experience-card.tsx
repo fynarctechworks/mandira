@@ -48,7 +48,7 @@ export function ExperienceCard({
       {experience.fitsJourney ? (
         <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
       ) : null}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-1">
         <h3 className="text-h3">
           {/*
            * The whole card is not the link. A card carries a trust badge that opens a
@@ -63,7 +63,11 @@ export function ExperienceCard({
             <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
           </Link>
         </h3>
-        {trust ? <TrustBadge state={trust} label={tBadge(trust)} /> : null}
+        {trust ? (
+          <div className="flex">
+            <TrustBadge state={trust} label={tBadge(trust)} />
+          </div>
+        ) : null}
       </div>
 
       {experience.significance.text ? (

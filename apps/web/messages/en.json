@@ -605,7 +605,14 @@
   },
   "journeysList": {
     "title": "Your journeys",
-    "empty": "You haven't saved a journey yet."
+    "empty": "You haven't saved a journey yet.",
+    "groups": {
+      "active": "On the way",
+      "upcoming": "Coming up",
+      "draft": "Drafts",
+      "completed": "Completed",
+      "archived": "Put away"
+    }
   },
   "notificationsPage": {
     "signed_out": "Reminders are tied to your journeys, so they start once you have an account.",

@@ -34,20 +34,20 @@ export function PlaceCard({
       {place.fitsJourney ? (
         <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
       ) : null}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-h3">
-            <Link
-              href={`/${locale}/destinations/${destinationSlug}/places/${place.slug}`}
-              className="flex min-h-11 items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
-            >
-              {place.name.text}
-              <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
-            </Link>
-          </h3>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-h3">
+          <Link
+            href={`/${locale}/destinations/${destinationSlug}/places/${place.slug}`}
+            className="flex min-h-11 items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+          >
+            {place.name.text}
+            <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
+          </Link>
+        </h3>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <p className="text-caption text-text-secondary">{typeLabel}</p>
+          {trust ? <TrustBadge state={trust} label={tBadge(trust)} /> : null}
         </div>
-        {trust ? <TrustBadge state={trust} label={tBadge(trust)} /> : null}
       </div>
 
       {place.summary.text ? (

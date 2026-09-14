@@ -204,21 +204,14 @@ export function VerifyQueue({
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
                     {!row.task?.assignedTo ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => claim(row)}
-                      >
+                      <Button variant="outline" disabled={busy} onClick={() => claim(row)}>
                         Claim
                       </Button>
                     ) : null}
 
                     {row.panelField ? (
                       <Sheet onOpenChange={(open) => (open ? undefined : router.refresh())}>
-                        <SheetTrigger render={<Button size="sm" variant="outline" />}>
-                          Check
-                        </SheetTrigger>
+                        <SheetTrigger render={<Button variant="outline" />}>Check</SheetTrigger>
                         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
                           <SheetHeader>
                             <SheetTitle>
@@ -243,7 +236,7 @@ export function VerifyQueue({
                     ) : null}
 
                     {row.task && !claimedByOther ? (
-                      <Button size="sm" disabled={busy} onClick={() => complete(row)}>
+                      <Button disabled={busy} onClick={() => complete(row)}>
                         Mark done
                       </Button>
                     ) : null}

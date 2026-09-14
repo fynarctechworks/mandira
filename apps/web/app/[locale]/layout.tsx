@@ -34,7 +34,7 @@ export async function generateMetadata({
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FBF7F2" },
-    { media: "(prefers-color-scheme: dark)", color: "#141110" },
+    { media: "(prefers-color-scheme: dark)", color: "#090b0c" },
   ],
   // The app is a standalone PWA on a phone; a zoomed-out viewport would fight the
   // mobile-first layout. Zoom itself stays enabled — capping it would break 200% text
