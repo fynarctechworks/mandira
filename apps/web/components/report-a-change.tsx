@@ -38,14 +38,24 @@ export function ReportAChange({
   entityName,
   fieldName,
   locale,
+  open: openProp,
+  onOpenChange,
+  showTrigger = true,
 }: {
   entityTable: "places" | "experiences" | "routes" | "destinations";
   entityId: string;
   entityName: string;
   fieldName?: string;
   locale: string;
+  /** Controlled from outside, e.g. the trust sheet's "Report a change" (PRD F9 → F14). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** False when something else opens the sheet, so there are not two buttons for one form. */
+  showTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   const tReport = useTranslations("reportChange");
   const [type, setType] = useState<(typeof TYPES)[number]>("timing_changed");
   const [description, setDescription] = useState("");
@@ -149,13 +159,15 @@ export function ReportAChange({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="focus-ring min-h-11 self-start px-2 text-body-sm font-medium text-brand-primary-text"
-      >
-        {tReport("open")}
-      </button>
+      {showTrigger ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="focus-ring min-h-11 self-start px-2 text-body-sm font-medium text-brand-primary-text"
+        >
+          {tReport("open")}
+        </button>
+      ) : null}
 
       <BottomSheet
         open={open}

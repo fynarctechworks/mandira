@@ -2,12 +2,14 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { SourcesFooter } from "@mandhira/ui";
 import { dateForDay } from "@mandhira/journey-engine";
 
 import { AccessibilityIcons } from "../../../../../../components/accessibility-icons";
 import { AddToJourney } from "../../../../../../components/add-to-journey";
 import { FactRow } from "../../../../../../components/fact-row";
 import { FieldTrust } from "../../../../../../components/field-trust";
+import { ReportAChange } from "../../../../../../components/report-a-change";
 import { listJourneysAt } from "../../../../../../lib/journeys";
 import { getExperienceDetail } from "../../../../../../lib/knowledge";
 import {
@@ -52,6 +54,8 @@ export default async function ExperienceDetailPage({
     tPresent,
   );
   const confirmed = (iso: string | null) => formatDate(iso, locale) ?? tCommon("not_recorded");
+  const tSources = await getTranslations("sourcesFooter");
+  const oldestVerified = formatDate(experience.oldestVerifiedAt, locale);
 
   const supabase = await webSupabase();
   const {
@@ -125,6 +129,13 @@ export default async function ExperienceDetailPage({
              * booking window that opens two months out.
              */}
             <FieldTrust
+              report={{
+                entityTable: "experiences",
+                entityId: experience.id,
+                entityName: experience.name.text,
+                fieldName: "advance_booking_how_i18n",
+                locale,
+              }}
               entry={experience.trust["advance_booking_how_i18n"]}
               fieldLabel={tFields("booking")}
               lastConfirmed={confirmed(
@@ -214,6 +225,22 @@ export default async function ExperienceDetailPage({
           </ul>
         </section>
       ) : null}
+
+      {experience.sources.length > 0 && oldestVerified ? (
+        <SourcesFooter
+          sources={experience.sources}
+          oldestVerified={oldestVerified}
+          labels={{ heading: tSources("heading"), oldestVerified: tSources("oldestVerified") }}
+        />
+      ) : null}
+
+      {/* PRD F14: what a traveler does when the badge is confident and the gate says otherwise. */}
+      <ReportAChange
+        entityTable="experiences"
+        entityId={experience.id}
+        entityName={experience.name.text}
+        locale={locale}
+      />
     </main>
   );
 }

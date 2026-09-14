@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { SourcesFooter } from "@mandhira/ui";
 
 import { AccessibilityIcons } from "../../../../../../components/accessibility-icons";
 import { FactRow } from "../../../../../../components/fact-row";
@@ -53,6 +54,8 @@ export default async function PlaceDetailPage({
     tPresent,
   );
   const confirmed = (iso: string | null) => formatDate(iso, locale) ?? tCommon("not_recorded");
+  const tSources = await getTranslations("sourcesFooter");
+  const oldestVerified = formatDate(place.oldestVerifiedAt, locale);
 
   const supabase = await webSupabase();
   const {
@@ -108,6 +111,13 @@ export default async function PlaceDetailPage({
               {tFields("opening_hours")}
             </h2>
             <FieldTrust
+              report={{
+                entityTable: "places",
+                entityId: place.id,
+                entityName: place.name.text,
+                fieldName: "opening_schedule",
+                locale,
+              }}
               entry={place.trust["opening_schedule"]}
               fieldLabel={tFields("opening_hours")}
               lastConfirmed={confirmed(place.trust["opening_schedule"]?.verified_at ?? null)}
@@ -209,6 +219,14 @@ export default async function PlaceDetailPage({
       ) : null}
 
       <PhrasesLink locale={locale} destinationSlug={slug} />
+
+      {place.sources.length > 0 && oldestVerified ? (
+        <SourcesFooter
+          sources={place.sources}
+          oldestVerified={oldestVerified}
+          labels={{ heading: tSources("heading"), oldestVerified: tSources("oldestVerified") }}
+        />
+      ) : null}
 
       {/*
         PRD F14, and the other half of the trust model. Every critical fact on this page

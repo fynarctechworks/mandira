@@ -2,6 +2,7 @@ import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { FirstRunLanguage } from "../../components/first-run-language";
 import { LanguageSwitcher } from "../../components/language-switcher";
 import { getDestinationCards } from "../../lib/knowledge";
 import { webSupabase } from "../../lib/supabase";
@@ -33,6 +34,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      <FirstRunLanguage />
+
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <p className="text-body-sm font-medium text-text-secondary">Mandhira</p>

@@ -85,9 +85,10 @@ test.describe("Discovery", () => {
     test("the page footer names its sources and the OLDEST verification", async ({ page }) => {
       await page.goto(DESTINATION);
 
-      const footer = page.getByText("Sources & freshness");
+      // The footer is a labelled region, in the catalog wording (D-194).
+      const footer = page.getByLabel("Sources and freshness");
       await expect(footer).toBeVisible();
-      await expect(page.getByText(/Fixture Temple Authority/)).toBeVisible();
+      await expect(footer.getByText(/Fixture Temple Authority/)).toBeVisible();
     });
   });
 

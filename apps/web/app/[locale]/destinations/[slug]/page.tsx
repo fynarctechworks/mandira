@@ -33,10 +33,11 @@ export default async function DestinationPage({
 
   const page = await getDestinationPage(slug, locale);
   if (!page) notFound();
-  const [t, tPage, tPresent] = await Promise.all([
+  const [t, tPage, tPresent, tSources] = await Promise.all([
     getTranslations("discovery"),
     getTranslations("destinationPage"),
     getTranslations("present"),
+    getTranslations("sourcesFooter"),
   ]);
 
   // Dates and clock times in the reader's language, for the next occurrence of a ritual.
@@ -306,7 +307,11 @@ export default async function DestinationPage({
        * about how current this page is, and the weakest part is what that claim rests on.
        */}
       {page.sources.length > 0 && oldestVerified ? (
-        <SourcesFooter sources={page.sources} oldestVerified={oldestVerified} />
+        <SourcesFooter
+          sources={page.sources}
+          oldestVerified={oldestVerified}
+          labels={{ heading: tSources("heading"), oldestVerified: tSources("oldestVerified") }}
+        />
       ) : null}
     </main>
   );

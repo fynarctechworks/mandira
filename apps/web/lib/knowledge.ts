@@ -612,6 +612,9 @@ export type PlaceDetail = PlaceCard & {
    */
   latitude: number | null;
   longitude: number | null;
+  /** Every source behind the page and the oldest confirmation, for the footer (PRD F9). */
+  sources: { name: string; tierLabel: string }[];
+  oldestVerifiedAt: string | null;
 };
 
 export type ExperienceDetail = ExperienceCard & {
@@ -634,6 +637,9 @@ export type ExperienceDetail = ExperienceCard & {
    * timing is about that timing, and not borrowed from whoever verified the booking note.
    */
   availabilityTrust: TrustEntry | undefined;
+  /** Every source behind the page and the oldest confirmation, for the footer (PRD F9). */
+  sources: { name: string; tierLabel: string }[];
+  oldestVerifiedAt: string | null;
 };
 
 export async function getPlaceDetail(
@@ -674,6 +680,7 @@ export async function getPlaceDetail(
     guidance: await getGuidance("places", data.id as string, locale),
     latitude: (data.latitude as number | null) ?? null,
     longitude: (data.longitude as number | null) ?? null,
+    ...collectSources([toPlaceCard(data, locale)]),
   };
 }
 
@@ -738,6 +745,10 @@ export async function getExperienceDetail(
     // Whole-entity trust on an availability rule has a NULL field name, which the view
     // emits under the key "entity".
     availabilityTrust: ((availability[0]?.trust ?? {}) as TrustMap)["entity"],
+    ...collectSources([
+      toExperienceCard(data, locale, windows),
+      { trust: (availability[0]?.trust ?? {}) as TrustMap },
+    ]),
   };
 }
 

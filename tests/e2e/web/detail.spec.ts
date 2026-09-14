@@ -102,8 +102,10 @@ test.describe("The trust sheet", () => {
     // By role: the sheet titles itself in both a heading and an sr-only description, so
     // a bare text lookup is ambiguous.
     await expect(page.getByRole("heading", { name: "Where this comes from" })).toBeVisible();
-    await expect(page.getByText(/Fixture Temple Authority/)).toBeVisible();
-    await expect(page.getByText("Last confirmed")).toBeVisible();
+    // Inside the sheet: the page footer names the same source (D-194).
+    const sheet = page.getByLabel("Where this comes from", { exact: true });
+    await expect(sheet.getByText(/Fixture Temple Authority/)).toBeVisible();
+    await expect(sheet.getByText("Last confirmed")).toBeVisible();
   });
 
   test("says when two sources disagree, rather than reassuring", async ({ page }) => {

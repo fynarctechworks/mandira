@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TrustBadge, TrustSheet } from "@mandhira/ui";
 
 import type { TrustEntry } from "../lib/trust";
+import { ReportAChange } from "./report-a-change";
 import { trustStateOf } from "../lib/trust";
 
 /**
@@ -24,6 +25,7 @@ export function FieldTrust({
   fieldLabel,
   lastConfirmed,
   validUntil,
+  report,
 }: {
   entry: TrustEntry | undefined;
   /** What this badge is about, e.g. "Opening hours" — read out to a screen reader. */
@@ -31,10 +33,23 @@ export function FieldTrust({
   /** Formatted by the server component, which is where the locale lives. */
   lastConfirmed: string;
   validUntil?: string | undefined;
+  /**
+   * What a report from this sheet is about. When given, the sheet offers "Report a change"
+   * (PRD F9 → F14) and the report is filed against this field.
+   */
+  report?: {
+    entityTable: "places" | "experiences" | "routes" | "destinations";
+    entityId: string;
+    entityName: string;
+    fieldName?: string;
+    locale: string;
+  };
 }) {
   const t = useTranslations("fieldTrust");
   const tCommon = useTranslations("common");
   const tBadge = useTranslations("trustBadge");
+  const tSheet = useTranslations("trustSheet");
+  const [reportOpen, setReportOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const state = trustStateOf(entry);
 
@@ -51,6 +66,21 @@ export function FieldTrust({
       <TrustSheet
         open={open}
         onOpenChange={setOpen}
+        labels={{
+          title: tSheet("title"),
+          source: tSheet("source"),
+          lastConfirmed: tSheet("lastConfirmed"),
+          validUntil: tSheet("validUntil"),
+          reportChange: tSheet("reportChange"),
+        }}
+        {...(report
+          ? {
+              onReportChange: () => {
+                setOpen(false);
+                setReportOpen(true);
+              },
+            }
+          : {})}
         sourceName={entry.source_name ?? tCommon("not_recorded")}
         sourceTierLabel={entry.source_tier_label ?? ""}
         lastConfirmed={lastConfirmed}
@@ -65,6 +95,14 @@ export function FieldTrust({
             }
           : {})}
       />
+      {report ? (
+        <ReportAChange
+          {...report}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          showTrigger={false}
+        />
+      ) : null}
     </>
   );
 }
