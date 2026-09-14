@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CommandPalette } from "./command-palette";
+import { OpsMobileNav } from "./ops-mobile-nav";
 import { OpsNav } from "./ops-nav";
 import { SignOutButton } from "./sign-out-button";
 
@@ -31,8 +32,9 @@ export function OpsShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-4 border-b border-border-subtle bg-surface px-8 py-3">
-          <div className="min-w-0">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border-subtle bg-surface px-4 py-3 md:static md:px-8">
+          <OpsMobileNav />
+          <div className="min-w-0 flex-1">
             <p className="truncate text-body-sm font-medium">{operatorEmail}</p>
             <p className="truncate text-caption text-text-tertiary">
               {roles.length > 0 ? roles.join(" · ") : "No role"}
@@ -41,7 +43,7 @@ export function OpsShell({
           <SignOutButton />
         </header>
 
-        <main className="min-w-0 flex-1 px-8 py-8">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
     </div>
   );

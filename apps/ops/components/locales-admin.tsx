@@ -173,6 +173,7 @@ export function LocalesAdmin({ locales, canEdit }: { locales: LocaleRow[]; canEd
                 <TableCell>
                   <label className="flex items-center gap-2">
                     <Switch
+                      aria-label={`Offer ${locale.name_en} to travelers`}
                       checked={locale.is_active}
                       disabled={!canEdit || pending}
                       onCheckedChange={(checked) =>
@@ -183,7 +184,6 @@ export function LocalesAdmin({ locales, canEdit }: { locales: LocaleRow[]; canEd
                       }
                     />
                     <span>{locale.is_active ? "On" : "Off"}</span>
-                    <span className="sr-only"> — {locale.name_en}</span>
                   </label>
                 </TableCell>
                 {canEdit ? (

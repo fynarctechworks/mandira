@@ -61,7 +61,11 @@ export default async function JourneyPage({
   const detail = await getJourney(supabase, id, locale);
   if (!detail) notFound();
 
-  const [t, tPresent] = await Promise.all([getTranslations(), getTranslations("present")]);
+  const [t, tPresent, tTier] = await Promise.all([
+    getTranslations(),
+    getTranslations("present"),
+    getTranslations("itemActions.tiers"),
+  ]);
   const { journey, items, health, labels, trust } = detail;
   // What another device may change underneath this page (PRD-ACCT-005).
   const version = await journeyVersion(supabase, journey.id);
@@ -269,7 +273,11 @@ export default async function JourneyPage({
                          * system speaks PRD §12.1's displayed keywords. Mapped at the
                          * boundary rather than bending either to the other.
                          */}
-                        <TierChip tier={TIER_CHIP[item.tier]} readOnly />
+                        <TierChip
+                          tier={TIER_CHIP[item.tier]}
+                          label={tTier(`${item.tier}.label`)}
+                          readOnly
+                        />
                       </div>
 
                       {staleNotes.has(item.id) ? (

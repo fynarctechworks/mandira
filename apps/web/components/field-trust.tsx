@@ -34,6 +34,7 @@ export function FieldTrust({
 }) {
   const t = useTranslations("fieldTrust");
   const tCommon = useTranslations("common");
+  const tBadge = useTranslations("trustBadge");
   const [open, setOpen] = useState(false);
   const state = trustStateOf(entry);
 
@@ -43,6 +44,7 @@ export function FieldTrust({
     <>
       <TrustBadge
         state={state}
+        label={tBadge(state)}
         onClick={() => setOpen(true)}
         aria-label={t("badge_label", { field: fieldLabel })}
       />

@@ -42,6 +42,7 @@ export default async function RecordPage({
   if (!record) notFound();
 
   const t = await getTranslations("record");
+  const tTier = await getTranslations("itemActions.tiers");
   const start = record.startDate ?? new Date().toISOString().slice(0, 10);
   const clock = (at: string) =>
     new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(new Date(at));
@@ -113,7 +114,11 @@ export default async function RecordPage({
                       {item.label}
                     </span>
                   </span>
-                  <TierChip tier={TIER_CHIP[item.tier]} readOnly />
+                  <TierChip
+                    tier={TIER_CHIP[item.tier]}
+                    label={tTier(`${item.tier}.label`)}
+                    readOnly
+                  />
                 </div>
 
                 <p className="pl-6 text-caption text-text-secondary">

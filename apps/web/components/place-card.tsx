@@ -20,6 +20,7 @@ export function PlaceCard({
   destinationSlug: string;
 }) {
   const t = useTranslations("knowledgeFields");
+  const tBadge = useTranslations("trustBadge");
   const tTypes = useTranslations("placeTypes");
   const tPresent = useTranslations("present");
   const tSearch = useTranslations("search");
@@ -46,7 +47,7 @@ export function PlaceCard({
           </h3>
           <p className="text-caption text-text-secondary">{typeLabel}</p>
         </div>
-        {trust ? <TrustBadge state={trust} /> : null}
+        {trust ? <TrustBadge state={trust} label={tBadge(trust)} /> : null}
       </div>
 
       {place.summary.text ? (

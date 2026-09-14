@@ -30,6 +30,7 @@ export function ExperienceCard({
   destinationSlug: string;
 }) {
   const t = useTranslations("knowledgeFields");
+  const tBadge = useTranslations("trustBadge");
   const tPresent = useTranslations("present");
   const tPhrases = useTranslations("phrases");
   const tSearch = useTranslations("search");
@@ -62,7 +63,7 @@ export function ExperienceCard({
             <ChevronRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
           </Link>
         </h3>
-        {trust ? <TrustBadge state={trust} /> : null}
+        {trust ? <TrustBadge state={trust} label={tBadge(trust)} /> : null}
       </div>
 
       {experience.significance.text ? (

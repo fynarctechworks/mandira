@@ -3998,6 +3998,7 @@ export type Database = {
               error: true
             } & "the function public.longitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
           }
+      merge_duplicate_traveler_profiles: { Args: never; Returns: number }
       my_journey_summary: {
         Args: { p_journey_id: string; p_locale?: string }
         Returns: Json

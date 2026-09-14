@@ -51,6 +51,12 @@ export type LiveView = {
   tomorrowFirst: LiveItemView | null;
   dayCauses: string[];
   isActive: boolean;
+  /**
+   * Whether `nowAt` falls on one of the journey's own dates, in its timezone. "Start today"
+   * is offered only then: on the evening before, it asked the traveler to start a journey
+   * that begins tomorrow.
+   */
+  onJourneyDates: boolean;
   /** When the data behind this view was read, or null when it came straight from the server. */
   syncedAt: string | null;
 };
@@ -152,6 +158,7 @@ export function assembleLiveView(input: {
       ),
     ],
     isActive: journey.status === "active",
+    onJourneyDates: onJourneyDates(journey, nowAt),
     syncedAt: input.syncedAt ?? null,
   };
 }
@@ -198,3 +205,16 @@ function causeSentence(cause: Cause, t: Translate): string {
 
 /** Re-exported so consumers do not need to reach into the engine for one type. */
 export type { JourneyItem };
+
+/** The journey's local date at `nowAt` is within its start and end dates (inclusive). */
+function onJourneyDates(journey: StoredJourney, nowAt: string): boolean {
+  if (!journey.startDate) return false;
+  // en-CA formats as YYYY-MM-DD, which compares correctly as a string.
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: journey.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(nowAt));
+  return today >= journey.startDate && (!journey.endDate || today <= journey.endDate);
+}

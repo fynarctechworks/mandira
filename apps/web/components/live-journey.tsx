@@ -117,6 +117,7 @@ export function LiveJourney({
   }, []);
 
   const t = useTranslations("live");
+  const tTier = useTranslations("itemActions.tiers");
   const tPresent = useTranslations("present");
   const leaveByAt = view?.projection.leaveByAt ?? null;
   const leaveByClock = leaveByAt ? clock(leaveByAt, locale) : null;
@@ -404,7 +405,15 @@ export function LiveJourney({
         eyebrow={kind === "day_complete" ? t("eyebrow_today") : t("eyebrow_now")}
         title={nowView.label}
         detail={nowDetail(view, now, t, tPresent)}
-        trailing={nowView.tier ? <TierChip tier={TIER_CHIP[nowView.tier]} readOnly /> : undefined}
+        trailing={
+          nowView.tier ? (
+            <TierChip
+              tier={TIER_CHIP[nowView.tier]}
+              label={tTier(`${nowView.tier}.label`)}
+              readOnly
+            />
+          ) : undefined
+        }
         /*
          * Exactly three, and only on a real item. PRD-LIVE-006 caps any card at three
          * actions; offering "Done" on a travel leg or on free time would be offering to
@@ -461,7 +470,13 @@ export function LiveJourney({
                   <p className="text-body-sm text-text-secondary">{view.next.place.name}</p>
                 ) : null}
               </div>
-              {view.next.tier ? <TierChip tier={TIER_CHIP[view.next.tier]} readOnly /> : null}
+              {view.next.tier ? (
+                <TierChip
+                  tier={TIER_CHIP[view.next.tier]}
+                  label={tTier(`${view.next.tier}.label`)}
+                  readOnly
+                />
+              ) : null}
             </div>
 
             {/*
@@ -516,7 +531,7 @@ export function LiveJourney({
                     {window_(row, locale, tAll("common.not_scheduled"))}
                   </p>
                 </div>
-                <TierChip tier={TIER_CHIP[row.tier]} readOnly />
+                <TierChip tier={TIER_CHIP[row.tier]} label={tTier(`${row.tier}.label`)} readOnly />
               </li>
             ))}
           </ul>

@@ -132,6 +132,7 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
               <TableCell className="align-top">
                 <label className="flex items-center gap-2">
                   <Switch
+                    aria-label={`Turn on ${flag.key}`}
                     checked={flag.is_enabled}
                     disabled={pending}
                     onCheckedChange={(checked) =>
@@ -142,7 +143,6 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
                     }
                   />
                   <span>{flag.is_enabled ? "On" : "Off"}</span>
-                  <span className="sr-only"> — {flag.key}</span>
                 </label>
               </TableCell>
             </TableRow>

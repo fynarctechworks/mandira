@@ -65,7 +65,9 @@ test.describe("Reaching Live Journey", () => {
     await expect(page).toHaveURL(new RegExp(`/journeys/${journeyId}/live$`));
   });
 
-  test("works before the traveler has tapped Start today", async ({ page }) => {
+  test("works before the journey has started, without asking to start it today", async ({
+    page,
+  }) => {
     // PRD-LIVE-001: activation is a read-time decision. The screen must not be gated behind
     // a write — someone opening the app at the temple gate has not tapped anything yet.
     //
@@ -75,8 +77,10 @@ test.describe("Reaching Live Journey", () => {
     const journeyId = await saveJourney(page, tomorrowInIndia());
     await page.goto(`/en/journeys/${journeyId}/live`);
 
-    await expect(page.getByRole("button", { name: "Start today" })).toBeVisible();
-    // And the plan is already there behind it, not hidden until they tap.
+    // "Start today" is for a day the journey is on (D-187): the evening before, it asked the
+    // traveler to start a journey that begins tomorrow. The next test covers a journey today.
+    await expect(page.getByRole("button", { name: "Start today" })).toBeHidden();
+    // And the plan is already there, not hidden behind a tap.
     await expect(page.getByRole("heading", { name: "Later today" })).toBeVisible();
   });
 

@@ -5,6 +5,17 @@ import { useState, useTransition } from "react";
 
 import { resolveReport, triageReport } from "@/app/(ops)/reports/actions";
 
+/*
+ * Pinned locale and zone. `toLocaleDateString()` used the server's defaults on the server
+ * and the operator's in the browser, so the two renders disagreed and React discarded the
+ * server HTML (hydration error #418 on /reports).
+ */
+const FILED = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Asia/Kolkata",
+});
 /**
  * The Reports queue (PRD F14, PRD-OPS-WF-005).
  *
@@ -85,7 +96,7 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
                   <p className="text-caption text-text-secondary">
                     {row.entity_table} · {row.entity_id.slice(0, 8)}
                     {row.field_name ? ` · ${row.field_name}` : ""} ·{" "}
-                    {new Date(row.created_at).toLocaleDateString()}
+                    {FILED.format(new Date(row.created_at))}
                     {row.locale ? ` · ${row.locale}` : ""}
                   </p>
                 </div>

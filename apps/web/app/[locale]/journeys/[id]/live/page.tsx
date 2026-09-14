@@ -69,6 +69,8 @@ export default async function LivePage({
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
+      {/* The screen's name for assistive technology; the visible title is the back link. */}
+      <h1 className="sr-only">{view?.journeyTitle ?? tJourney("untitled")}</h1>
       {/*
        * Live is a screen you can leave, not a mode that captures the app. A traveler who
        * wants to see the whole plan should not have to work out how to escape.
@@ -86,7 +88,7 @@ export default async function LivePage({
        * screen works whether or not the journey has been marked `active` — so this asks
        * only when the traveler has not said so themselves.
        */}
-      {view && !view.isActive ? <StartToday journeyId={id} /> : null}
+      {view && !view.isActive && view.onJourneyDates ? <StartToday journeyId={id} /> : null}
 
       <LiveConditions conditions={conditions} />
 
