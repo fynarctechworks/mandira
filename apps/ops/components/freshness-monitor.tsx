@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { assignReverification } from "@/app/(ops)/freshness/actions";
+import { editorPath } from "@/lib/entities";
 
 /**
  * O15's rows and the bulk assignment (PRD F18, PRD-OPS-WF-006).
@@ -34,13 +35,6 @@ export type FreshnessRow = {
   source_name: string | null;
   source_tier: string | null;
   has_open_task: boolean;
-};
-
-const EDITOR_PATH: Record<string, string> = {
-  places: "/places",
-  experiences: "/experiences",
-  routes: "/routes",
-  transport_connections: "/transport",
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -183,9 +177,9 @@ export function FreshnessMonitor({ rows }: { rows: FreshnessRow[] }) {
                 </td>
 
                 <td className="p-2">
-                  {EDITOR_PATH[row.entity_table] ? (
+                  {editorPath(row.entity_table, row.entity_id) ? (
                     <Link
-                      href={`${EDITOR_PATH[row.entity_table]}/${row.entity_id}`}
+                      href={editorPath(row.entity_table, row.entity_id)!}
                       className="focus-ring underline"
                     >
                       {row.entity_label}

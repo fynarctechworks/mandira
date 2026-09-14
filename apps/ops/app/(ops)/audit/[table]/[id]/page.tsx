@@ -121,7 +121,7 @@ export default async function EntityHistoryPage({
                           v{row.version}
                         </Link>
                         {row.version === latest?.version ? (
-                          <span className="ml-1 text-caption text-text-tertiary">current</span>
+                          <span className="ml-1 text-caption text-text-secondary">current</span>
                         ) : null}
                       </TableCell>
                       <TableCell>{formatWhen(row.created_at)}</TableCell>
