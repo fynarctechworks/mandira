@@ -1042,5 +1042,11 @@
     "protected_cannot_remove": "You marked that as something you must do, so Mandhira won’t remove it. Change its tier if that’s no longer true.",
     "cannot_change": "That can’t be changed.",
     "journey_max_days": "A journey can be up to {days} days."
+  },
+  "preview": {
+    "label": "Preview",
+    "visible": "Travelers see this page now.",
+    "hidden": "Travelers cannot see this yet. It appears once it is published and a person has reviewed its critical details.",
+    "only_ops": "Only people in Ops can open this page."
   }
 }

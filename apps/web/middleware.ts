@@ -16,7 +16,11 @@ const handleLocale = createIntlMiddleware(routing);
  * Matched after the locale prefix is stripped, so `/en/journeys/…` and `/te/journeys/…`
  * are the same rule.
  */
-const SIGNED_IN_ONLY = [/^\/journeys(\/|$)/];
+const SIGNED_IN_ONLY = [
+  /^\/journeys(\/|$)/,
+  // The Ops preview (OPS-PREVIEW-01). RLS and the page's own Ops check are the control.
+  /^\/preview(\/|$)/,
+];
 
 /**
  * Locale routing, session refresh, and the sign-in gate.

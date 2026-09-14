@@ -51,7 +51,9 @@ const serwist = new Serwist({
       matcher: ({ url, request }) =>
         request.method !== "GET" ||
         url.pathname.startsWith("/auth/") ||
-        url.pathname.startsWith("/api/heartbeat"),
+        url.pathname.startsWith("/api/heartbeat") ||
+        // An Ops preview shows unpublished content, which must never be stored (OPS-PREVIEW-01).
+        /^\/[a-z]{2}\/preview\//.test(url.pathname),
       handler: new NetworkOnly(),
     },
     {

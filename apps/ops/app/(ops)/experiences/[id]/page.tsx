@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { HistoryLink } from "@/components/history-link";
+import { PreviewInApp } from "@/components/preview-in-app";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
 import { PublishPanel } from "@/components/publish-panel";
@@ -73,7 +74,10 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
           <h1 className="text-h1">{initial.name_i18n["en"] ?? initial.slug}</h1>
           <p className="mt-1 text-body text-text-secondary">Editing a draft experience.</p>
         </div>
-        <HistoryLink table="experiences" id={data.id} />
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <HistoryLink table="experiences" id={data.id} />
+          <PreviewInApp kind="experiences" id={data.id} locales={locales} />
+        </div>
       </header>
 
       {/* Trust first, then availability: these are the two things most likely to be

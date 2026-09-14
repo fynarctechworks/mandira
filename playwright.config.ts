@@ -51,7 +51,7 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
       testIgnore:
-        /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record|add-to-journey|profile|saved-places|reorder|health-sheet)\.spec\.ts/,
+        /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record|add-to-journey|profile|saved-places|reorder|health-sheet|preview)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -114,6 +114,19 @@ export default defineConfig({
       dependencies: ["web-setup"],
     },
 
+    // OPS-PREVIEW-01: the Ops admin's session opens the traveler app's preview routes. One
+    // Supabase Auth serves both apps, and a localhost cookie is shared across ports.
+    {
+      name: "web-ops-preview",
+      use: {
+        ...devices["Pixel 5"],
+        baseURL: `http://localhost:${WEB_PORT}`,
+        storageState: OPS_STORAGE_STATE,
+      },
+      testMatch: /web[\\/]preview\.spec\.ts/,
+      dependencies: ["ops-setup", "web-setup"],
+    },
+
     // Signs in once; every other Ops test reuses the session. GoTrue rate-limits
     // magic-link sends per address, so a suite where each test requests its own link
     // fails as soon as it grows.
@@ -152,7 +165,10 @@ export default defineConfig({
     },
     {
       command: `pnpm --filter @mandhira/ops exec next start --port ${OPS_PORT}`,
-      env: { NEXT_DIST_DIR: E2E_DIST_DIR },
+      env: {
+        NEXT_DIST_DIR: E2E_DIST_DIR,
+        NEXT_PUBLIC_TRAVELER_APP_URL: `http://localhost:${WEB_PORT}`,
+      },
       url: `http://localhost:${OPS_PORT}`,
       reuseExistingServer: !process.env["CI"],
       timeout: 120_000,

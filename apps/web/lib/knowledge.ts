@@ -1396,3 +1396,213 @@ export async function getJourneyAdvisories(
           ?.source_name ?? null,
     }));
 }
+
+// ── Ops preview (OPS-PREVIEW-01, PRD-OPS-CNT-001) ────────────────────────────────
+
+const PREVIEW_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const ACCESSIBILITY_COLUMNS =
+  "step_free, wheelchair_access, queue_assistance, rest_seating, distance_from_dropoff_m, notes_i18n";
+
+/**
+ * Whether the signed-in user may preview: an Ops role, asked of the database.
+ *
+ * RLS already gives nobody else a base-table row. Asking first means the 404 a traveler
+ * gets does not depend on that result happening to be empty.
+ */
+async function canPreview(id: string): Promise<boolean> {
+  if (!PREVIEW_ID.test(id)) return false;
+  const supabase = await webSupabase();
+  const { data } = await supabase.rpc("is_ops");
+  return data === true;
+}
+
+/** Guidance on a previewed entity, drafts included: the preview shows what has been written. */
+async function previewGuidance(
+  table: "places" | "experiences",
+  id: string,
+  locale: string,
+): Promise<GuidanceBlock[]> {
+  const supabase = await webSupabase();
+
+  const data = mustList(
+    await supabase
+      .from("guidance_blocks")
+      .select("id, guidance_type, body_i18n")
+      .eq("applies_to_table", table)
+      .eq("applies_to_id", id)
+      .is("deleted_at", null)
+      .order("sort_order"),
+    "guidance_blocks",
+  );
+
+  return data.map((row) => ({
+    id: row.id as string,
+    guidanceType: row.guidance_type as string,
+    body: text(row.body_i18n, locale),
+  }));
+}
+
+/**
+ * A place as its detail page will show it, read from the base table for an Ops preview.
+ *
+ * Runs as the signed-in user, never the service role, so it can read no more than that
+ * operator can in Ops. `visibleToTravelers` is whether the published view returns the place —
+ * the publish gate's own answer, not a copy of its rules.
+ */
+export async function getPlacePreview(
+  id: string,
+  locale: string,
+): Promise<{ place: PlaceDetail; visibleToTravelers: boolean } | null> {
+  if (!(await canPreview(id))) return null;
+  const supabase = await webSupabase();
+
+  const data = mustMaybe(
+    await supabase
+      .from("places")
+      .select(
+        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, address, opening_schedule, closure_rules_i18n, entry_requirements_i18n, dress_code_i18n, hours_note_i18n, visit_duration_min_minutes, visit_duration_likely_minutes, visit_duration_max_minutes, destination_id, latitude, longitude",
+      )
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    "places",
+  );
+  if (!data) return null;
+
+  const [destination, trust, accessibility, published, guidance] = await Promise.all([
+    supabase.from("destinations").select("slug").eq("id", data.destination_id).maybeSingle(),
+    supabase.rpc("entity_trust", { p_entity_table: "places", p_entity_id: id }),
+    supabase
+      .from("accessibility_records")
+      .select(ACCESSIBILITY_COLUMNS)
+      .eq("place_id", id)
+      .maybeSingle(),
+    supabase.from("v_published_places").select("id").eq("id", id).maybeSingle(),
+    previewGuidance("places", id, locale),
+  ]);
+
+  const card = toPlaceCard(
+    {
+      ...data,
+      trust: trust.data ?? {},
+      accessibility: mustMaybe(accessibility, "accessibility_records"),
+    },
+    locale,
+  );
+
+  return {
+    place: {
+      ...card,
+      destinationSlug: mustMaybe(destination, "destinations")?.slug ?? "",
+      address: data.address ?? null,
+      openingSchedule: (data.opening_schedule as OpeningSchedule | null) ?? null,
+      closureRules: text(data.closure_rules_i18n, locale),
+      entryRequirements: text(data.entry_requirements_i18n, locale),
+      dressCode: text(data.dress_code_i18n, locale),
+      hoursNote: text(data.hours_note_i18n, locale),
+      visitDurationMinMinutes: data.visit_duration_min_minutes ?? null,
+      visitDurationMaxMinutes: data.visit_duration_max_minutes ?? null,
+      guidance,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      ...collectSources([card]),
+    },
+    visibleToTravelers: Boolean(mustMaybe(published, "v_published_places")),
+  };
+}
+
+/** An experience as its detail page will show it, read from the base tables for an Ops preview. */
+export async function getExperiencePreview(
+  id: string,
+  locale: string,
+): Promise<{ experience: ExperienceDetail; visibleToTravelers: boolean } | null> {
+  if (!(await canPreview(id))) return null;
+  const supabase = await webSupabase();
+
+  const data = mustMaybe(
+    await supabase
+      .from("experiences")
+      .select(
+        "id, slug, name_i18n, experience_type, significance_i18n, description_i18n, duration_min_minutes, duration_likely_minutes, duration_max_minutes, advance_booking_required, advance_booking_how_i18n, advance_booking_opens_days_before, eligibility_i18n, cost_note_i18n, queue_expectation_i18n, preparation_i18n, is_outdoor, editorial_weight, destination_id, place_id",
+      )
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    "experiences",
+  );
+  if (!data) return null;
+
+  const [destination, trust, rulesResult, placeResult, accessibilityResult, published, guidance] =
+    await Promise.all([
+      supabase.from("destinations").select("slug").eq("id", data.destination_id).maybeSingle(),
+      supabase.rpc("entity_trust", { p_entity_table: "experiences", p_entity_id: id }),
+      supabase
+        .from("availability_rules")
+        .select("id, experience_id, kind, daily_times")
+        .eq("experience_id", id)
+        .order("priority", { ascending: false }),
+      data.place_id
+        ? supabase
+            .from("places")
+            .select("slug, name_i18n")
+            .eq("id", data.place_id)
+            .is("deleted_at", null)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      data.place_id
+        ? supabase
+            .from("accessibility_records")
+            .select(ACCESSIBILITY_COLUMNS)
+            .eq("place_id", data.place_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      supabase.from("v_published_experiences").select("id").eq("id", id).maybeSingle(),
+      previewGuidance("experiences", id, locale),
+    ]);
+
+  const rules = mustList(rulesResult, "availability_rules");
+  // Availability's trust is on the rule, not the experience (PRD F1), as on the real page.
+  const firstRule = rules[0];
+  const ruleTrust = firstRule
+    ? (((
+        await supabase.rpc("entity_trust", {
+          p_entity_table: "availability_rules",
+          p_entity_id: firstRule.id,
+        })
+      ).data ?? {}) as TrustMap)
+    : {};
+  const place = mustMaybe(placeResult, "places");
+  const windows = groupAvailability(rules).get(id) ?? [];
+  const card = toExperienceCard(
+    {
+      ...data,
+      trust: trust.data ?? {},
+      accessibility: mustMaybe(accessibilityResult, "accessibility_records"),
+    },
+    locale,
+    windows,
+  );
+
+  return {
+    experience: {
+      ...card,
+      destinationSlug: mustMaybe(destination, "destinations")?.slug ?? "",
+      description: text(data.description_i18n, locale),
+      eligibility: text(data.eligibility_i18n, locale),
+      costNote: text(data.cost_note_i18n, locale),
+      queueExpectation: text(data.queue_expectation_i18n, locale),
+      preparation: text(data.preparation_i18n, locale),
+      advanceBookingHow: text(data.advance_booking_how_i18n, locale),
+      isOutdoor: Boolean(data.is_outdoor),
+      durationMinMinutes: data.duration_min_minutes ?? null,
+      durationMaxMinutes: data.duration_max_minutes ?? null,
+      placeName: place ? text(place.name_i18n, locale) : null,
+      placeSlug: (place?.slug as string | null | undefined) ?? null,
+      guidance,
+      availabilityTrust: ruleTrust["entity"],
+      ...collectSources([card, { trust: ruleTrust }]),
+    },
+    visibleToTravelers: Boolean(mustMaybe(published, "v_published_experiences")),
+  };
+}
