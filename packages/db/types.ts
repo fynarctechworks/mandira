@@ -4085,6 +4085,13 @@ export type Database = {
           email: string
         }[]
       }
+      ops_colleagues: {
+        Args: never
+        Returns: {
+          label: string
+          user_id: string
+        }[]
+      }
       ops_find_account: {
         Args: { p_email: string }
         Returns: {

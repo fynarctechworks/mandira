@@ -40,6 +40,10 @@ const sourceFields = {
   ingestion_method: z.enum(["manual", "url_monitor"]).default("manual"),
   status: z.enum(["active", "paused", "retired"]).default("active"),
   notes: z.string().max(2000).nullish(),
+  /** Who keeps this source checked (PRD F17). Must be someone in Ops. */
+  owner_user_id: uuid.nullish().or(z.literal("")),
+  /** The destinations this source covers — `sources.coverage`, an array of ids (TRD §4.3). */
+  coverage: z.array(uuid).max(500).default([]),
 };
 
 const createSchema = z.object(sourceFields);
@@ -53,13 +57,30 @@ function toRow(input: Record<string, unknown>) {
     url: (rest["url"] as string) || null,
     contact: (rest["contact"] as string) || null,
     notes: (rest["notes"] as string) || null,
+    owner_user_id: (rest["owner_user_id"] as string) || null,
   };
+}
+
+/** An owner has to be someone in Ops; anyone else cannot keep a source checked. */
+async function assertOwnerInOps(
+  supabase: Parameters<Parameters<typeof opsAction>[0]["handler"]>[0]["supabase"],
+  ownerId: string | null | undefined,
+) {
+  if (!ownerId) return;
+  const { data, error } = await supabase.rpc("ops_colleagues");
+  if (error) throw error;
+  if (!(data ?? []).some((colleague) => colleague.user_id === ownerId)) {
+    throw Object.assign(new Error("refused"), {
+      userMessage: "Choose an owner from the Ops team.",
+    });
+  }
 }
 
 export const createSource = opsAction({
   roles: ["researcher", "editor", "admin"],
   input: createSchema,
   handler: async ({ input, supabase }) => {
+    await assertOwnerInOps(supabase, input.owner_user_id);
     const { data, error } = await supabase
       .from("sources")
       .insert(asRow(toRow(input as Record<string, unknown>)))
@@ -76,6 +97,7 @@ export const updateSource = opsAction({
   roles: ["researcher", "editor", "admin"],
   input: updateSchema,
   handler: async ({ input, supabase }) => {
+    await assertOwnerInOps(supabase, input.owner_user_id);
     const { error } = await supabase
       .from("sources")
       .update(asRow(toRow(input as Record<string, unknown>)))

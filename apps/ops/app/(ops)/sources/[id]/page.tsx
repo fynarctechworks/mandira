@@ -6,6 +6,7 @@ import {
   type CaptureRow,
 } from "@/components/source-activity";
 import { SourceForm, type SourceDraft } from "@/components/source-form";
+import { sourceFormOptions } from "@/lib/source-options";
 import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Source · Mandhira Ops" };
@@ -56,7 +57,12 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
     ingestion_method: data.ingestion_method === "url_monitor" ? "url_monitor" : "manual",
     status: data.status as SourceDraft["status"],
     notes: data.notes ?? "",
+    owner_user_id: data.owner_user_id ?? "",
+    coverage: Array.isArray(data.coverage)
+      ? (data.coverage as unknown[]).filter((id): id is string => typeof id === "string")
+      : [],
   };
+  const options = await sourceFormOptions(supabase);
 
   const captureRows: CaptureRow[] = (captures.data ?? []).map((capture) => ({
     id: capture.id,
@@ -72,7 +78,7 @@ export default async function EditSourcePage({ params }: { params: Promise<{ id:
         <h1 className="text-h1">{initial.name}</h1>
         <p className="mt-1 text-body text-text-secondary">A registered source.</p>
       </header>
-      <SourceForm initial={initial} />
+      <SourceForm initial={initial} options={options} />
 
       {captures.error || candidates.error ? (
         <LoadProblem title="Captures didn't load" />

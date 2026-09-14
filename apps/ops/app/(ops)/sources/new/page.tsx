@@ -1,8 +1,12 @@
 import { EMPTY_SOURCE, SourceForm } from "@/components/source-form";
+import { sourceFormOptions } from "@/lib/source-options";
+import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Register a source · Mandhira Ops" };
 
-export default function NewSourcePage() {
+export default async function NewSourcePage() {
+  const options = await sourceFormOptions(await opsSupabase());
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -12,7 +16,7 @@ export default function NewSourcePage() {
           are told to be.
         </p>
       </header>
-      <SourceForm initial={EMPTY_SOURCE} />
+      <SourceForm initial={EMPTY_SOURCE} options={options} />
     </div>
   );
 }

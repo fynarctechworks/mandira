@@ -35,6 +35,14 @@ export type SourceDraft = {
   ingestion_method: "manual" | "url_monitor";
   status: "active" | "paused" | "retired";
   notes: string;
+  owner_user_id: string;
+  /** Destination ids. */
+  coverage: string[];
+};
+
+export type SourceFormOptions = {
+  colleagues: { id: string; label: string }[];
+  destinations: { id: string; label: string }[];
 };
 
 export const EMPTY_SOURCE: SourceDraft = {
@@ -47,6 +55,8 @@ export const EMPTY_SOURCE: SourceDraft = {
   ingestion_method: "manual",
   status: "active",
   notes: "",
+  owner_user_id: "",
+  coverage: [],
 };
 
 /**
@@ -57,7 +67,13 @@ export const EMPTY_SOURCE: SourceDraft = {
  * notice board. The operator can always override — the suggestion saves a decision, it
  * does not make one.
  */
-export function SourceForm({ initial }: { initial: SourceDraft }) {
+export function SourceForm({
+  initial,
+  options,
+}: {
+  initial: SourceDraft;
+  options: SourceFormOptions;
+}) {
   const router = useRouter();
   const [draft, setDraft] = useState<SourceDraft>(initial);
   const [saving, setSaving] = useState(false);
@@ -221,6 +237,59 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
           </select>
         </label>
       </div>
+
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
+          Owner
+          <select
+            value={draft.owner_user_id}
+            onChange={(e) => set("owner_user_id", e.target.value)}
+            className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
+          >
+            <option value="">Nobody yet</option>
+            {options.colleagues.map((colleague) => (
+              <option key={colleague.id} value={colleague.id}>
+                {colleague.label}
+              </option>
+            ))}
+          </select>
+          <span className="text-caption font-normal text-text-secondary">
+            Who keeps this source checked on its cadence.
+          </span>
+        </label>
+      </div>
+
+      {/*
+        PRD F17: what a source covers. A fieldset of checkboxes rather than a multi-select,
+        so every choice is visible and tappable without a hidden modifier key.
+      */}
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-body-sm font-medium">Covers</legend>
+        {options.destinations.length === 0 ? (
+          <p className="text-body-sm text-text-secondary">No destinations have been created yet.</p>
+        ) : (
+          <div className="grid max-h-56 gap-1 overflow-y-auto rounded-input border border-border-subtle p-2 sm:grid-cols-2">
+            {options.destinations.map((destination) => (
+              <label key={destination.id} className="flex min-h-11 items-center gap-2 text-body-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.coverage.includes(destination.id)}
+                  onChange={(e) =>
+                    set(
+                      "coverage",
+                      e.target.checked
+                        ? [...draft.coverage, destination.id]
+                        : draft.coverage.filter((id) => id !== destination.id),
+                    )
+                  }
+                  className="size-4"
+                />
+                {destination.label}
+              </label>
+            ))}
+          </div>
+        )}
+      </fieldset>
 
       <label className="flex flex-col gap-1 text-body-sm font-medium">
         Notes

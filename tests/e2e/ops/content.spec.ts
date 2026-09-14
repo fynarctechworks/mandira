@@ -85,8 +85,14 @@ test.describe("O08 — Source detail", () => {
     await page.getByRole("button", { name: "Register source" }).click();
     await expect(page).toHaveURL(/\/sources$/);
 
-    await page.getByRole("link", { name: `Detail Source ${RUN}` }).click();
-    await expect(page.getByRole("heading", { name: /^Captures \(\d+\)$/ })).toBeVisible();
+    // The sources list grows with every local run and can drop a first click while it
+    // hydrates; retry until the source is open (the guard knowledge and trust specs use).
+    await expect(async () => {
+      await page.getByRole("link", { name: `Detail Source ${RUN}` }).click();
+      await expect(page.getByRole("heading", { name: /^Captures \(\d+\)$/ })).toBeVisible({
+        timeout: 5_000,
+      });
+    }).toPass({ timeout: 25_000 });
     await expect(page.getByRole("heading", { name: /^Change candidates \(\d+\)$/ })).toBeVisible();
     await expect(page.getByText(/Collection is manual for now/)).toHaveCount(0);
   });
