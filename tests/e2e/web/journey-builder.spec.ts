@@ -70,7 +70,8 @@ test.describe("Saving a journey", () => {
 
     await page.goto(`/en/journeys/${journeyId}`);
     await expect(page.getByRole("heading", { name: "Your journey" })).toBeVisible();
-    await expect(page.getByText("Dawn Darshan (fixture)")).toBeVisible();
+    // By heading: each item's "Do this after" list also names the other items (D-192).
+    await expect(page.getByRole("heading", { name: "Dawn Darshan (fixture)" })).toBeVisible();
 
     await page.goto("/en/journeys");
     // The one this test just made. Other tests in the file save journeys for the same
@@ -122,7 +123,7 @@ test.describe("The tier rules hold at the API, not in the UI", () => {
     // Dawn Darshan went in as must-do → PROTECTED.
     const itemId = await page
       .locator("li")
-      .filter({ hasText: "Dawn Darshan (fixture)" })
+      .filter({ has: page.getByRole("heading", { name: "Dawn Darshan (fixture)", exact: true }) })
       .locator("select[id^='tier-']")
       .first()
       .getAttribute("id")
@@ -148,7 +149,7 @@ test.describe("The tier rules hold at the API, not in the UI", () => {
 
     const itemId = await page
       .locator("li")
-      .filter({ hasText: "Evening Aarti (fixture)" })
+      .filter({ has: page.getByRole("heading", { name: "Evening Aarti (fixture)", exact: true }) })
       .locator("select[id^='tier-']")
       .first()
       .getAttribute("id")
@@ -172,7 +173,7 @@ test.describe("The tier rules hold at the API, not in the UI", () => {
 
     const itemId = await page
       .locator("li")
-      .filter({ hasText: "Dawn Darshan (fixture)" })
+      .filter({ has: page.getByRole("heading", { name: "Dawn Darshan (fixture)", exact: true }) })
       .locator("select[id^='tier-']")
       .first()
       .getAttribute("id")
@@ -211,7 +212,7 @@ test.describe("Editing", () => {
 
     const itemId = await page
       .locator("li")
-      .filter({ hasText: "Dawn Darshan (fixture)" })
+      .filter({ has: page.getByRole("heading", { name: "Dawn Darshan (fixture)", exact: true }) })
       .locator("select[id^='buffer-']")
       .first()
       .getAttribute("id")

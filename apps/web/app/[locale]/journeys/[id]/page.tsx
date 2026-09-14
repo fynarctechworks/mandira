@@ -66,7 +66,7 @@ export default async function JourneyPage({
     getTranslations("present"),
     getTranslations("itemActions.tiers"),
   ]);
-  const { journey, items, health, labels, trust } = detail;
+  const { journey, items, health, labels, trust, dependencies } = detail;
   // What another device may change underneath this page (PRD-ACCT-005).
   const version = await journeyVersion(supabase, journey.id);
 
@@ -309,6 +309,19 @@ export default async function JourneyPage({
                         bufferMinutes={item.buffer_minutes ?? 15}
                         dayIndex={item.day_index}
                         dayCount={dayCount}
+                        preferredWindowStart={item.preferred_window_start ?? null}
+                        note={item.note ?? null}
+                        afterItemId={
+                          dependencies.find((dep) => dep.item_id === item.id)?.after_item_id ?? null
+                        }
+                        sameDay={dayItems
+                          .filter((other) => other.id !== item.id)
+                          .map((other) => ({
+                            id: other.id,
+                            label: other.experience_id
+                              ? (labels.get(other.experience_id) ?? t("common.something_you_added"))
+                              : t("common.free_time"),
+                          }))}
                       />
                     </li>
                   );

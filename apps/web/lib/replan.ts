@@ -43,7 +43,14 @@ export async function rescheduleDays(
     plan: (knowledge) => ({
       items: days.flatMap(
         (dayIndex) =>
-          scheduleDay({ journey: engineJourney, dayIndex, items, knowledge, travelers }).items,
+          scheduleDay({
+            journey: engineJourney,
+            dayIndex,
+            items,
+            knowledge,
+            travelers,
+            dependencies: detail.dependencies,
+          }).items,
       ),
     }),
   });

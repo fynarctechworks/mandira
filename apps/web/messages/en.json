@@ -940,7 +940,17 @@
     "remove": "Remove this",
     "fixed_locked": "This has a set time, so it can't be removed. Change how much it matters if that's no longer true.",
     "protected_locked": "You marked this as something you must do, so Mandhira won't remove it.",
-    "not_through": "That didn't go through."
+    "not_through": "That didn't go through.",
+    "window_label": "Preferred start time",
+    "window_hint": "Mandhira plans it as close to this as the rest of the day allows.",
+    "window_save": "Save time",
+    "window_clear": "Clear preferred time",
+    "after_label": "Do this after",
+    "after_none": "Nothing in particular",
+    "after_save": "Save order",
+    "note_label": "Note",
+    "note_placeholder": "For example: carry the pooja items",
+    "note_save": "Save note"
   },
   "present": {
     "whenever_open": "Whenever the place is open",

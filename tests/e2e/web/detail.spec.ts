@@ -143,9 +143,10 @@ test.describe("Open in Maps (MAPS-03)", () => {
      * ST_X is longitude and ST_Y is latitude, and a swap renders a confident pin in
      * western China that looks perfectly normal on a map.
      */
-    const href = await link.getAttribute("href");
-    expect(href).toMatch(/^geo:17\.386,78\.478\?q=17\.386,78\.478\(/);
-    expect(href).toContain("Hill%20Temple");
+    // The platform is read after hydration (open-in-maps.tsx), so the href is waited for
+    // rather than read once: a first read can land before the component knows it is Android.
+    await expect(link).toHaveAttribute("href", /^geo:17\.386,78\.478\?q=17\.386,78\.478\(/);
+    await expect(link).toHaveAttribute("href", /Hill%20Temple/);
   });
 
   test("says that it leaves the app, for anyone not looking at the icon", async ({ page }) => {

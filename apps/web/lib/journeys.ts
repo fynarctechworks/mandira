@@ -47,6 +47,8 @@ export type JourneyDetail = {
    * journey screen can say when a critical field has gone stale (PRD-TRST-004).
    */
   trust: Record<string, TrustMap>;
+  /** What must come after what, for the item editor's "Do this after" (PRD-PLAN-003). */
+  dependencies: JourneyItemDependency[];
 };
 
 const JOURNEY_COLUMNS =
@@ -156,11 +158,12 @@ export async function getJourney(
     ? await getKnowledgeBundle(journey.destinationId, locale)
     : EMPTY_KNOWLEDGE;
 
+  const inputs = await healthInputsFor(supabase, journeyId, items);
   const health = computeHealth({
     journey: toEngineJourney(journey),
     items,
     knowledge,
-    ...(await healthInputsFor(supabase, journeyId, items)),
+    ...inputs,
   });
 
   return {
@@ -170,6 +173,7 @@ export async function getJourney(
     labels: await labelsFor(supabase, items, locale),
     // Built from the published views' TrustMap rows in getKnowledgeBundle.
     trust: (knowledge.trust ?? {}) as Record<string, TrustMap>,
+    dependencies: inputs.dependencies,
   };
 }
 
@@ -266,6 +270,7 @@ function toItem(row: Record<string, unknown>): StoredItem {
     status: (row["status"] as StoredItem["status"]) ?? "planned",
     actual_start_at: (row["actual_start_at"] as string | null) ?? null,
     actual_end_at: (row["actual_end_at"] as string | null) ?? null,
+    note: (row["note"] as string | null) ?? null,
   };
 }
 

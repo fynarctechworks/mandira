@@ -26,6 +26,10 @@ export function ItemActions({
   bufferMinutes,
   dayIndex,
   dayCount,
+  preferredWindowStart,
+  note,
+  afterItemId,
+  sameDay,
 }: {
   journeyId: string;
   itemId: string;
@@ -33,6 +37,13 @@ export function ItemActions({
   bufferMinutes: number;
   dayIndex: number;
   dayCount: number;
+  /** HH:MM, or null when the traveler has no preference. */
+  preferredWindowStart: string | null;
+  note: string | null;
+  /** The item this one is planned after, if any. */
+  afterItemId: string | null;
+  /** The other items on the same day, which this one could come after. */
+  sameDay: { id: string; label: string }[];
 }) {
   const t = useTranslations("itemActions");
   const tJourney = useTranslations("addToJourney");
@@ -40,6 +51,10 @@ export function ItemActions({
   const [pending, startTransition] = useTransition();
   const [problem, setProblem] = useState<string | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  // Held until the traveler taps Save: nothing here changes the plan on blur or on typing.
+  const [windowStart, setWindowStart] = useState(preferredWindowStart ?? "");
+  const [noteText, setNoteText] = useState(note ?? "");
+  const [after, setAfter] = useState(afterItemId ?? "");
 
   const canRemove = checkItemAction(tier, "remove").allowed;
   const canMove = checkItemAction(tier, "move").allowed;
@@ -65,6 +80,17 @@ export function ItemActions({
     await respond(
       await fetch(`/api/journeys/${journeyId}/items/${itemId}?confirmed=true`, {
         method: "DELETE",
+      }),
+    );
+  }
+
+  async function saveAfter() {
+    setProblem(null);
+    await respond(
+      await fetch(`/api/journeys/${journeyId}/items/${itemId}/dependencies`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ afterItemId: after || null }),
       }),
     );
   }
@@ -152,6 +178,95 @@ export function ItemActions({
           </select>
         </div>
       ) : null}
+
+      {canMove ? (
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`window-${itemId}`}
+            className="text-caption font-medium text-text-secondary"
+          >
+            {t("window_label")}
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id={`window-${itemId}`}
+              type="time"
+              value={windowStart}
+              disabled={pending}
+              onChange={(event) => setWindowStart(event.target.value)}
+              className="min-h-11 rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
+            />
+            <Button
+              variant="secondary"
+              disabled={pending || windowStart === (preferredWindowStart ?? "")}
+              onClick={() =>
+                void send({ preferredWindowStart: windowStart || null, confirmed: true })
+              }
+            >
+              {windowStart ? t("window_save") : t("window_clear")}
+            </Button>
+          </div>
+          <p className="text-caption text-text-secondary">{t("window_hint")}</p>
+        </div>
+      ) : null}
+
+      {sameDay.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`after-${itemId}`}
+            className="text-caption font-medium text-text-secondary"
+          >
+            {t("after_label")}
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              id={`after-${itemId}`}
+              value={after}
+              disabled={pending}
+              onChange={(event) => setAfter(event.target.value)}
+              className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-bg-surface px-3 text-body-sm"
+            >
+              <option value="">{t("after_none")}</option>
+              {sameDay.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="secondary"
+              disabled={pending || after === (afterItemId ?? "")}
+              onClick={() => void saveAfter()}
+            >
+              {t("after_save")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`note-${itemId}`} className="text-caption font-medium text-text-secondary">
+          {t("note_label")}
+        </label>
+        <textarea
+          id={`note-${itemId}`}
+          value={noteText}
+          maxLength={500}
+          rows={2}
+          disabled={pending}
+          placeholder={t("note_placeholder")}
+          onChange={(event) => setNoteText(event.target.value)}
+          className="rounded-lg border border-border bg-bg-surface px-3 py-2 text-body-sm"
+        />
+        <Button
+          variant="secondary"
+          className="self-start"
+          disabled={pending || noteText === (note ?? "")}
+          onClick={() => void send({ note: noteText.trim() || null })}
+        >
+          {t("note_save")}
+        </Button>
+      </div>
 
       {canRemove ? (
         confirmingRemove ? (

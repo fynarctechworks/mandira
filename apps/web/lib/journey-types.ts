@@ -42,6 +42,8 @@ export type StoredItem = JourneyItem & {
   status: "planned" | "in_progress" | "done" | "skipped" | "moved";
   actual_start_at: string | null;
   actual_end_at: string | null;
+  /** The traveler's own note on the item (PRD-PLAN-003). */
+  note?: string | null;
 };
 
 /**
