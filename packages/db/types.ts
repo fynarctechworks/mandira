@@ -4113,6 +4113,14 @@ export type Database = {
       }
       publish_scheduled_entities: { Args: never; Returns: Json }
       purge_deleted_accounts: { Args: { p_grace?: string }; Returns: Json }
+      queue_advisory_notifications: {
+        Args: { p_advisory_id: string }
+        Returns: number
+      }
+      queue_change_notifications: {
+        Args: { p_update_id: string }
+        Returns: number
+      }
       recompute_freshness: { Args: never; Returns: Json }
       reconcile_app_cron_responses: { Args: never; Returns: Json }
       record_audit: {
