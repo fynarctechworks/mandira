@@ -30,9 +30,9 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.5",
-    "@supabase/supabase-js": "^2.112.4",
-    "zod": "^4.4.3"
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "zod": "^4.6.2"
   },
   "peerDependencies": {
     "next": "^15.5.0"
