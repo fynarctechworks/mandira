@@ -146,11 +146,21 @@ function Dashboard({ health }: { health: KnowledgeHealth }) {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{queue.open}</TableCell>
                 <TableCell className="text-text-secondary">
-                  {queue.open === 0 || !queue.at
-                    ? "—"
-                    : queue.kind === "due"
-                      ? `Next ${formatWhen(queue.at)}`
-                      : `Waiting ${ageOf(queue.at)}`}
+                  {queue.open === 0 || !queue.at ? (
+                    "—"
+                  ) : queue.kind === "due" ? (
+                    `Next ${formatWhen(queue.at)}`
+                  ) : (
+                    <span className="inline-flex flex-wrap items-center gap-2">
+                      {`Waiting ${ageOf(queue.at)}`}
+                      {/* TRD §11: past seven days the admins are emailed too (0046). */}
+                      {Date.parse(queue.at) < Date.now() - 7 * 86_400_000 ? (
+                        <span className="rounded-full border border-status-broken px-2 py-0.5 text-caption font-medium text-status-broken">
+                          Over 7 days
+                        </span>
+                      ) : null}
+                    </span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

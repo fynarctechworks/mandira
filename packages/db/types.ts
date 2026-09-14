@@ -4079,12 +4079,26 @@ export type Database = {
         }
         Returns: string
       }
+      ops_alert_recipients: {
+        Args: never
+        Returns: {
+          email: string
+        }[]
+      }
       ops_find_account: {
         Args: { p_email: string }
         Returns: {
           display_name: string
           email: string
           user_id: string
+        }[]
+      }
+      ops_overdue_queues: {
+        Args: { p_days?: number }
+        Returns: {
+          oldest_at: string
+          open_count: number
+          queue: string
         }[]
       }
       ops_team: {
