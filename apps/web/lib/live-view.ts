@@ -12,6 +12,7 @@ import {
 } from "@mandhira/journey-engine";
 
 import { engineText, type Translate } from "./engine-text";
+import { practicalChips, type Facility, type PracticalChip } from "./practical-chips";
 import { weakestTrustEntry, type TrustEntry, type TrustMap } from "./trust";
 import { toEngineJourney, type StoredItem, type StoredJourney } from "./journey-types";
 
@@ -66,6 +67,8 @@ export type LiveView = {
    * that begins tomorrow.
    */
   onJourneyDates: boolean;
+  /** Restroom, water and cloakroom nearest where NOW is (PRD F8), nearest first per kind. */
+  nowChips: PracticalChip[];
   /** When the data behind this view was read, or null when it came straight from the server. */
   syncedAt: string | null;
 };
@@ -88,6 +91,8 @@ export function assembleLiveView(input: {
    */
   travelers?: TravelerProfile[];
   dependencies?: JourneyItemDependency[];
+  /** The destination's facilities with a pin, for the NOW card's practical chips. */
+  facilities?: Facility[];
 }): LiveView {
   const { journey, items, bundle, labels, places, nowAt, t } = input;
   const engineJourney = toEngineJourney(journey);
@@ -184,6 +189,10 @@ export function assembleLiveView(input: {
     ],
     isActive: journey.status === "active",
     onJourneyDates: onJourneyDates(journey, nowAt),
+    nowChips: practicalChips(
+      projection.now.placeId ? (places.get(projection.now.placeId) ?? null) : null,
+      input.facilities ?? [],
+    ),
     syncedAt: input.syncedAt ?? null,
   };
 }

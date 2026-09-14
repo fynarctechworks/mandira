@@ -1,5 +1,6 @@
 import type { Translate } from "../engine-text";
 import { assembleLiveView, type LivePlace, type LiveView } from "../live-view";
+import type { Facility } from "../practical-chips";
 import { readSnapshot } from "./sync";
 
 /**
@@ -27,6 +28,7 @@ export async function readLiveViewLocally(
 
   const labels = new Map<string, string>();
   const places = new Map<string, LivePlace>();
+  const facilities: Facility[] = [];
 
   for (const entity of snapshot.entities) {
     const payload = entity.payload;
@@ -46,6 +48,19 @@ export async function readLiveViewLocally(
         latitude: (payload["latitude"] as number | null) ?? null,
         longitude: (payload["longitude"] as number | null) ?? null,
       });
+
+      // The snapshot stores the destination's facilities for exactly this (snapshot.ts).
+      const subtype = payload["facility_subtype"] as string | null | undefined;
+      const latitude = payload["latitude"] as number | null | undefined;
+      const longitude = payload["longitude"] as number | null | undefined;
+      if (
+        payload["place_type"] === "facility" &&
+        subtype &&
+        latitude != null &&
+        longitude != null
+      ) {
+        facilities.push({ subtype, latitude, longitude });
+      }
     }
   }
 
@@ -55,6 +70,7 @@ export async function readLiveViewLocally(
     bundle: snapshot.bundle,
     labels,
     places,
+    facilities,
     nowAt,
     syncedAt: snapshot.syncedAt,
     t,

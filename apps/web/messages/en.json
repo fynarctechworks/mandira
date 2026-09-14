@@ -387,6 +387,12 @@
       "free": "Nothing you need to do right now",
       "before_day": "Your day hasn't started yet",
       "day_complete": "Today is complete"
+    },
+    "chips_label": "Nearby",
+    "chips": {
+      "restroom": "Restroom {distance}",
+      "drinking_water": "Water {distance}",
+      "cloakroom": "Cloakroom {distance}"
     }
   },
   "prepare": {

@@ -707,7 +707,13 @@
     "announce_now": "ఇప్పుడు: {label}. {detail}",
     "announce_next": "తర్వాత: {label}, {time}కి బయలుదేరండి.",
     "leave_by_title": "బయలుదేరే సమయం",
-    "leave_by_body": "{label} కోసం {time}కి బయలుదేరండి."
+    "leave_by_body": "{label} కోసం {time}కి బయలుదేరండి.",
+    "chips_label": "దగ్గర్లో",
+    "chips": {
+      "restroom": "మరుగుదొడ్డి {distance}",
+      "drinking_water": "తాగునీరు {distance}",
+      "cloakroom": "క్లోక్‌రూమ్ {distance}"
+    }
   },
   "prepare": {
     "groups": {

@@ -707,7 +707,13 @@
     "announce_now": "अभी: {label}। {detail}",
     "announce_next": "अगला: {label}, {time} तक निकलें।",
     "leave_by_title": "निकलने का समय",
-    "leave_by_body": "{label} के लिए {time} तक निकलें।"
+    "leave_by_body": "{label} के लिए {time} तक निकलें।",
+    "chips_label": "पास में",
+    "chips": {
+      "restroom": "शौचालय {distance}",
+      "drinking_water": "पीने का पानी {distance}",
+      "cloakroom": "क्लोकरूम {distance}"
+    }
   },
   "prepare": {
     "groups": {

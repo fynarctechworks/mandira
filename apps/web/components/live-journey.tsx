@@ -458,6 +458,20 @@ export function LiveJourney({
       ) : null}
 
       {/* PRD-LIVE-002's phrase shortcut — beside the NOW card, never one of its three actions. */}
+      {/* PRD F8's practical chips: what is nearby, not a route to it. */}
+      {view.nowChips.length > 0 ? (
+        <ul aria-label={t("chips_label")} className="flex flex-wrap gap-2">
+          {view.nowChips.map((chip) => (
+            <li
+              key={chip.subtype}
+              className="rounded-full border border-border bg-bg-surface px-3 py-1 text-body-sm"
+            >
+              {t(`chips.${chip.subtype}`, { distance: distanceText(chip.meters, locale) })}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {view.destinationId ? (
         <PhraseShortcut destinationId={view.destinationId} locale={locale} />
       ) : null}
@@ -694,4 +708,18 @@ function LiveTrust({ item, locale }: { item: LiveItemView; locale: string }) {
       validUntil={validUntil}
     />
   );
+}
+
+/** "120 m", "1.2 km" — in the reader's language and digits. */
+function distanceText(meters: number, locale: string): string {
+  return meters < 1000
+    ? new Intl.NumberFormat(locale, { style: "unit", unit: "meter", unitDisplay: "short" }).format(
+        meters,
+      )
+    : new Intl.NumberFormat(locale, {
+        style: "unit",
+        unit: "kilometer",
+        unitDisplay: "short",
+        maximumFractionDigits: 1,
+      }).format(meters / 1000);
 }

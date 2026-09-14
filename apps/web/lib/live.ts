@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { mustList } from "./data-error";
 import { assembleLiveView, type LivePlace, type LiveView } from "./live-view";
+import type { Facility } from "./practical-chips";
 import { getJourney, healthInputsFor } from "./journeys";
 import { getKnowledgeBundle } from "./knowledge";
 import type { webSupabase } from "./supabase";
@@ -45,6 +46,7 @@ export async function getLiveView(
     bundle,
     labels,
     places: await placesFor(supabase, items, locale),
+    facilities: journey.destinationId ? await facilitiesFor(supabase, journey.destinationId) : [],
     nowAt,
     t: await getTranslations({ locale }),
     ...(await healthInputsFor(supabase, journeyId, items)),
@@ -91,3 +93,31 @@ const EMPTY_BUNDLE = {
   travel_estimates: [],
   trust: {},
 };
+
+/**
+ * The destination's published facilities that have a kind and a pin — the same set the
+ * offline snapshot stores (snapshot.ts), so the chips read the same online and offline.
+ */
+async function facilitiesFor(supabase: Client, destinationId: string): Promise<Facility[]> {
+  const data = mustList(
+    await supabase
+      .from("v_published_places")
+      .select("facility_subtype, latitude, longitude")
+      .eq("destination_id", destinationId)
+      .eq("place_type", "facility")
+      .limit(50),
+    "v_published_places",
+  );
+
+  return data.flatMap((row) =>
+    row.facility_subtype && row.latitude != null && row.longitude != null
+      ? [
+          {
+            subtype: row.facility_subtype as string,
+            latitude: row.latitude as number,
+            longitude: row.longitude as number,
+          },
+        ]
+      : [],
+  );
+}
