@@ -3,6 +3,7 @@ import { createWithApi } from "@mandhira/db/api";
 import { getOpsRoles } from "@mandhira/db/client/roles";
 import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 
+import { translateApiMessage } from "./api-messages";
 import { reportServerError } from "./report";
 import { webSupabase } from "./supabase";
 
@@ -23,6 +24,8 @@ export const withApi = createWithApi({
    * deliberately never included in a report.
    */
   onUnexpected: (error, context) => reportServerError({ route: context.route, error, app: "web" }),
+  // Refusals in the traveler's language (PRD-LANG-001), see api-messages.ts.
+  translate: translateApiMessage,
 });
 
 /** The cookie B-019's guest draft sets; named here so both halves agree on it. */

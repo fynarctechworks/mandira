@@ -122,6 +122,11 @@ export type WithApiDeps = {
   anonKey?: (request: Request) => string;
   /** Reported to Sentry once B-024 wires it; until then this is where that hook goes. */
   onUnexpected?: (error: unknown, context: { route: string }) => void;
+  /**
+   * Renders a refusal in the caller's language (PRD-LANG-001). Routes keep writing English;
+   * the app decides the language from the request. Omitted, messages pass through.
+   */
+  translate?: (message: string, request: Request) => string;
 };
 
 /**
@@ -136,6 +141,7 @@ export function createWithApi(deps: WithApiDeps) {
     config: WithApiConfig<TSchema, TResult>,
   ) {
     return async (request: Request): Promise<Response> => {
+      const say = (message: string) => deps.translate?.(message, request) ?? message;
       try {
         const input = await validate(config.schema, request);
         const supabase = await deps.createClient();
@@ -170,7 +176,7 @@ export function createWithApi(deps: WithApiDeps) {
 
           if (!result.allowed) {
             return json(
-              { ok: false, error: { code: "rate_limited", message: MESSAGES.rate_limited } },
+              { ok: false, error: { code: "rate_limited", message: say(MESSAGES.rate_limited) } },
               429,
               // TRD §6.2: a 429 without Retry-After tells the caller to guess, and every
               // client guesses wrong in the same direction.
@@ -189,7 +195,7 @@ export function createWithApi(deps: WithApiDeps) {
 
         return json({ ok: true, data }, 200);
       } catch (cause) {
-        return toResponse(cause, request, deps.onUnexpected);
+        return toResponse(cause, request, deps.onUnexpected, say);
       }
     };
   };
@@ -239,6 +245,7 @@ function toResponse(
   cause: unknown,
   request: Request,
   onUnexpected: WithApiDeps["onUnexpected"],
+  say: (message: string) => string = (message) => message,
 ): Response {
   if (cause instanceof ApiError) {
     return json(
@@ -246,8 +253,17 @@ function toResponse(
         ok: false,
         error: {
           code: cause.code,
-          message: cause.message,
-          ...(cause.fieldErrors ? { fieldErrors: cause.fieldErrors } : {}),
+          message: say(cause.message),
+          ...(cause.fieldErrors
+            ? {
+                fieldErrors: Object.fromEntries(
+                  Object.entries(cause.fieldErrors).map(([field, messages]) => [
+                    field,
+                    messages.map(say),
+                  ]),
+                ),
+              }
+            : {}),
         },
       },
       STATUS[cause.code],
@@ -257,14 +273,14 @@ function toResponse(
   // Postgres unique violation — almost always a duplicate identifier in this app.
   const pgCode = (cause as { code?: string } | null)?.code;
   if (pgCode === "23505") {
-    return json({ ok: false, error: { code: "conflict", message: MESSAGES.conflict } }, 409);
+    return json({ ok: false, error: { code: "conflict", message: say(MESSAGES.conflict) } }, 409);
   }
 
   // Anything unrecognised is a bug, not a refusal. It is reported and then flattened: a
   // driver message or a stack trace on the wire is an information leak, and TRD-API-001
   // says so explicitly.
   onUnexpected?.(cause, { route: new URL(request.url).pathname });
-  return json({ ok: false, error: { code: "failed", message: MESSAGES.failed } }, 500);
+  return json({ ok: false, error: { code: "failed", message: say(MESSAGES.failed) } }, 500);
 }
 
 function json(body: ApiResponse<unknown>, status: number, headers?: Record<string, string>) {
