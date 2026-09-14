@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   buildInitialJourney,
+  computeWorstCase,
   toInstant,
   type JourneyBrief,
   type TravelerProfile,
@@ -14,6 +15,7 @@ import { SaveJourney } from "../../../../components/save-journey";
 import { JourneyHealth } from "../../../../components/journey-health";
 import { getDestinationPage, getKnowledgeBundle } from "../../../../lib/knowledge";
 import { planWithTravel } from "../../../../lib/travel";
+import { WorstCase } from "../../../../components/worst-case";
 
 /**
  * The journey Mandhira proposes from a brief (PRD F4).
@@ -85,6 +87,9 @@ export default async function PreviewPage({
   });
 
   const nameOf = new Map(page.experiences.map((e) => [e.id, e.name.text]));
+  // PRD-HLTH-004: the same plan, judged on the longest recorded durations.
+  const worst = computeWorstCase({ journey, items, knowledge, travelers });
+  const tDay = await getTranslations("addToJourney");
   const dayIndexes = [...new Set(items.map((i) => i.day_index))].sort((a, b) => a - b);
 
   return (
@@ -103,6 +108,14 @@ export default async function PreviewPage({
       </header>
 
       <JourneyHealth report={health} />
+
+      {items.length > 0 ? (
+        <WorstCase
+          likely={health}
+          worst={worst}
+          dayLabel={(dayIndex) => tDay("day_option", { day: dayIndex + 1 })}
+        />
+      ) : null}
 
       {items.length === 0 ? (
         <p className="text-body-sm text-text-secondary">{t("nothing_chosen")}</p>

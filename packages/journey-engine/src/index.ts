@@ -9,6 +9,7 @@
 
 export * from "./types";
 export { projectActuals } from "./actuals";
+export { computeWorstCase, worstCaseItems } from "./worst-case";
 export { resolveAvailability, type AvailabilityResult } from "./availability";
 export { computeBuffer, BASE_BUFFER_MINUTES } from "./buffer";
 export { scheduleDay, travelMinutes, type ScheduleDayResult } from "./schedule";

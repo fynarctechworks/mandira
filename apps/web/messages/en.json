@@ -988,5 +988,10 @@
     "title": "Choose your language",
     "promise": "Mandhira plans your pilgrimage around what matters most to you, and keeps it working on the day.",
     "continue": "Continue"
+  },
+  "worstCase": {
+    "title": "If everything runs long",
+    "intro": "Using the longest times on record, these days would get harder:",
+    "still_fits": "Even if everything takes its longest recorded time, every day still fits."
   }
 }
