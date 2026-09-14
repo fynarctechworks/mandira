@@ -87,6 +87,14 @@ test.describe("O22 — Product signals", () => {
     expect(text).not.toMatch(/anon_session_id|journey_id/);
   });
 
+  test("shows what journeys did, as counts and shares", async ({ page }) => {
+    await page.goto("/signals?days=90");
+    for (const section of ["Journeys", "Health at departure"]) {
+      await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
+    }
+    await expect(page.getByText("Reports per 1,000 journey-days")).toBeVisible();
+  });
+
   test("product signals are accessible", async ({ page }) => {
     await page.goto("/signals");
     expect(seriousViolations(await new AxeBuilder({ page }).analyze())).toEqual([]);

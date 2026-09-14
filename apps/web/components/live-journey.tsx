@@ -3,10 +3,11 @@
 import { HealthPill, NowCard, TierChip } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ChangeCard, ChangeTrigger } from "@mandhira/journey-engine";
 
+import { track } from "../lib/analytics";
 import { useLeaveByReminder } from "../lib/leave-by-reminder";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import type { PlainTranslate } from "../lib/present";
@@ -112,6 +113,37 @@ export function LiveJourney({
 
   const view = manualView ?? localView ?? serverView;
 
+  /*
+   * PRD F20: Live use during a journey, and how often it is read from the device alone.
+   * Once per journey per visit — the minute-by-minute refreshes are not new visits — and
+   * the offline read once it happens, which is after the stored copy has been read.
+   */
+  const trackedLive = useRef<string | null>(null);
+  const trackedOffline = useRef<string | null>(null);
+  useEffect(() => {
+    if (!view) return;
+    const context = {
+      journeyId: view.journeyId,
+      locale,
+      ...(view.destinationId ? { destinationId: view.destinationId } : {}),
+    };
+
+    if (trackedLive.current !== view.journeyId) {
+      trackedLive.current = view.journeyId;
+      track(
+        "live_opened",
+        { card_kind: view.isActive ? "now" : "preview", health_state: view.projection.dayState },
+        context,
+      );
+    }
+
+    if (view.syncedAt && !navigator.onLine && trackedOffline.current !== view.journeyId) {
+      trackedOffline.current = view.journeyId;
+      const ageMinutes = Math.max(0, Math.round((Date.now() - Date.parse(view.syncedAt)) / 60_000));
+      track("offline_render", { snapshot_age_minutes: ageMinutes }, context);
+    }
+  }, [view, locale]);
+
   useEffect(() => {
     // A second is enough to keep "in 4 minutes" honest without re-rendering constantly.
     const tick = setInterval(() => setNow(Date.now()), 1000);
@@ -165,6 +197,7 @@ export function LiveJourney({
     const body = { action, ...(extraMinutes ? { extraMinutes } : {}) };
     // Taken now, so a tap replayed from the outbox hours later still says when it happened.
     const occurredAt = new Date().toISOString();
+    track("live_action", { action }, { journeyId, locale });
 
     try {
       const response = await fetch(`/api/journeys/${journeyId}/items/${itemId}/status`, {

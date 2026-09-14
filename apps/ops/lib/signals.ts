@@ -10,6 +10,40 @@ export type ProductSignals = {
   locales: Record<string, number>;
 };
 
+/** PRD F20's signals derived from journeys, from `product_outcomes()` (0048). Counts only. */
+export type ProductOutcomes = {
+  since: string;
+  journeys: { created: number; with_protected: number; with_protected_and_fixed: number };
+  health_at_departure: Partial<Record<(typeof DEPARTURE_STATES)[number][0], number>>;
+  change_cards: {
+    shown: number;
+    accepted: number;
+    kept_as_is: number;
+    accepted_within_2_min: number;
+  };
+  live: {
+    journey_days: number;
+    journey_days_with_live: number;
+    opened: number;
+    opened_offline: number;
+  };
+  offline: { events: number; renders: number };
+  reports: { total: number; valid: number; journey_days: number };
+};
+
+export const DEPARTURE_STATES = [
+  ["comfortable", "Comfortable"],
+  ["tight", "Tight"],
+  ["at_risk", "At risk"],
+  ["broken", "Broken"],
+] as const;
+
+/** A count per 1,000 journey-days, to one decimal; null before anyone has travelled. */
+export function per1000(count: number, journeyDays: number): number | null {
+  if (journeyDays <= 0) return null;
+  return Math.round((count / journeyDays) * 10_000) / 10;
+}
+
 export function parseDays(value: string | undefined): Days {
   const n = Number(value);
   return (DAY_OPTIONS as readonly number[]).includes(n) ? (n as Days) : 30;

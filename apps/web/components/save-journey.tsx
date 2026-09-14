@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { track } from "../lib/analytics";
 import { saveGuestDraft } from "../lib/offline/guest-draft";
 
 type Brief = {
@@ -69,6 +70,11 @@ export function SaveJourney({ brief, locale }: { brief: Brief; locale: string })
       return;
     }
 
+    track(
+      "journey_saved",
+      { day_count: brief.dayCount, item_count: brief.mustDo.length + brief.wouldLike.length },
+      { journeyId: payload.data.journeyId, destinationId: brief.destinationId, locale },
+    );
     router.push(`/${locale}/journeys/${payload.data.journeyId}`);
   }
 

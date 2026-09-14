@@ -6,6 +6,7 @@ import { TrustBadge, TrustSheet } from "@mandhira/ui";
 
 import type { TrustEntry } from "../lib/trust";
 import { ReportAChange } from "./report-a-change";
+import { track } from "../lib/analytics";
 import { trustStateOf } from "../lib/trust";
 
 /**
@@ -60,7 +61,10 @@ export function FieldTrust({
       <TrustBadge
         state={state}
         label={tBadge(state)}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          track("trust_sheet_opened", { trust_state: state });
+        }}
         aria-label={t("badge_label", { field: fieldLabel })}
       />
       <TrustSheet

@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { dailySeries, istDay, parseDays } from "./signals";
+import { dailySeries, istDay, parseDays, per1000 } from "./signals";
+
+describe("per1000", () => {
+  it("is a rate per 1,000 journey-days, to one decimal", () => {
+    expect(per1000(3, 2000)).toBe(1.5);
+    expect(per1000(1, 3)).toBe(333.3);
+    expect(per1000(0, 40)).toBe(0);
+  });
+
+  it("has no rate before anyone has travelled", () => {
+    expect(per1000(2, 0)).toBeNull();
+  });
+});
 
 describe("parseDays", () => {
   it("accepts only the offered windows", () => {

@@ -1555,6 +1555,9 @@ export type Database = {
           deleted_at: string | null
           device_draft_id: string | null
           end_date: string | null
+          health_at_departure:
+            | Database["public"]["Enums"]["health_state_enum"]
+            | null
           health_report: Json | null
           health_state: Database["public"]["Enums"]["health_state_enum"] | null
           id: string
@@ -1581,6 +1584,9 @@ export type Database = {
           deleted_at?: string | null
           device_draft_id?: string | null
           end_date?: string | null
+          health_at_departure?:
+            | Database["public"]["Enums"]["health_state_enum"]
+            | null
           health_report?: Json | null
           health_state?: Database["public"]["Enums"]["health_state_enum"] | null
           id?: string
@@ -1607,6 +1613,9 @@ export type Database = {
           deleted_at?: string | null
           device_draft_id?: string | null
           end_date?: string | null
+          health_at_departure?:
+            | Database["public"]["Enums"]["health_state_enum"]
+            | null
           health_report?: Json | null
           health_state?: Database["public"]["Enums"]["health_state_enum"] | null
           id?: string
@@ -4121,6 +4130,7 @@ export type Database = {
       }
       owns_journey: { Args: { p_journey_id: string }; Returns: boolean }
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
+      product_outcomes: { Args: { p_days?: number }; Returns: Json }
       product_signals: { Args: { p_days?: number }; Returns: Json }
       prune_ai_cache: { Args: never; Returns: number }
       prune_rate_limits: { Args: { p_older_than?: string }; Returns: number }
