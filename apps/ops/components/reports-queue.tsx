@@ -70,6 +70,9 @@ const STATUS_LABEL: Record<string, string> = {
   ...Object.fromEntries(OUTCOMES.map((outcome) => [outcome.value, outcome.label])),
 };
 
+/** Reports still waiting on someone, as the Ops dashboard counts them (0032). */
+const OPEN_STATUSES = new Set(["new", "triaged", "verifying"]);
+
 export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
   const [pending, startTransition] = useTransition();
   const [note, setNote] = useState<Record<string, string>>({});
@@ -83,6 +86,37 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
     });
   }
 
+  /*
+   * PRD F18 Reports: grouped by entity and field, with count and recency. Three travelers
+   * reporting the same timing are one thing to check, not three cards to scroll past — and
+   * the group with the most open reports is the one most likely to be really wrong.
+   */
+  const groups = [
+    ...rows
+      .reduce((byKey, row) => {
+        const key = `${row.entity_table}|${row.entity_id}|${row.field_name ?? ""}`;
+        const group = byKey.get(key) ?? {
+          key,
+          entityTable: row.entity_table,
+          entityId: row.entity_id,
+          fieldName: row.field_name,
+          rows: [] as ReportRow[],
+        };
+        group.rows.push(row);
+        return byKey.set(key, group);
+      }, new Map<string, { key: string; entityTable: string; entityId: string; fieldName: string | null; rows: ReportRow[] }>())
+      .values(),
+  ]
+    .map((group) => ({
+      ...group,
+      open: group.rows.filter((row) => OPEN_STATUSES.has(row.status)).length,
+      latest: group.rows.reduce(
+        (latest, row) => (row.created_at > latest ? row.created_at : latest),
+        group.rows[0]!.created_at,
+      ),
+    }))
+    .sort((a, b) => b.open - a.open || b.latest.localeCompare(a.latest));
+
   return (
     <div className="flex flex-col gap-4">
       {problem ? (
@@ -91,137 +125,153 @@ export function ReportsQueue({ rows }: { rows: ReportRow[] }) {
         </p>
       ) : null}
 
-      <ul className="flex flex-col gap-3">
-        {rows.map((row) => {
-          const resolved = row.status.startsWith("resolved") || row.status === "closed";
-
-          return (
-            <li
-              key={row.id}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4"
+      {groups.map((group, index) => (
+        <section
+          key={group.key}
+          aria-labelledby={`report-group-${index}`}
+          className="flex flex-col gap-3"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id={`report-group-${index}`} className="text-h3">
+              {entityNoun(group.entityTable)}
+              {group.fieldName ? ` · ${group.fieldName}` : ""}
+            </h2>
+            <p className="text-caption text-text-secondary">
+              {group.open} open of {group.rows.length} · latest{" "}
+              {FILED.format(new Date(group.latest))}
+            </p>
+          </div>
+          {editorPath(group.entityTable, group.entityId) ? (
+            <Link
+              href={editorPath(group.entityTable, group.entityId)!}
+              className="focus-ring self-start text-body-sm font-medium text-brand-primary-text underline"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h2 className="text-h3">{TYPE_LABEL[row.report_type] ?? row.report_type}</h2>
-                  <p className="text-caption text-text-secondary">
-                    {entityNoun(row.entity_table)}
-                    {row.field_name ? ` · ${row.field_name}` : ""} ·{" "}
-                    {FILED.format(new Date(row.created_at))}
-                    {row.locale ? ` · ${row.locale}` : ""}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption">
-                  {STATUS_LABEL[row.status] ?? row.status}
-                </span>
-              </div>
+              Open the record these are about
+            </Link>
+          ) : null}
+          <ul className="flex flex-col gap-3">
+            {group.rows.map((row) => {
+              const resolved = row.status.startsWith("resolved") || row.status === "closed";
 
-              {editorPath(row.entity_table, row.entity_id) ? (
-                <Link
-                  href={editorPath(row.entity_table, row.entity_id)!}
-                  className="focus-ring self-start text-body-sm font-medium text-brand-primary-text underline"
+              return (
+                <li
+                  key={row.id}
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4"
                 >
-                  Open the record this is about
-                </Link>
-              ) : null}
-
-              {row.description ? (
-                /*
-                 * Free text a traveler typed, rendered as text and never as markup. It is
-                 * the only user-authored content that reaches an operator's screen.
-                 */
-                <p className="text-body-sm">{row.description}</p>
-              ) : (
-                <p className="text-body-sm text-text-tertiary">No description given.</p>
-              )}
-
-              {row.media_id ? (
-                row.photoUrl ? (
-                  <figure className="flex flex-col gap-1">
-                    <a
-                      href={row.photoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="focus-ring self-start"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL from a private bucket; next/image would cache it */}
-                      <img
-                        src={row.photoUrl}
-                        alt="Photo sent with this report"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="max-h-64 w-auto max-w-full rounded-lg border border-border object-contain"
-                      />
-                    </a>
-                    <figcaption className="text-caption text-text-secondary">
-                      Photo from the reporter. Select it to open full size. The link lasts 15
-                      minutes — refresh the page for a new one.
-                    </figcaption>
-                  </figure>
-                ) : (
-                  <p className="text-body-sm text-status-tight">
-                    This report has a photo, but it didn&apos;t load. Refresh the page to try again.
-                  </p>
-                )
-              ) : null}
-
-              {resolved ? (
-                <p className="text-body-sm text-text-secondary">
-                  {row.resolution_note ? `“${row.resolution_note}” · ` : ""}
-                  {/* Whether the reporter has an account is not readable by Ops (0030 withholds
-                      user_id), so this says only what is known. */}
-                  {row.notified_user
-                    ? "The reporter has been told."
-                    : "The reporter has not been told."}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={`note-${row.id}`} className="text-body-sm font-medium">
-                    What did you find? (optional, and the reporter does not see it)
-                  </label>
-                  <input
-                    id={`note-${row.id}`}
-                    value={note[row.id] ?? ""}
-                    maxLength={500}
-                    onChange={(event) =>
-                      setNote((current) => ({ ...current, [row.id]: event.target.value }))
-                    }
-                    className="focus-ring min-h-11 rounded-lg border border-border px-3 text-body-sm"
-                  />
-
-                  <div className="flex flex-wrap gap-2">
-                    {OUTCOMES.map((outcome) => (
-                      <Button
-                        key={outcome.value}
-                        variant="secondary"
-                        disabled={pending}
-                        onClick={() => resolve(row.id, outcome.value)}
-                      >
-                        {outcome.label}
-                      </Button>
-                    ))}
-
-                    {row.status === "new" ? (
-                      <Button
-                        variant="tertiary"
-                        disabled={pending}
-                        onClick={() =>
-                          startTransition(async () => {
-                            setProblem(null);
-                            const result = await triageReport({ id: row.id });
-                            if (!result.ok) setProblem(result.error.message);
-                          })
-                        }
-                      >
-                        Send to Verify
-                      </Button>
-                    ) : null}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className="text-h3">{TYPE_LABEL[row.report_type] ?? row.report_type}</h3>
+                      <p className="text-caption text-text-secondary">
+                        {FILED.format(new Date(row.created_at))}
+                        {row.locale ? ` · ${row.locale}` : ""}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption">
+                      {STATUS_LABEL[row.status] ?? row.status}
+                    </span>
                   </div>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+
+                  {row.description ? (
+                    /*
+                     * Free text a traveler typed, rendered as text and never as markup. It is
+                     * the only user-authored content that reaches an operator's screen.
+                     */
+                    <p className="text-body-sm">{row.description}</p>
+                  ) : (
+                    <p className="text-body-sm text-text-tertiary">No description given.</p>
+                  )}
+
+                  {row.media_id ? (
+                    row.photoUrl ? (
+                      <figure className="flex flex-col gap-1">
+                        <a
+                          href={row.photoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="focus-ring self-start"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL from a private bucket; next/image would cache it */}
+                          <img
+                            src={row.photoUrl}
+                            alt="Photo sent with this report"
+                            referrerPolicy="no-referrer"
+                            loading="lazy"
+                            className="max-h-64 w-auto max-w-full rounded-lg border border-border object-contain"
+                          />
+                        </a>
+                        <figcaption className="text-caption text-text-secondary">
+                          Photo from the reporter. Select it to open full size. The link lasts 15
+                          minutes — refresh the page for a new one.
+                        </figcaption>
+                      </figure>
+                    ) : (
+                      <p className="text-body-sm text-status-tight">
+                        This report has a photo, but it didn&apos;t load. Refresh the page to try
+                        again.
+                      </p>
+                    )
+                  ) : null}
+
+                  {resolved ? (
+                    <p className="text-body-sm text-text-secondary">
+                      {row.resolution_note ? `“${row.resolution_note}” · ` : ""}
+                      {/* Whether the reporter has an account is not readable by Ops (0030 withholds
+                      user_id), so this says only what is known. */}
+                      {row.notified_user
+                        ? "The reporter has been told."
+                        : "The reporter has not been told."}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor={`note-${row.id}`} className="text-body-sm font-medium">
+                        What did you find? (optional, and the reporter does not see it)
+                      </label>
+                      <input
+                        id={`note-${row.id}`}
+                        value={note[row.id] ?? ""}
+                        maxLength={500}
+                        onChange={(event) =>
+                          setNote((current) => ({ ...current, [row.id]: event.target.value }))
+                        }
+                        className="focus-ring min-h-11 rounded-lg border border-border px-3 text-body-sm"
+                      />
+
+                      <div className="flex flex-wrap gap-2">
+                        {OUTCOMES.map((outcome) => (
+                          <Button
+                            key={outcome.value}
+                            variant="secondary"
+                            disabled={pending}
+                            onClick={() => resolve(row.id, outcome.value)}
+                          >
+                            {outcome.label}
+                          </Button>
+                        ))}
+
+                        {row.status === "new" ? (
+                          <Button
+                            variant="tertiary"
+                            disabled={pending}
+                            onClick={() =>
+                              startTransition(async () => {
+                                setProblem(null);
+                                const result = await triageReport({ id: row.id });
+                                if (!result.ok) setProblem(result.error.message);
+                              })
+                            }
+                          >
+                            Send to Verify
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
