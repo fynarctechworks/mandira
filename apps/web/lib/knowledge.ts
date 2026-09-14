@@ -12,6 +12,7 @@ import { mustList, mustMaybe } from "./data-error";
 import { rankByJourneyFit, type JourneyToFit } from "./journey-fit";
 import { webSupabase } from "./supabase";
 import type { TrustEntry, TrustMap } from "./trust";
+import { nextOccurrence, todayIn, type NextOccurrence } from "./next-occurrence";
 
 /*
  * Re-exported so a server component has one import for the whole read layer. The
@@ -99,6 +100,33 @@ export type Advisory = {
 
 export type GuidanceBlock = { id: string; guidanceType: string; body: Text };
 
+/** A ritual, festival or event on the destination page, with when it next happens. */
+export type RitualCard = {
+  id: string;
+  slug: string;
+  name: Text;
+  experienceType: string;
+  significance: Text;
+  next: NextOccurrence | null;
+};
+
+export type TransportMode = "walk" | "vehicle" | "public_transport" | "hired" | "other";
+
+/** One published way of getting there or around (PRD F2 "Getting there & around"). */
+export type TransportLine = {
+  id: string;
+  mode: TransportMode;
+  durationLikelyMinutes: number | null;
+  operator: string | null;
+  frequency: Text;
+};
+
+/** A published destination worth the journey from this one (PRD F2). */
+export type NearbyDestination = { slug: string; name: Text; region: string | null; note: Text };
+
+/** Rituals and events: the experience types that happen on a date rather than whenever. */
+const RITUAL_TYPES = ["ritual", "aarti", "seva", "festival", "event"] as const;
+
 export type DestinationPage = {
   destination: DestinationSummary;
   experiences: ExperienceCard[];
@@ -106,6 +134,16 @@ export type DestinationPage = {
   /** How many are published in all, so a section can offer "See all" past its first 20. */
   experienceTotal: number;
   placeTotal: number;
+  rituals: RitualCard[];
+  seasons: { best: Text; notes: Text };
+  /**
+   * PRD F2's accessibility summary, over the places listed: how many were checked, how many
+   * of those are step-free or partly, and any accessibility guidance Ops wrote.
+   */
+  accessibilitySummary: { recorded: number; stepFree: number; notes: GuidanceBlock[] };
+  transport: TransportLine[];
+  nearby: NearbyDestination[];
+  /** Practical essentials: every guidance block except accessibility, which has its own section. */
   guidance: GuidanceBlock[];
   advisories: Advisory[];
   /** Every source used anywhere on the page, and the oldest verification across it. */
@@ -123,7 +161,7 @@ export async function getDestinationPage(
   const destination = mustMaybe(
     await supabase
       .from("v_published_destinations")
-      .select("id, slug, name_i18n, region, overview_i18n")
+      .select("id, slug, name_i18n, region, overview_i18n, best_seasons_i18n, seasonal_notes_i18n")
       .eq("slug", slug)
       .maybeSingle(),
     "v_published_destinations",
@@ -131,47 +169,87 @@ export async function getDestinationPage(
 
   if (!destination?.id) return null;
 
-  const [experiencesResult, placesResult, guidanceResult, advisoriesResult, availabilityResult] =
-    await Promise.all([
-      supabase
-        .from("v_published_experiences")
-        // One string literal, not a concatenation: the client infers the row shape from the
-        // literal type, and a joined string degrades it to an opaque error type.
-        .select(
-          "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
-          { count: "exact" },
-        )
-        .eq("destination_id", destination.id)
-        // PRD F2: ranked by the editorial weight Ops set, never by popularity.
-        .order("editorial_weight", { ascending: false })
-        .limit(SECTION_LIMIT),
-      supabase
-        .from("v_published_places")
-        .select(
-          "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
-          { count: "exact" },
-        )
-        .eq("destination_id", destination.id)
-        .order("editorial_weight", { ascending: false })
-        .limit(SECTION_LIMIT),
-      supabase
-        .from("v_published_guidance_blocks")
-        .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
-        .eq("applies_to_table", "destinations")
-        .eq("applies_to_id", destination.id)
-        .order("sort_order"),
-      supabase
-        .from("v_published_advisories")
-        .select("id, title_i18n, body_i18n, severity")
-        .eq("destination_id", destination.id),
-      supabase.from("v_published_availability_rules").select("experience_id, kind, daily_times"),
-    ]);
+  const [
+    experiencesResult,
+    placesResult,
+    guidanceResult,
+    advisoriesResult,
+    availabilityResult,
+    ritualsResult,
+    transportResult,
+    nearbyResult,
+  ] = await Promise.all([
+    supabase
+      .from("v_published_experiences")
+      // One string literal, not a concatenation: the client infers the row shape from the
+      // literal type, and a joined string degrades it to an opaque error type.
+      .select(
+        "id, slug, name_i18n, experience_type, significance_i18n, duration_likely_minutes, advance_booking_required, advance_booking_opens_days_before, editorial_weight, trust, accessibility, destination_id",
+        { count: "exact" },
+      )
+      .eq("destination_id", destination.id)
+      // PRD F2: ranked by the editorial weight Ops set, never by popularity.
+      .order("editorial_weight", { ascending: false })
+      .limit(SECTION_LIMIT),
+    supabase
+      .from("v_published_places")
+      .select(
+        "id, slug, name_i18n, place_type, facility_subtype, summary_i18n, visit_duration_likely_minutes, editorial_weight, trust, accessibility, destination_id",
+        { count: "exact" },
+      )
+      .eq("destination_id", destination.id)
+      .order("editorial_weight", { ascending: false })
+      .limit(SECTION_LIMIT),
+    supabase
+      .from("v_published_guidance_blocks")
+      .select("id, guidance_type, body_i18n, applies_to_table, applies_to_id, sort_order")
+      .eq("applies_to_table", "destinations")
+      .eq("applies_to_id", destination.id)
+      .order("sort_order"),
+    supabase
+      .from("v_published_advisories")
+      .select("id, title_i18n, body_i18n, severity")
+      .eq("destination_id", destination.id),
+    supabase
+      .from("v_published_availability_rules")
+      .select(
+        "id, experience_id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority, valid_from, valid_to",
+      ),
+    supabase
+      .from("v_published_experiences")
+      .select("id, slug, name_i18n, experience_type, significance_i18n")
+      .eq("destination_id", destination.id)
+      .in("experience_type", [...RITUAL_TYPES])
+      .order("editorial_weight", { ascending: false })
+      .limit(SECTION_LIMIT),
+    supabase
+      .from("v_published_transport_connections")
+      .select("id, mode, duration_likely_minutes, operator, frequency_note_i18n")
+      .or(`destination_id.eq.${destination.id},to_destination_id.eq.${destination.id}`)
+      .limit(SECTION_LIMIT),
+    supabase
+      .from("v_published_destination_links")
+      .select("nearby_slug, nearby_name_i18n, nearby_region, note_i18n")
+      .eq("destination_id", destination.id)
+      .order("nearby_editorial_weight", { ascending: false })
+      .limit(SECTION_LIMIT),
+  ]);
 
   const experiences = mustList(experiencesResult, "v_published_experiences");
   const places = mustList(placesResult, "v_published_places");
   const guidance = mustList(guidanceResult, "v_published_guidance_blocks");
   const advisories = mustList(advisoriesResult, "v_published_advisories");
   const availability = mustList(availabilityResult, "v_published_availability_rules");
+  const ritualRows = mustList(ritualsResult, "v_published_experiences");
+  const transportRows = mustList(transportResult, "v_published_transport_connections");
+  const nearbyRows = mustList(nearbyResult, "v_published_destination_links");
+
+  const today = todayIn();
+  const guidanceBlocks = guidance.map((row) => ({
+    id: row.id as string,
+    guidanceType: row.guidance_type as string,
+    body: text(row.body_i18n, locale),
+  }));
 
   const windowsByExperience = groupAvailability(availability);
 
@@ -192,11 +270,45 @@ export async function getDestinationPage(
     places: placeCards,
     experienceTotal: experiencesResult.count ?? experienceCards.length,
     placeTotal: placesResult.count ?? placeCards.length,
-    guidance: guidance.map((row) => ({
+    rituals: ritualRows.map((row) => ({
       id: row.id as string,
-      guidanceType: row.guidance_type as string,
-      body: text(row.body_i18n, locale),
+      slug: row.slug as string,
+      name: text(row.name_i18n, locale),
+      experienceType: row.experience_type as string,
+      significance: text(row.significance_i18n, locale),
+      next: nextOccurrence(
+        availability.filter(
+          (rule) => rule.experience_id === row.id,
+        ) as unknown as AvailabilityRule[],
+        today,
+      ),
     })),
+    seasons: {
+      best: text(destination.best_seasons_i18n, locale),
+      notes: text(destination.seasonal_notes_i18n, locale),
+    },
+    accessibilitySummary: {
+      recorded: placeCards.filter((place) => place.accessibility?.step_free).length,
+      stepFree: placeCards.filter(
+        (place) =>
+          place.accessibility?.step_free === "yes" || place.accessibility?.step_free === "partial",
+      ).length,
+      notes: guidanceBlocks.filter((block) => block.guidanceType === "accessibility"),
+    },
+    transport: transportRows.map((row) => ({
+      id: row.id as string,
+      mode: (row.mode as TransportMode | null) ?? "other",
+      durationLikelyMinutes: (row.duration_likely_minutes as number | null) ?? null,
+      operator: (row.operator as string | null) ?? null,
+      frequency: text(row.frequency_note_i18n, locale),
+    })),
+    nearby: nearbyRows.map((row) => ({
+      slug: row.nearby_slug as string,
+      name: text(row.nearby_name_i18n, locale),
+      region: (row.nearby_region as string | null) ?? null,
+      note: text(row.note_i18n, locale),
+    })),
+    guidance: guidanceBlocks.filter((block) => block.guidanceType !== "accessibility"),
     advisories: advisories.map((row) => ({
       id: row.id as string,
       title: text(row.title_i18n, locale),

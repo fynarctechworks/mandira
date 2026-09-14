@@ -105,7 +105,9 @@ insert into journey_travelers (journey_id, traveler_profile_id) values
   ('f4320000-0000-4000-8000-000000000002', 'f4310000-0000-4000-8000-000000000003');
 
 -- u1's twins are identical too, but they share a journey, so they are two people.
-select is(merge_duplicate_traveler_profiles(), 2, 'two copies are folded away');
+-- The merge runs over every owner, so its total depends on whatever else the database holds;
+-- what this test owns is its own users' profiles.
+select cmp_ok(merge_duplicate_traveler_profiles(), '>=', 2, 'the copies are folded away');
 select is(
   (select count(*)::int from traveler_profiles where owner_user_id = 'f4300000-0000-4000-8000-0000000000a2'),
   2, 'leaving the person once, and the different profile untouched');

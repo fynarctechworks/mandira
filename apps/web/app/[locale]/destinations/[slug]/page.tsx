@@ -8,7 +8,7 @@ import { ExperienceCard } from "../../../../components/experience-card";
 import { PhrasesLink } from "../../../../components/phrases-link";
 import { PlaceCard } from "../../../../components/place-card";
 import { getDestinationPage } from "../../../../lib/knowledge";
-import { formatDate } from "../../../../lib/present";
+import { durationLabel, formatDate } from "../../../../lib/present";
 
 /**
  * The destination page (PRD F2).
@@ -33,10 +33,34 @@ export default async function DestinationPage({
 
   const page = await getDestinationPage(slug, locale);
   if (!page) notFound();
-  const [t, tPage] = await Promise.all([
+  const [t, tPage, tPresent] = await Promise.all([
     getTranslations("discovery"),
     getTranslations("destinationPage"),
+    getTranslations("present"),
   ]);
+
+  // Dates and clock times in the reader's language, for the next occurrence of a ritual.
+  const day = new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+  const clock = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+  const nextLine = (next: (typeof page.rituals)[number]["next"]) => {
+    if (!next) return tPage("no_upcoming");
+    const date = day.format(new Date(`${next.date}T00:00:00Z`));
+    return next.start
+      ? tPage("next_on_time", {
+          date,
+          time: clock.format(new Date(`2000-01-01T${next.start}:00Z`)),
+        })
+      : tPage("next_on", { date });
+  };
 
   const { destination, experiences, places, guidance, advisories } = page;
   const oldestVerified = formatDate(page.oldestVerifiedAt, locale);
@@ -131,6 +155,51 @@ export default async function DestinationPage({
         ))}
       </Section>
 
+      {/* PRD F2's order continues: rituals and events, seasons, then practical essentials. */}
+      <Section
+        id="rituals"
+        title={tPage("rituals")}
+        empty={tPage("rituals_empty")}
+        count={page.rituals.length}
+        seeAll={null}
+      >
+        {page.rituals.map((ritual) => (
+          <article
+            key={ritual.id}
+            className="flex flex-col gap-1 rounded-lg border border-border bg-bg-surface p-4"
+          >
+            <h3 className="text-h3">
+              <Link
+                href={`/${locale}/destinations/${slug}/experiences/${ritual.slug}`}
+                className="focus-ring flex min-h-11 items-center"
+              >
+                {ritual.name.text}
+              </Link>
+            </h3>
+            {ritual.significance.text ? (
+              <p className="text-body-sm text-text-secondary">{ritual.significance.text}</p>
+            ) : null}
+            <p className="text-body-sm font-medium">{nextLine(ritual.next)}</p>
+          </article>
+        ))}
+      </Section>
+
+      {page.seasons.best.text || page.seasons.notes.text ? (
+        <section aria-labelledby="seasons-heading" className="flex flex-col gap-2">
+          <h2 id="seasons-heading" className="text-h2">
+            {tPage("seasonal")}
+          </h2>
+          {page.seasons.best.text ? (
+            <p className="text-body-sm font-medium">
+              {tPage("best_seasons_line", { seasons: page.seasons.best.text })}
+            </p>
+          ) : null}
+          {page.seasons.notes.text ? (
+            <p className="text-body-sm text-text-secondary">{page.seasons.notes.text}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       {guidance.length > 0 ? (
         <section aria-labelledby="guidance-heading" className="flex flex-col gap-3">
           <h2 id="guidance-heading" className="text-h2">
@@ -143,6 +212,87 @@ export default async function DestinationPage({
                 className="rounded-lg border border-border bg-bg-surface p-4 text-body-sm"
               >
                 {block.body.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/*
+       * Said even when nothing has been checked: for a wheelchair user "not checked" and
+       * "no step-free access" are different answers, and silence reads as the second (D-080).
+       */}
+      <section aria-labelledby="accessibility-heading" className="flex flex-col gap-2">
+        <h2 id="accessibility-heading" className="text-h2">
+          {tPage("accessibility")}
+        </h2>
+        <p className="text-body-sm">
+          {page.accessibilitySummary.recorded === 0
+            ? tPage("access_unrecorded")
+            : tPage("access_counts", {
+                stepFree: page.accessibilitySummary.stepFree,
+                recorded: page.accessibilitySummary.recorded,
+              })}
+        </p>
+        {page.accessibilitySummary.notes.map((note) => (
+          <p
+            key={note.id}
+            className="rounded-lg border border-border bg-bg-surface p-4 text-body-sm"
+          >
+            {note.body.text}
+          </p>
+        ))}
+      </section>
+
+      {page.transport.length > 0 ? (
+        <section aria-labelledby="getting-there-heading" className="flex flex-col gap-3">
+          <h2 id="getting-there-heading" className="text-h2">
+            {tPage("getting_there")}
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {page.transport.map((leg) => {
+              const duration = durationLabel(leg.durationLikelyMinutes, tPresent);
+              return (
+                <li
+                  key={leg.id}
+                  className="flex flex-col gap-0.5 rounded-lg border border-border bg-bg-surface p-4"
+                >
+                  <span className="text-body font-medium">{tPage(`modes.${leg.mode}`)}</span>
+                  {leg.operator ? (
+                    <span className="text-body-sm text-text-secondary">{leg.operator}</span>
+                  ) : null}
+                  {duration ? (
+                    <span className="text-body-sm text-text-secondary">
+                      {tPage("about", { duration })}
+                    </span>
+                  ) : null}
+                  {leg.frequency.text ? (
+                    <span className="text-body-sm text-text-secondary">{leg.frequency.text}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
+      {page.nearby.length > 0 ? (
+        <section aria-labelledby="nearby-heading" className="flex flex-col gap-3">
+          <h2 id="nearby-heading" className="text-h2">
+            {tPage("nearby")}
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {page.nearby.map((place) => (
+              <li key={place.slug}>
+                <Link
+                  href={`/${locale}/destinations/${place.slug}`}
+                  className="focus-ring flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-border bg-bg-surface p-4"
+                >
+                  <span className="text-h3">{place.name.text}</span>
+                  {place.note.text ? (
+                    <span className="text-body-sm text-text-secondary">{place.note.text}</span>
+                  ) : null}
+                </Link>
               </li>
             ))}
           </ul>

@@ -788,7 +788,27 @@
     "advisories": "Advisories",
     "empty_experiences": "Nothing here has been published yet.",
     "empty_places": "No places have been published yet.",
-    "essentials": "Practical essentials"
+    "essentials": "Practical essentials",
+    "rituals": "Rituals and events",
+    "rituals_empty": "No rituals or events have been published here yet.",
+    "next_on": "Next: {date}",
+    "next_on_time": "Next: {date} at {time}",
+    "no_upcoming": "No date set in the coming year yet.",
+    "seasonal": "Seasons",
+    "best_seasons_line": "Best time to go: {seasons}",
+    "accessibility": "Accessibility",
+    "access_counts": "{stepFree} of the {recorded} places checked here are step-free or partly step-free.",
+    "access_unrecorded": "No place here has had its accessibility checked yet.",
+    "getting_there": "Getting there and around",
+    "about": "About {duration}",
+    "modes": {
+      "walk": "On foot",
+      "vehicle": "By car or taxi",
+      "public_transport": "By bus or train",
+      "hired": "Hired vehicle",
+      "other": "Other ways"
+    },
+    "nearby": "Nearby places worth the journey"
   },
   "notFound": {
     "title": "This page isn't here",

@@ -54,7 +54,11 @@ test.describe("Discovery", () => {
   test("an experience with no booking requirement says nothing about booking", async ({ page }) => {
     await page.goto(DESTINATION);
 
-    const card = page.locator("article").filter({ hasText: "Evening Aarti (fixture)" });
+    // Scoped to the experience cards: the aarti also appears under Rituals and events (D-191).
+    const card = page
+      .getByRole("region", { name: "What people come here for" })
+      .locator("article")
+      .filter({ hasText: "Evening Aarti (fixture)" });
     await expect(card).not.toContainText("Advance booking");
   });
 

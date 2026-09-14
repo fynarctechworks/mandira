@@ -3173,6 +3173,47 @@ export type Database = {
           },
         ]
       }
+      v_published_destination_links: {
+        Row: {
+          destination_id: string | null
+          nearby_destination_id: string | null
+          nearby_editorial_weight: number | null
+          nearby_name_i18n: Json | null
+          nearby_region: string | null
+          nearby_slug: string | null
+          note_i18n: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destination_links_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "destination_links_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "v_published_destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "destination_links_nearby_destination_id_fkey"
+            columns: ["nearby_destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "destination_links_nearby_destination_id_fkey"
+            columns: ["nearby_destination_id"]
+            isOneToOne: false
+            referencedRelation: "v_published_destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_published_destinations: {
         Row: {
           best_seasons_i18n: Json | null
