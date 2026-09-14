@@ -54,7 +54,7 @@ export function LocationPicker({
     <fieldset className="flex flex-col gap-3">
       <legend className="text-body-sm font-medium">Centre point</legend>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="search"
           value={query}
@@ -115,8 +115,8 @@ export function LocationPicker({
         </ul>
       ) : null}
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
           Latitude
           <input
             type="number"
@@ -132,7 +132,7 @@ export function LocationPicker({
             className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body"
           />
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-body-sm">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
           Longitude
           <input
             type="number"

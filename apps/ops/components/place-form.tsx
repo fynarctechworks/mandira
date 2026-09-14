@@ -91,7 +91,7 @@ export function PlaceForm({
     key:
       "visit_duration_min_minutes" | "visit_duration_likely_minutes" | "visit_duration_max_minutes",
   ) => (
-    <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+    <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
       {label}
       <input
         type="number"
@@ -177,8 +177,8 @@ export function PlaceForm({
         ) : null}
       </label>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Type
           <select
             value={draft.place_type}
@@ -203,7 +203,7 @@ export function PlaceForm({
         </label>
 
         {draft.place_type === "facility" ? (
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Facility type
             <select
               value={draft.facility_subtype ?? ""}
@@ -279,7 +279,7 @@ export function PlaceForm({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-body-sm font-medium">Visit duration (minutes)</legend>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {duration("Shortest", "visit_duration_min_minutes")}
           {duration("Usual", "visit_duration_likely_minutes")}
           {duration("Longest", "visit_duration_max_minutes")}
@@ -296,9 +296,12 @@ export function PlaceForm({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-body-sm font-medium">Typical crowd</legend>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {CROWD_SLOTS.map((slot) => (
-            <label key={slot} className="flex flex-1 flex-col gap-1 text-body-sm capitalize">
+            <label
+              key={slot}
+              className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm capitalize"
+            >
               {slot}
               <select
                 value={draft.crowd_pattern[slot] ?? ""}
@@ -336,7 +339,7 @@ export function PlaceForm({
         </p>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={saving}>
           {initial.id ? "Save changes" : "Create place"}
         </Button>

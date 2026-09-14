@@ -80,9 +80,15 @@ test.describe.serial("Trust and sources", () => {
 
   test("verifying against a source yields high confidence", async ({ page }) => {
     await page.goto("/places");
-    await page.getByRole("link", { name: `Trust Temple ${RUN}` }).click();
-
     const panel = page.getByRole("group", { name: "Trust for Opening hours" });
+    // The places list grows with every local run and hydrates slowly enough to drop a first
+    // click; retry until the place is open (the guard knowledge.spec and publish.spec use).
+    await expect(async () => {
+      await page.getByRole("link", { name: `Trust Temple ${RUN}` }).click();
+      await expect(panel.getByRole("button", { name: "Edit trust" })).toBeVisible({
+        timeout: 5_000,
+      });
+    }).toPass({ timeout: 25_000 });
     await panel.getByRole("button", { name: "Edit trust" }).click();
     await panel.getByLabel("Status", { exact: true }).selectOption("verified");
     await panel.getByRole("button", { name: "Save trust record" }).click();

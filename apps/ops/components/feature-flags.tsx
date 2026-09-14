@@ -87,7 +87,7 @@ export function FeatureFlags({ flags }: { flags: FlagRow[] }) {
                       maxLength={500}
                       onChange={(e) => setDraft(e.target.value)}
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         disabled={pending}
                         onClick={() =>

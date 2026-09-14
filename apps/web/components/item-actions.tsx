@@ -175,7 +175,12 @@ export function ItemActions({
             </div>
           </div>
         ) : (
-          <Button variant="secondary" onClick={() => setConfirmingRemove(true)} disabled={pending}>
+          <Button
+            variant="tertiary"
+            onClick={() => setConfirmingRemove(true)}
+            disabled={pending}
+            className="self-start text-status-broken"
+          >
             {t("remove")}
           </Button>
         )

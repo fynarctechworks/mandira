@@ -166,7 +166,7 @@ export function ExperienceForm({
         ) : null}
       </label>
 
-      <label className="flex w-56 flex-col gap-1 text-body-sm font-medium">
+      <label className="flex w-full flex-col sm:w-56 gap-1 text-body-sm font-medium">
         Type
         <select
           value={draft.experience_type}
@@ -200,7 +200,7 @@ export function ExperienceForm({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-body-sm font-medium">Duration (minutes)</legend>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {(
             [
               ["Shortest", "duration_min_minutes"],
@@ -208,7 +208,7 @@ export function ExperienceForm({
               ["Longest", "duration_max_minutes"],
             ] as const
           ).map(([label, key]) => (
-            <label key={key} className="flex flex-1 flex-col gap-1 text-body-sm">
+            <label key={key} className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
               {label}
               <input
                 type="number"
@@ -259,7 +259,7 @@ export function ExperienceForm({
                 {fieldError("advance_booking_how_i18n")}
               </p>
             ) : null}
-            <label className="flex w-56 flex-col gap-1 text-body-sm font-medium">
+            <label className="flex w-full flex-col sm:w-56 gap-1 text-body-sm font-medium">
               Booking opens (days before)
               <input
                 type="number"
@@ -320,7 +320,7 @@ export function ExperienceForm({
         </p>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={saving}>
           {initial.id ? "Save changes" : "Create experience"}
         </Button>

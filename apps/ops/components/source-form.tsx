@@ -105,8 +105,8 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
         ) : null}
       </label>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Kind of source
           <select
             value={draft.source_type}
@@ -129,7 +129,7 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
           </select>
         </label>
 
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Trust tier
           <select
             value={draft.tier}
@@ -162,8 +162,8 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
         ) : null}
       </label>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Contact
           <input
             value={draft.contact}
@@ -171,7 +171,7 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
             className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
           />
         </label>
-        <label className="flex w-52 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex w-full flex-col sm:w-52 gap-1 text-body-sm font-medium">
           Re-check every (days)
           <input
             type="number"
@@ -189,7 +189,7 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
           them, and offering a method that does nothing is worse than not offering it —
           an operator would configure it and believe the source was being monitored.
         */}
-        <label className="flex w-56 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex w-full flex-col sm:w-56 gap-1 text-body-sm font-medium">
           Ingestion method
           <select
             value={draft.ingestion_method}
@@ -208,7 +208,7 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
             <option value="url_monitor">Watch the page for changes</option>
           </select>
         </label>
-        <label className="flex w-40 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex w-full flex-col sm:w-40 gap-1 text-body-sm font-medium">
           Status
           <select
             value={draft.status}
@@ -245,7 +245,7 @@ export function SourceForm({ initial }: { initial: SourceDraft }) {
         </p>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={saving}>
           {initial.id ? "Save changes" : "Register source"}
         </Button>

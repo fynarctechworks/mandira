@@ -36,4 +36,28 @@
     font-family: var(--font-heading);
     font-weight: 600;
   }
+
+  /*
+   * Native form controls stay native on purpose — a <select> opens the phone's own picker
+   * (see packages/ui/src/index.ts) — but they no longer look like the browser's defaults
+   * beside the design system (design review, D-190). Styled here once, so every select,
+   * checkbox and radio in both apps agrees without touching each screen.
+   *
+   * The select's end padding is !important because the screens set `px-3` as a utility,
+   * and utilities would otherwise let long option text run under the chevron. The preset's
+   * NativeSelect draws its own chevron and is left alone.
+   */
+  select:not([multiple]):not([data-slot="native-select"]) {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a9497' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-inline-end: 2.25rem !important;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--brand-primary);
+  }
 }

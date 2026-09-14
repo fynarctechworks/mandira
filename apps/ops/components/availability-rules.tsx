@@ -262,8 +262,8 @@ export function AvailabilityRules({
         ) : null}
 
         {kind === "date_range" ? (
-          <div className="flex gap-3">
-            <label className="flex flex-1 flex-col gap-1 text-body-sm">
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
               From
               <input
                 type="date"
@@ -272,7 +272,7 @@ export function AvailabilityRules({
                 className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body"
               />
             </label>
-            <label className="flex flex-1 flex-col gap-1 text-body-sm">
+            <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
               To
               <input
                 type="date"
@@ -298,7 +298,7 @@ export function AvailabilityRules({
           </label>
         ) : null}
 
-        <label className="flex w-40 flex-col gap-1 text-body-sm">
+        <label className="flex w-full flex-col sm:w-40 gap-1 text-body-sm">
           Priority
           <input
             type="number"

@@ -130,8 +130,8 @@ export function TransportEditor({
           </select>
         </label>
 
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <div className="flex flex-wrap gap-3">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             From
             <select
               value={fromId}
@@ -146,7 +146,7 @@ export function TransportEditor({
               ))}
             </select>
           </label>
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             To
             <select
               value={toId}
@@ -163,8 +163,8 @@ export function TransportEditor({
           </label>
         </div>
 
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <div className="flex flex-wrap gap-3">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Mode
             <select
               value={mode}
@@ -178,7 +178,7 @@ export function TransportEditor({
               ))}
             </select>
           </label>
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Usual minutes
             <input
               type="number"
@@ -188,7 +188,7 @@ export function TransportEditor({
               className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
             />
           </label>
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Worst case
             <input
               type="number"

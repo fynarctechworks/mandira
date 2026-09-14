@@ -91,7 +91,7 @@ export function PhraseForm({
   return (
     <form onSubmit={submit} className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-wrap gap-3">
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-48 flex-1 flex-col gap-1">
           <label htmlFor="phrase-destination" className="text-body-sm font-medium">
             Destination
           </label>
@@ -109,7 +109,7 @@ export function PhraseForm({
             ))}
           </NativeSelect>
         </div>
-        <div className="flex w-56 flex-col gap-1">
+        <div className="flex w-full flex-col sm:w-56 gap-1">
           <label htmlFor="phrase-context" className="text-body-sm font-medium">
             Situation
           </label>
@@ -129,7 +129,7 @@ export function PhraseForm({
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <div className="flex w-48 flex-col gap-1">
+        <div className="flex w-full flex-col sm:w-48 gap-1">
           <label htmlFor="phrase-source-locale" className="text-body-sm font-medium">
             Written in
           </label>
@@ -146,7 +146,7 @@ export function PhraseForm({
             ))}
           </NativeSelect>
         </div>
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-48 flex-1 flex-col gap-1">
           <label htmlFor="phrase-source-text" className="text-body-sm font-medium">
             Phrase
           </label>
@@ -195,7 +195,7 @@ export function PhraseForm({
       )}
 
       <div className="flex flex-wrap gap-3">
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-48 flex-1 flex-col gap-1">
           <label htmlFor="phrase-audio" className="text-body-sm font-medium">
             Audio
           </label>
@@ -241,7 +241,7 @@ export function PhraseForm({
         {saved ? <p className="text-body-sm text-text-secondary">Saved.</p> : null}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={pending}>
           {initial.id ? "Save changes" : "Create phrase"}
         </Button>

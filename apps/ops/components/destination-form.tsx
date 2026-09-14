@@ -120,8 +120,8 @@ export function DestinationForm({
         ) : null}
       </label>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Region
           <input
             value={draft.region ?? ""}
@@ -129,7 +129,7 @@ export function DestinationForm({
             className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 text-body font-normal"
           />
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           State
           <input
             value={draft.state ?? ""}
@@ -160,7 +160,7 @@ export function DestinationForm({
         </p>
       ) : null}
 
-      <label className="flex w-48 flex-col gap-1 text-body-sm font-medium">
+      <label className="flex w-full flex-col sm:w-48 gap-1 text-body-sm font-medium">
         Offline radius (km)
         <input
           type="number"
@@ -190,7 +190,7 @@ export function DestinationForm({
         onChange={(v) => set("best_seasons_i18n", v)}
       />
 
-      <label className="flex w-48 flex-col gap-1 text-body-sm font-medium">
+      <label className="flex w-full flex-col sm:w-48 gap-1 text-body-sm font-medium">
         Editorial weight
         <input
           type="number"
@@ -211,7 +211,7 @@ export function DestinationForm({
         </p>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={saving}>
           {initial?.id ? "Save changes" : "Create destination"}
         </Button>

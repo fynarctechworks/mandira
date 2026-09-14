@@ -101,8 +101,8 @@ export function RouteForm({
         ) : null}
       </label>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           How it is travelled
           <select
             value={draft.mode}
@@ -116,7 +116,7 @@ export function RouteForm({
             ))}
           </select>
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Difficulty
           <select
             value={draft.difficulty ?? ""}
@@ -133,7 +133,7 @@ export function RouteForm({
             ))}
           </select>
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
           Distance (m)
           <input
             type="number"
@@ -149,7 +149,7 @@ export function RouteForm({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-body-sm font-medium">Time to walk it (minutes)</legend>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {(
             [
               ["Fastest", "duration_min_minutes"],
@@ -157,7 +157,7 @@ export function RouteForm({
               ["Slowest", "duration_max_minutes"],
             ] as const
           ).map(([label, key]) => (
-            <label key={key} className="flex flex-1 flex-col gap-1 text-body-sm">
+            <label key={key} className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm">
               {label}
               <input
                 type="number"
@@ -192,7 +192,7 @@ export function RouteForm({
         </p>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={saving}>
           {initial.id ? "Save changes" : "Create route"}
         </Button>

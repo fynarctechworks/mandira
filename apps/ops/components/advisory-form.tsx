@@ -92,7 +92,7 @@ export function AdvisoryForm({
   return (
     <form onSubmit={submit} className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-wrap gap-3">
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-48 flex-1 flex-col gap-1">
           <label htmlFor="advisory-destination" className="text-body-sm font-medium">
             Destination
           </label>
@@ -109,7 +109,7 @@ export function AdvisoryForm({
             ))}
           </NativeSelect>
         </div>
-        <div className="flex w-48 flex-col gap-1">
+        <div className="flex w-full flex-col sm:w-48 gap-1">
           <label htmlFor="advisory-severity" className="text-body-sm font-medium">
             Severity
           </label>
@@ -213,7 +213,7 @@ export function AdvisoryForm({
         {saved ? <p className="text-body-sm text-text-secondary">Saved.</p> : null}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={pending}>
           {initial.id ? "Save changes" : "Create advisory"}
         </Button>

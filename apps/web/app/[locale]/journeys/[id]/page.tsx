@@ -201,8 +201,10 @@ export default async function JourneyPage({
             aria-labelledby={`day-${dayIndex}`}
             className="flex flex-col gap-3"
           >
-            <div className="flex items-center justify-between gap-3">
-              <h2 id={`day-${dayIndex}`} className="text-h2">
+            {/* Wraps rather than squeezing: a long weekday in Telugu at 390px put the
+                heading on three lines beside the health pill. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <h2 id={`day-${dayIndex}`} className="min-w-0 text-h2">
                 {dayLabel}
               </h2>
               {day ? (

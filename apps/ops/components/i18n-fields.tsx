@@ -48,7 +48,7 @@ export function I18nFields({
     <fieldset className="flex flex-col gap-2">
       <legend className="text-body-sm font-medium">{label}</legend>
 
-      <div role="tablist" aria-label={`${label} language`} className="flex gap-1">
+      <div role="tablist" aria-label={`${label} language`} className="flex flex-wrap gap-1">
         {locales.map((locale) => {
           const selected = locale.code === active;
           const filled = (value[locale.code] ?? "").trim() !== "";

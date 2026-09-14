@@ -67,7 +67,7 @@ export function AccessibilityPanel({
   }
 
   const grade = (label: string, key: "step_free" | "wheelchair_access") => (
-    <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+    <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
       {label}
       <select
         value={values[key] ?? ""}
@@ -93,7 +93,7 @@ export function AccessibilityPanel({
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         {grade("Step-free", "step_free")}
         {grade("Wheelchair access", "wheelchair_access")}
       </div>
@@ -119,7 +119,7 @@ export function AccessibilityPanel({
         </label>
       </div>
 
-      <label className="flex w-64 flex-col gap-1 text-body-sm font-medium">
+      <label className="flex w-full flex-col sm:w-64 gap-1 text-body-sm font-medium">
         Walk from drop-off (metres)
         <input
           type="number"

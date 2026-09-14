@@ -151,7 +151,7 @@ export function TrustPanel({
           <p className="text-caption text-text-secondary">{field.why}</p>
 
           <div className="flex flex-wrap gap-3">
-            <div className="flex flex-1 flex-col gap-1">
+            <div className="flex min-w-48 flex-1 flex-col gap-1">
               <label htmlFor={`${ids}-status`} className="text-body-sm font-medium">
                 Status
               </label>
@@ -169,7 +169,7 @@ export function TrustPanel({
               </select>
             </div>
 
-            <div className="flex flex-1 flex-col gap-1">
+            <div className="flex min-w-48 flex-1 flex-col gap-1">
               <label htmlFor={`${ids}-source`} className="text-body-sm font-medium">
                 Source
               </label>
@@ -188,7 +188,7 @@ export function TrustPanel({
               </select>
             </div>
 
-            <label className="flex w-44 flex-col gap-1 text-body-sm font-medium">
+            <label className="flex w-full flex-col sm:w-44 gap-1 text-body-sm font-medium">
               Valid until
               <input
                 type="date"

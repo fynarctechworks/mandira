@@ -128,7 +128,7 @@ export default async function TranslationsPage({
                         aria-label={`${locale.name} content coverage ${share}%`}
                       />
                     </TableCell>
-                    <TableCell className="flex gap-3">
+                    <TableCell className="flex flex-wrap gap-3">
                       <Link href="/destinations" className="focus-ring underline">
                         Destinations
                       </Link>

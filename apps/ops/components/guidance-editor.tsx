@@ -124,8 +124,8 @@ export function GuidanceEditor({
       <section className="flex flex-col gap-3 rounded-card border border-border-subtle bg-surface p-4">
         <h2 className="text-h3">Add guidance</h2>
 
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+        <div className="flex flex-wrap gap-3">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Kind
             <select
               value={type}
@@ -140,7 +140,7 @@ export function GuidanceEditor({
             </select>
           </label>
 
-          <label className="flex flex-1 flex-col gap-1 text-body-sm font-medium">
+          <label className="flex min-w-48 flex-1 flex-col gap-1 text-body-sm font-medium">
             Applies to
             <select
               value={targetKey}
