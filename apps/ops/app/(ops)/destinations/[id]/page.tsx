@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { HistoryLink } from "@/components/history-link";
+import { LoadProblem } from "@/components/load-problem";
+import { NearbyDestinations } from "@/components/nearby-destinations";
 import { TranslateLink } from "@/components/translate-link";
 import { DestinationForm, type DestinationDraft } from "@/components/destination-form";
+import { destinationOptions } from "@/lib/destinations";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
 
@@ -14,7 +17,7 @@ export default async function EditDestinationPage({ params }: { params: Promise<
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, locales] = await Promise.all([
+  const [{ data, error }, locales, linksResult, destinations] = await Promise.all([
     supabase
       .from("destinations")
       .select("*, latitude, longitude")
@@ -22,6 +25,11 @@ export default async function EditDestinationPage({ params }: { params: Promise<
       .is("deleted_at", null)
       .maybeSingle(),
     activeLocales(),
+    supabase
+      .from("destination_links")
+      .select("nearby_destination_id, note_i18n")
+      .eq("destination_id", id),
+    destinationOptions(),
   ]);
 
   if (error || !data) notFound();
@@ -42,6 +50,15 @@ export default async function EditDestinationPage({ params }: { params: Promise<
     longitude: data.longitude,
   };
 
+  const labels = new Map(destinations.map((destination) => [destination.id, destination.label]));
+  const nearby = (linksResult.data ?? [])
+    .map((link) => ({
+      nearby_destination_id: link.nearby_destination_id,
+      label: labels.get(link.nearby_destination_id) ?? "A destination that has been archived",
+      note_i18n: text(link.note_i18n),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -54,6 +71,21 @@ export default async function EditDestinationPage({ params }: { params: Promise<
           <TranslateLink table="destinations" id={data.id} />
         </div>
       </header>
+
+      <div className="max-w-2xl">
+        {linksResult.error ? (
+          // Never offer to save links that could not be read: saving would replace them.
+          <LoadProblem />
+        ) : (
+          <NearbyDestinations
+            destinationId={data.id}
+            locales={locales}
+            options={destinations.filter((destination) => destination.id !== data.id)}
+            initial={nearby}
+          />
+        )}
+      </div>
+
       <DestinationForm locales={locales} initial={initial} />
     </div>
   );

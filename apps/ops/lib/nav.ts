@@ -50,6 +50,14 @@ export const NAV_ITEMS: NavItem[] = [
 
   // ── Knowledge ───────────────────────────────────────────────────────────────
   { id: "O02", label: "Destinations", section: "entities", href: "/destinations" },
+  // PRD F19's circuit builder, beside the destinations it orders (OPS-REL-01).
+  {
+    id: "O02b",
+    label: "Circuits",
+    section: "entities",
+    href: "/circuits",
+    keywords: ["circuit", "yatra", "ordered destinations"],
+  },
   {
     id: "O03",
     label: "Places",

@@ -54,6 +54,7 @@ export function entityNoun(table: string): string {
 /** Where an operator edits this entity, or null when it has no screen of its own. */
 export function editorPath(table: string, id: string | null): string | null {
   switch (table) {
+    case "circuits":
     case "destinations":
     case "places":
     case "experiences":

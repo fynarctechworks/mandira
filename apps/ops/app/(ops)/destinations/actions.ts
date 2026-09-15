@@ -128,3 +128,36 @@ export const searchPlaces = opsAction({
     return { results };
   },
 });
+
+// ── Nearby destinations (PRD F2/F19, OPS-REL-01) ─────────────────────────────────────
+
+const destinationLinksSchema = z.object({
+  destination_id: uuid,
+  links: z
+    .array(z.object({ nearby_destination_id: uuid, note_i18n: i18nText.default({}) }))
+    .max(20, "Link at most 20 nearby destinations"),
+});
+
+/**
+ * A destination's nearby links, replaced in one transaction (0051). The function's refusals
+ * (a destination nearby itself, one listed twice) are written for an operator.
+ */
+export const saveDestinationLinks = opsAction({
+  roles: ["researcher", "editor", "approver", "admin"],
+  input: destinationLinksSchema,
+  handler: async ({ input, supabase }) => {
+    const { error } = await supabase.rpc("set_destination_links", {
+      p_destination_id: input.destination_id,
+      p_links: input.links,
+    });
+    if (error) {
+      if (error.code === "23514" || error.code === "P0002") {
+        throw Object.assign(new Error("refused"), { userMessage: error.message });
+      }
+      throw error;
+    }
+
+    revalidatePath(`/destinations/${input.destination_id}`);
+    return { count: input.links.length };
+  },
+});

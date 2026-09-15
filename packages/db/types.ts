@@ -4207,6 +4207,7 @@ export type Database = {
           queue: string
         }[]
       }
+      ops_place_connections: { Args: { p_place_id: string }; Returns: Json }
       ops_team: {
         Args: never
         Returns: {
@@ -4363,6 +4364,14 @@ export type Database = {
           p_publish_at: string
         }
         Returns: string
+      }
+      set_circuit_destinations: {
+        Args: { p_circuit_id: string; p_destination_ids: string[] }
+        Returns: number
+      }
+      set_destination_links: {
+        Args: { p_destination_id: string; p_links: Json }
+        Returns: number
       }
       set_route_stops: {
         Args: { p_route_id: string; p_stops: Json }

@@ -4,6 +4,7 @@ import { TranslateLink } from "@/components/translate-link";
 import { PreviewInApp } from "@/components/preview-in-app";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
+import { PlaceConnections, type PlaceConnectionsData } from "@/components/place-connections";
 import { PublishPanel } from "@/components/publish-panel";
 import { journeyImpact } from "@/lib/impact";
 import { trustForEntity, validationProblems } from "@/lib/entity-review";
@@ -53,6 +54,8 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
     ]);
 
   if (error || !data) notFound();
+
+  const connections = await supabase.rpc("ops_place_connections", { p_place_id: id });
 
   const initial: PlaceDraft = {
     id: data.id,
@@ -106,6 +109,16 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
           entityId={data.id}
           sources={sources}
           records={trust as Record<string, TrustRecord | undefined>}
+        />
+      </div>
+
+      <div className="max-w-2xl">
+        <PlaceConnections
+          data={
+            connections.error
+              ? null
+              : ((connections.data as unknown as PlaceConnectionsData | null) ?? null)
+          }
         />
       </div>
 

@@ -152,7 +152,7 @@ export default defineConfig({
       },
       dependencies: ["ops-setup"],
       testMatch:
-        /ops[\\/](shell-nav|editors|knowledge|trust|publish|ingestion|queues|dashboards|workflow|admin|content|phrases)\.spec\.ts/,
+        /ops[\\/](shell-nav|editors|knowledge|trust|publish|ingestion|queues|dashboards|workflow|admin|content|phrases|relationships)\.spec\.ts/,
     },
   ],
   webServer: [
