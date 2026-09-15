@@ -645,6 +645,47 @@ export type Database = {
           },
         ]
       }
+      content_translations: {
+        Row: {
+          entity_id: string
+          entity_table: string
+          field_name: string
+          locale: string
+          source_text: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          entity_id: string
+          entity_table: string
+          field_name: string
+          locale: string
+          source_text: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          entity_id?: string
+          entity_table?: string
+          field_name?: string
+          locale?: string
+          source_text?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "locales"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       destination_links: {
         Row: {
           destination_id: string
@@ -3907,6 +3948,10 @@ export type Database = {
           reset_at: string
         }[]
       }
+      content_translation_overview: {
+        Args: { p_entity_id?: string; p_limit?: number; p_locale: string }
+        Returns: Json
+      }
       create_journey: { Args: { p_journey: Json }; Returns: string }
       critical_fields: { Args: { p_entity_table: string }; Returns: string[] }
       critical_fields_gated: {
@@ -4238,6 +4283,17 @@ export type Database = {
       roll_journey_statuses: { Args: never; Returns: Json }
       route_stops_for: { Args: { p_route_id: string }; Returns: Json }
       run_scheduled_job: { Args: { p_name: string }; Returns: Json }
+      save_content_translation: {
+        Args: {
+          p_entity_id: string
+          p_entity_table: string
+          p_field: string
+          p_locale: string
+          p_status: string
+          p_text: string
+        }
+        Returns: string
+      }
       schedule_publish: {
         Args: {
           p_entity_id: string
@@ -4257,6 +4313,10 @@ export type Database = {
       source_tier_label: {
         Args: { p_tier: Database["public"]["Enums"]["source_tier_enum"] }
         Returns: string
+      }
+      translatable_fields: {
+        Args: { p_entity_table: string }
+        Returns: string[]
       }
       trust_status_roles: {
         Args: {

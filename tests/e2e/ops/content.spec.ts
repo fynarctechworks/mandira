@@ -57,7 +57,7 @@ test.describe("O17 — Translations", () => {
     page,
   }) => {
     await page.goto("/translations");
-    await expect(page.getByRole("heading", { name: "Translations" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Translations", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Content by locale" })).toBeVisible();
 
     const search = page.getByLabel("Search");
@@ -68,6 +68,36 @@ test.describe("O17 — Translations", () => {
     await search.fill("nav");
     await page.getByRole("button", { name: "Apply" }).click();
     await expect(page).toHaveURL(/q=nav/);
+  });
+
+  test("translates a destination side by side, and counts only what is confirmed", async ({
+    page,
+  }) => {
+    await page.goto("/destinations/new");
+    await page.getByRole("tabpanel").first().getByRole("textbox").fill(`Trans Dest ${RUN}`);
+    await page.getByLabel("Slug").fill(`${RUN}-trans`);
+    await page.getByRole("button", { name: "Create destination" }).click();
+    await expect(page.getByRole("heading", { name: `Trans Dest ${RUN}` })).toBeVisible();
+
+    const translate = page.getByRole("link", { name: "Translate", exact: true });
+    await expect(translate).toHaveAttribute(
+      "href",
+      /^\/translations\/destinations\/[0-9a-f-]{36}$/,
+    );
+    await page.goto(`${await translate.getAttribute("href")}?locale=te`);
+
+    await expect(page.getByRole("heading", { name: `Translate Trans Dest ${RUN}` })).toBeVisible();
+    const name = page.getByRole("region", { name: "Name", exact: true });
+    await expect(name).toContainText(`Trans Dest ${RUN}`);
+    await expect(name).toContainText("Missing");
+    await expect(page.getByText("0 of 1 fields confirmed in Telugu")).toBeVisible();
+
+    await name.getByLabel("Telugu").fill("యాత్ర గమ్యం");
+    await name.getByRole("button", { name: "Confirm Name" }).click();
+    await expect(name).toContainText("Confirmed");
+    await expect(page.getByText("1 of 1 fields confirmed in Telugu")).toBeVisible();
+
+    expect(seriousViolations(await new AxeBuilder({ page }).analyze())).toEqual([]);
   });
 
   test("the translation workspace is accessible", async ({ page }) => {

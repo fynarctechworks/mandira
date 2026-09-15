@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { HistoryLink } from "@/components/history-link";
+import { TranslateLink } from "@/components/translate-link";
 import { PreviewInApp } from "@/components/preview-in-app";
 import { AvailabilityRules, type AvailabilityRuleRow } from "@/components/availability-rules";
 import { ExperienceForm, type ExperienceDraft } from "@/components/experience-form";
@@ -76,6 +77,7 @@ export default async function EditExperiencePage({ params }: { params: Promise<{
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
           <HistoryLink table="experiences" id={data.id} />
+          <TranslateLink table="experiences" id={data.id} />
           <PreviewInApp kind="experiences" id={data.id} locales={locales} />
         </div>
       </header>

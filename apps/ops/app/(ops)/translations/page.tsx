@@ -1,5 +1,5 @@
 import { getOpsRoles, hasAnyRole } from "@mandhira/db/client/roles";
-import { Button } from "@mandhira/ui/components/ui/button";
+import { Button, buttonVariants } from "@mandhira/ui/components/ui/button";
 import { Input } from "@mandhira/ui/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@mandhira/ui/components/ui/native-select";
 import {
@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { LoadProblem } from "@/components/load-problem";
 import { TranslationsGrid } from "@/components/translations-grid";
+import type { TranslationOverview } from "@/lib/content-translations";
 import { percent, type KnowledgeHealth } from "@/lib/health";
 import { activeLocales } from "@/lib/locales";
 import { opsSupabase } from "@/lib/supabase";
@@ -45,7 +46,7 @@ export const dynamic = "force-dynamic";
 export default async function TranslationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; missing?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; missing?: string; page?: string; lang?: string }>;
 }) {
   const query = await searchParams;
   const supabase = await opsSupabase();
@@ -58,6 +59,11 @@ export default async function TranslationsPage({
   ]);
 
   const codes = locales.map((locale) => locale.code);
+  const targets = locales.filter((locale) => locale.code !== "en");
+  const lang = (targets.find((locale) => locale.code === query.lang) ?? targets[0])?.code ?? null;
+  const overview = lang
+    ? await supabase.rpc("content_translation_overview", { p_locale: lang, p_limit: 20 })
+    : null;
   const missing = codes.includes(query.missing ?? "") ? (query.missing as string) : null;
   const q = (query.q ?? "").slice(0, 100);
   const pivot = pivotStrings((strings.data ?? []) as UiStringRow[], codes);
@@ -73,6 +79,7 @@ export default async function TranslationsPage({
     if (q) params.set("q", q);
     if (missing) params.set("missing", missing);
     if (target > 1) params.set("page", String(target));
+    if (query.lang && lang) params.set("lang", lang);
     const text = params.toString();
     return `/translations${text ? `?${text}` : ""}`;
   };
@@ -144,6 +151,47 @@ export default async function TranslationsPage({
               })}
             </TableBody>
           </Table>
+        )}
+      </section>
+
+      <section aria-labelledby="entity-translations-heading" className="flex flex-col gap-3">
+        <h2 id="entity-translations-heading" className="text-h3">
+          Content translations
+        </h2>
+        <p className="text-body-sm text-text-secondary">
+          Every translatable field that has English, entry by entry. Confirmed means a translator
+          confirmed it against the English as it reads now.
+        </p>
+        {!lang ? (
+          <p className="text-body-sm text-text-secondary">
+            Add a language other than English to start translating content.
+          </p>
+        ) : (
+          <>
+            <nav aria-label="Content language" className="flex flex-wrap gap-2">
+              {targets.map((locale) => (
+                <Link
+                  key={locale.code}
+                  href={`/translations?lang=${locale.code}`}
+                  aria-current={locale.code === lang ? "page" : undefined}
+                  className={buttonVariants({
+                    size: "sm",
+                    variant: locale.code === lang ? "default" : "outline",
+                  })}
+                >
+                  {locale.label}
+                </Link>
+              ))}
+            </nav>
+            {!overview || overview.error || !overview.data ? (
+              <LoadProblem />
+            ) : (
+              <ContentOverview
+                overview={overview.data as unknown as TranslationOverview}
+                label={labelFor(lang)}
+              />
+            )}
+          </>
         )}
       </section>
 
@@ -234,6 +282,67 @@ export default async function TranslationsPage({
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+const KIND = { destinations: "Destination", places: "Place", experiences: "Experience" } as const;
+
+/** One language's content progress and what to translate next (PRD F19 completeness). */
+function ContentOverview({ overview, label }: { overview: TranslationOverview; label: string }) {
+  const share = percent(overview.confirmed, overview.fields);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <p className="text-body-sm">
+          <span className="font-medium">{label}</span>{" "}
+          <span className="text-text-secondary">
+            {overview.confirmed} of {overview.fields} fields confirmed · {overview.drafts} drafts ·{" "}
+            {overview.english_changed} with changed English · {overview.missing} missing
+          </span>
+        </p>
+        <Progress value={share} aria-label={`${label} content confirmed ${share}%`} />
+      </div>
+
+      {overview.next.length === 0 ? (
+        <p className="text-body-sm text-text-secondary">
+          Everything that has English is confirmed in {label}.
+        </p>
+      ) : (
+        <Table>
+          <TableCaption className="sr-only">
+            Content with the most left to translate in {label}
+          </TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Next to translate</TableHead>
+              <TableHead>Kind</TableHead>
+              <TableHead className="text-right">Confirmed</TableHead>
+              <TableHead className="text-right">English changed</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {overview.next.map((item) => (
+              <TableRow key={item.entity_id}>
+                <TableCell>
+                  <Link
+                    href={`/translations/${item.entity_table}/${item.entity_id}?locale=${overview.locale}`}
+                    className="focus-ring underline"
+                  >
+                    {item.label}
+                  </Link>
+                </TableCell>
+                <TableCell>{KIND[item.entity_table]}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {item.confirmed} of {item.fields}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{item.english_changed}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }

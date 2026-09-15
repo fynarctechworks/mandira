@@ -1,5 +1,6 @@
 import type { CrowdPattern, OpeningSchedule } from "@mandhira/db";
 import { HistoryLink } from "@/components/history-link";
+import { TranslateLink } from "@/components/translate-link";
 import { PreviewInApp } from "@/components/preview-in-app";
 import { notFound } from "next/navigation";
 import { AccessibilityPanel, type AccessibilityValues } from "@/components/accessibility-panel";
@@ -85,6 +86,7 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
           <HistoryLink table="places" id={data.id} />
+          <TranslateLink table="places" id={data.id} />
           <PreviewInApp kind="places" id={data.id} locales={locales} />
         </div>
       </header>
