@@ -8,6 +8,8 @@ import {
   type TravelMode as RoutedMode,
 } from "@mandhira/providers";
 
+import { recordProviderUsage } from "./provider-usage";
+
 type ServiceClient = ReturnType<typeof createServiceRoleSupabase>;
 
 export type Leg = { from: string; to: string };
@@ -149,6 +151,11 @@ export async function ensureTravelEstimates(
         computed_at: now.toISOString(),
       });
     }
+  }
+
+  // MON-01: each leg asked of OpenRouteService spends its free quota, answered or not.
+  if (batch.length > 0 && router.name.startsWith("openrouteservice")) {
+    await recordProviderUsage("openrouteservice", batch.length, client);
   }
 
   if (rows.length > 0) {

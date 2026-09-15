@@ -2,17 +2,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
   overdue: [] as { queue: string; open_count: number; oldest_at: string }[],
+  usage: [] as {
+    provider: string;
+    period: string;
+    label: string;
+    quota: number;
+    used: number;
+    share: number;
+    near_limit: boolean;
+  }[],
   recipients: [] as { email: string | null }[],
-  provider: "resend",
+  provider: "Resend",
   sent: [] as { to: string; subject: string; text: string }[],
+  recorded: [] as [string, number][],
 }));
 
 vi.mock("@mandhira/db/client/server", () => ({
   createServiceRoleSupabase: () => ({
-    rpc: async (name: string) =>
-      name === "ops_overdue_queues"
-        ? { data: state.overdue, error: null }
-        : { data: state.recipients, error: null },
+    rpc: async (name: string) => {
+      if (name === "ops_overdue_queues") return { data: state.overdue, error: null };
+      if (name === "provider_usage_status") return { data: state.usage, error: null };
+      return { data: state.recipients, error: null };
+    },
   }),
 }));
 vi.mock("@mandhira/providers", () => ({
@@ -23,6 +34,11 @@ vi.mock("@mandhira/providers", () => ({
       return { ok: true };
     },
   }),
+}));
+vi.mock("../../../../lib/provider-usage", () => ({
+  recordProviderUsage: async (provider: string, calls: number) => {
+    state.recorded.push([provider, calls]);
+  },
 }));
 vi.mock("../../../../lib/report", () => ({ reportServerError: vi.fn() }));
 
@@ -39,9 +55,11 @@ const call = (authorization?: string) =>
 beforeEach(() => {
   vi.stubEnv("CRON_SECRET", SECRET);
   state.overdue = [];
+  state.usage = [];
   state.recipients = [{ email: "admin@mandhira.test" }, { email: null }];
-  state.provider = "resend";
+  state.provider = "Resend";
   state.sent = [];
+  state.recorded = [];
 });
 
 afterEach(() => {
@@ -55,10 +73,22 @@ describe("GET /api/cron/ops-alerts", () => {
     expect((await call(`Bearer ${SECRET}`)).status).toBe(404);
   });
 
-  it("sends nothing when no queue is overdue", async () => {
+  it("sends nothing when no queue is overdue and every quota is below 70%", async () => {
+    state.usage = [
+      {
+        provider: "resend",
+        period: "day",
+        label: "Resend email",
+        quota: 100,
+        used: 40,
+        share: 40,
+        near_limit: false,
+      },
+    ];
+
     const response = await call(`Bearer ${SECRET}`);
 
-    expect(await response.json()).toEqual({ ok: true, overdue: 0, sent: 0 });
+    expect(await response.json()).toEqual({ ok: true, overdue: 0, quotas: 0, sent: 0 });
     expect(state.sent).toEqual([]);
   });
 
@@ -78,12 +108,33 @@ describe("GET /api/cron/ops-alerts", () => {
 
     const body = await (await call(`Bearer ${SECRET}`)).json();
 
-    expect(body).toEqual({ ok: true, overdue: 2, sent: 1 });
+    expect(body).toEqual({ ok: true, overdue: 2, quotas: 0, sent: 1 });
     expect(state.sent).toHaveLength(1);
     expect(state.sent[0]!.to).toBe("admin@mandhira.test");
     expect(state.sent[0]!.subject).toContain("2 queues");
     expect(state.sent[0]!.text).toContain("Reports: 3 waiting, the oldest for 9 days");
     expect(state.sent[0]!.text).toContain("Verify: 1 waiting, the oldest for 12 days");
+  });
+
+  it("names a provider at 70% of its free quota, and counts the alert's own email", async () => {
+    state.usage = [
+      {
+        provider: "openrouteservice",
+        period: "day",
+        label: "OpenRouteService routing",
+        quota: 2000,
+        used: 1500,
+        share: 75,
+        near_limit: true,
+      },
+    ];
+
+    const body = await (await call(`Bearer ${SECRET}`)).json();
+
+    expect(body).toEqual({ ok: true, overdue: 0, quotas: 1, sent: 1 });
+    expect(state.sent[0]!.subject).toContain("1 free quota is at 70% or more");
+    expect(state.sent[0]!.text).toContain("OpenRouteService routing: 1500 of 2000 today (75%)");
+    expect(state.recorded).toEqual([["resend", 1]]);
   });
 
   it("says so, rather than failing, when no email provider is configured", async () => {
@@ -93,8 +144,10 @@ describe("GET /api/cron/ops-alerts", () => {
     expect(await (await call(`Bearer ${SECRET}`)).json()).toEqual({
       ok: true,
       overdue: 1,
+      quotas: 0,
       sent: 0,
       reason: "email_not_configured",
     });
+    expect(state.recorded).toEqual([]);
   });
 });

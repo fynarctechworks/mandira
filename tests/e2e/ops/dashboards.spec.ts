@@ -19,6 +19,7 @@ test.describe("O01 — Knowledge health", () => {
       "Locale completeness",
       "Destinations by depth",
       "Scheduled jobs",
+      "Free quotas",
     ]) {
       await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
     }

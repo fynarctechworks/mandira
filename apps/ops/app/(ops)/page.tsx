@@ -22,6 +22,7 @@ import { LoadProblem } from "@/components/load-problem";
 import { PublishStatusTag } from "@/components/publish-status-tag";
 import { ageOf, formatWhen } from "@/lib/entities";
 import { everyLabel, percent, queueRows, type KnowledgeHealth } from "@/lib/health";
+import { barValue, periodLabel, type ProviderUsage } from "@/lib/quotas";
 import { opsSupabase } from "@/lib/supabase";
 
 export const metadata = { title: "Home · Mandhira Ops" };
@@ -34,7 +35,10 @@ export const metadata = { title: "Home · Mandhira Ops" };
  */
 export default async function OpsHomePage() {
   const supabase = await opsSupabase();
-  const { data, error } = await supabase.rpc("knowledge_health");
+  const [{ data, error }, usage] = await Promise.all([
+    supabase.rpc("knowledge_health"),
+    supabase.rpc("provider_usage_status"),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,6 +51,8 @@ export default async function OpsHomePage() {
       </header>
 
       {error || !data ? <LoadProblem /> : <Dashboard health={data as unknown as KnowledgeHealth} />}
+
+      <FreeQuotas rows={usage.error ? null : ((usage.data ?? []) as unknown as ProviderUsage[])} />
     </div>
   );
 }
@@ -346,5 +352,76 @@ function Figure({
         <span className="sr-only">{warn ? "needs attention" : "none"}</span>
       </CardContent>
     </Card>
+  );
+}
+
+/** TRD §13's free quotas (MON-01): calls counted by Mandhira against each provider's free tier. */
+function FreeQuotas({ rows }: { rows: ProviderUsage[] | null }) {
+  const near = (rows ?? []).filter((row) => row.near_limit).length;
+
+  return (
+    <section aria-labelledby="quotas-heading" className="flex flex-col gap-3">
+      <h2 id="quotas-heading" className="text-h3">
+        Free quotas
+      </h2>
+      <p className="text-body-sm text-text-secondary">
+        {near === 0
+          ? "Every provider is below 70% of its free quota."
+          : `${near} ${near === 1 ? "quota is" : "quotas are"} at 70% or more, and the daily Ops email names ${near === 1 ? "it" : "them"}.`}{" "}
+        Counted by Mandhira in UTC days and months. Map tiles load in the browser and are not
+        counted here; MapTiler&apos;s own dashboard has those.
+      </p>
+      {!rows ? (
+        <LoadProblem />
+      ) : (
+        <Table>
+          <TableCaption className="sr-only">Provider usage against each free quota</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Provider</TableHead>
+              <TableHead>Period</TableHead>
+              <TableHead className="text-right">Used</TableHead>
+              <TableHead className="w-1/4">Share</TableHead>
+              <TableHead>State</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={`${row.provider}:${row.period}`}>
+                <TableCell>
+                  {row.label}
+                  {row.note ? (
+                    <span className="block text-caption text-text-tertiary">{row.note}</span>
+                  ) : null}
+                </TableCell>
+                <TableCell>{periodLabel(row.period)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {row.used} of {row.quota}
+                </TableCell>
+                <TableCell>
+                  <Progress
+                    value={barValue(row.share)}
+                    aria-label={`${row.label}, ${periodLabel(row.period)}: ${row.share}% of the free quota`}
+                  />
+                </TableCell>
+                <TableCell>
+                  {row.near_limit ? (
+                    <Badge variant="destructive">
+                      <TriangleAlertIcon aria-hidden="true" />
+                      Near the limit
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      <CircleCheckIcon aria-hidden="true" />
+                      Within the limit
+                    </Badge>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </section>
   );
 }

@@ -2325,6 +2325,51 @@ export type Database = {
           },
         ]
       }
+      provider_quotas: {
+        Row: {
+          label: string
+          note: string | null
+          period: string
+          provider: string
+          quota: number
+          updated_at: string
+        }
+        Insert: {
+          label: string
+          note?: string | null
+          period: string
+          provider: string
+          quota: number
+          updated_at?: string
+        }
+        Update: {
+          label?: string
+          note?: string | null
+          period?: string
+          provider?: string
+          quota?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      provider_usage: {
+        Row: {
+          calls: number
+          day: string
+          provider: string
+        }
+        Insert: {
+          calls?: number
+          day: string
+          provider: string
+        }
+        Update: {
+          calls?: number
+          day?: string
+          provider?: string
+        }
+        Relationships: []
+      }
       publish_schedules: {
         Row: {
           created_at: string
@@ -4177,6 +4222,19 @@ export type Database = {
       owns_journey_item: { Args: { p_item_id: string }; Returns: boolean }
       product_outcomes: { Args: { p_days?: number }; Returns: Json }
       product_signals: { Args: { p_days?: number }; Returns: Json }
+      provider_usage_status: {
+        Args: never
+        Returns: {
+          label: string
+          near_limit: boolean
+          note: string
+          period: string
+          provider: string
+          quota: number
+          share: number
+          used: number
+        }[]
+      }
       prune_ai_cache: { Args: never; Returns: number }
       prune_rate_limits: { Args: { p_older_than?: string }; Returns: number }
       publish_entity: {
@@ -4226,6 +4284,10 @@ export type Database = {
           p_entity_table: string
         }
         Returns: string
+      }
+      record_provider_usage: {
+        Args: { p_calls?: number; p_provider: string }
+        Returns: undefined
       }
       reorder_journey_items: {
         Args: {

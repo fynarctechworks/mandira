@@ -3,6 +3,7 @@ import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { createWebPushProvider, getEmailProvider, shouldDisable } from "@mandhira/providers";
 
 import { deliverEmail } from "../../../../lib/email-delivery";
+import { recordProviderUsage } from "../../../../lib/provider-usage";
 import { render } from "../../../../lib/notifications";
 
 /**
@@ -115,6 +116,11 @@ export async function GET(request: Request): Promise<Response> {
           return data.user?.email ?? null;
         },
       });
+
+      // MON-01: anything but a cancellation reached the email provider.
+      if (outcome !== "cancelled" && email.name === "Resend") {
+        await recordProviderUsage("resend", 1);
+      }
 
       if (outcome === "sent") {
         await markSent(supabase, row.id);
