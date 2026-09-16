@@ -82,3 +82,64 @@ describe("OpsDataTable", () => {
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });
+
+describe("OpsDataTable on a long list", () => {
+  const many: Row[] = Array.from({ length: 200 }, (_, i) => ({
+    id: String(i),
+    name: `Place ${i}`,
+    status: i % 2 === 0 ? "published" : "draft",
+  }));
+
+  function Long() {
+    return (
+      <OpsDataTable
+        columns={columns}
+        data={many}
+        getRowId={(row) => row.id}
+        filter={{ label: "Filter", placeholder: "Name" }}
+        caption="Places"
+      />
+    );
+  }
+
+  it("shows one page at a time and says how many rows there are in all", () => {
+    render(<Long />);
+
+    const table = screen.getByRole("table", { name: "Places" });
+    expect(table).toHaveAttribute("aria-rowcount", "200");
+    // Fifty rows and the header.
+    expect(within(table).getAllByRole("row")).toHaveLength(51);
+    expect(screen.getByText("200 rows")).toBeInTheDocument();
+    expect(screen.getByText("Showing 1–50 of 200")).toBeInTheDocument();
+  });
+
+  it("moves to the next page and back", async () => {
+    render(<Long />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Showing 51–100 of 200")).toBeInTheDocument();
+    expect(screen.getByText("Place 50")).toBeInTheDocument();
+    expect(screen.queryByText("Place 0")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(screen.getByText("Showing 1–50 of 200")).toBeInTheDocument();
+  });
+
+  it("filters to the row an operator is looking for, wherever it sits", async () => {
+    render(<Long />);
+
+    await userEvent.type(screen.getByLabelText("Filter"), "Place 137");
+
+    expect(screen.getByText("Place 137")).toBeInTheDocument();
+    expect(screen.queryByText("Place 138")).not.toBeInTheDocument();
+    expect(screen.getByText("1 of 200")).toBeInTheDocument();
+  });
+
+  it("says when a filter matches nothing, rather than looking empty", async () => {
+    render(<Long />);
+
+    await userEvent.type(screen.getByLabelText("Filter"), "nothing like this");
+
+    expect(screen.getByText("Nothing matches that.")).toBeInTheDocument();
+  });
+});

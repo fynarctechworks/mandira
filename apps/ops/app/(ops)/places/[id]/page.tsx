@@ -37,25 +37,32 @@ export default async function EditPlacePage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const supabase = await opsSupabase();
 
-  const [{ data, error }, accessResult, locales, destinations, sources, trust, problems] =
-    await Promise.all([
-      supabase
-        .from("places")
-        .select("*, latitude, longitude")
-        .eq("id", id)
-        .is("deleted_at", null)
-        .maybeSingle(),
-      supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
-      activeLocales(),
-      destinationOptions(),
-      activeSources(),
-      trustForEntity("places", id),
-      validationProblems("places", id),
-    ]);
+  const [
+    { data, error },
+    accessResult,
+    locales,
+    destinations,
+    sources,
+    trust,
+    problems,
+    connections,
+  ] = await Promise.all([
+    supabase
+      .from("places")
+      .select("*, latitude, longitude")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    supabase.from("accessibility_records").select("*").eq("place_id", id).maybeSingle(),
+    activeLocales(),
+    destinationOptions(),
+    activeSources(),
+    trustForEntity("places", id),
+    validationProblems("places", id),
+    supabase.rpc("ops_place_connections", { p_place_id: id }),
+  ]);
 
   if (error || !data) notFound();
-
-  const connections = await supabase.rpc("ops_place_connections", { p_place_id: id });
 
   const initial: PlaceDraft = {
     id: data.id,

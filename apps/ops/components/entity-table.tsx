@@ -46,9 +46,14 @@ export function EntityTable({
       {
         id: "name",
         header: "Name",
+        // An accessor as well as a cell: the filter matches values, not rendered links.
+        accessorFn: (row) => labelOf(row.name_i18n, row.slug),
         cell: ({ row }) => (
           <Link
             href={`${basePath}/${row.original.id}`}
+            // One list can hold fifty of these; prefetching every editor ahead of the one
+            // click that follows costs the server more than it saves the operator.
+            prefetch={false}
             className="focus-ring font-medium text-brand-primary-text hover:underline"
           >
             {labelOf(row.original.name_i18n, row.original.slug)}
@@ -58,11 +63,13 @@ export function EntityTable({
       ...columnOrder.map<ColumnDef<EntityRow, unknown>>((key) => ({
         id: key,
         header: key,
+        accessorFn: (row: EntityRow) => row.columns[key] ?? "—",
         cell: ({ row }) => row.original.columns[key] ?? "—",
       })),
       {
         id: "status",
         header: "Status",
+        accessorFn: (row: EntityRow) => row.status,
         cell: ({ row }) => <PublishStatusTag status={row.original.status} />,
       },
     ],
@@ -75,6 +82,7 @@ export function EntityTable({
       columns={columns}
       data={rows}
       getRowId={(row) => row.id}
+      filter={{ label: "Filter", placeholder: "Name, slug or status" }}
       selection={{ value: selected, onChange: setSelected }}
       empty={
         <div className="text-center">

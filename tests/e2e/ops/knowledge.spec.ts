@@ -67,12 +67,12 @@ test.describe.serial("Experiences and routes", () => {
 
   test("an availability kind without its payload is refused", async ({ page }) => {
     await page.goto("/experiences");
-    // The list grows with every local run and hydrates slowly enough to drop a first click;
-    // retry until the editor is open (the same guard publish.spec's openPlace uses).
-    await expect(async () => {
-      await page.getByRole("link", { name: `B10 Morning Darshan ${RUN}` }).click();
-      await expect(page.getByLabel("Add a rule")).toBeVisible({ timeout: 5_000 });
-    }).toPass({ timeout: 25_000 });
+    await page.getByLabel("Filter").fill(`B10 Morning Darshan ${RUN}`);
+    const href = await page
+      .getByRole("link", { name: `B10 Morning Darshan ${RUN}` })
+      .getAttribute("href");
+    await page.goto(href ?? "/experiences");
+    await expect(page.getByLabel("Add a rule")).toBeVisible();
 
     // date_range with no dates: the shared schema must refuse it, not store a rule the
     // engine cannot evaluate.

@@ -35,6 +35,7 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
         cell: ({ row }) => (
           <Link
             href={`/sources/${row.original.id}`}
+            prefetch={false}
             className="focus-ring font-medium text-brand-primary-text hover:underline"
           >
             {row.original.name}
@@ -93,6 +94,7 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
       columns={columns}
       data={rows}
       getRowId={(row) => row.id}
+      filter={{ label: "Filter", placeholder: "Name, tier or kind" }}
       selection={{ value: selected, onChange: setSelected }}
       empty={
         <div className="text-center">

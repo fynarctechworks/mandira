@@ -22,10 +22,12 @@ const RUN = `b12-${Date.now().toString(36)}`;
  */
 async function openPlace(page: Page, name: string) {
   await page.goto("/places");
-  await expect(async () => {
-    await page.getByRole("link", { name }).click();
-    await expect(page.getByRole("heading", { name })).toBeVisible({ timeout: 3_000 });
-  }).toPass({ timeout: 20_000 });
+  // The list is virtualised past fifty rows, so a row is reached the way an operator
+  // reaches it: by filtering (TRD §12.4).
+  await page.getByLabel("Filter").fill(name);
+  const href = await page.getByRole("link", { name }).getAttribute("href");
+  await page.goto(href ?? "/places");
+  await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
 test.describe.serial("Publishing", () => {

@@ -94,7 +94,9 @@ test.describe("O17 — Translations", () => {
 
     await name.getByLabel("Telugu").fill("యాత్ర గమ్యం");
     await name.getByRole("button", { name: "Confirm Name" }).click();
-    await expect(name).toContainText("Confirmed");
+    // Saving runs a server action and then refreshes the page; under parallel workers that
+    // takes longer than the default window.
+    await expect(name).toContainText("Confirmed", { timeout: 15_000 });
     await expect(page.getByText("1 of 1 fields confirmed in Telugu")).toBeVisible();
 
     expect(seriousViolations(await new AxeBuilder({ page }).analyze())).toEqual([]);
@@ -115,8 +117,12 @@ test.describe("O08 — Source detail", () => {
     await page.getByRole("button", { name: "Register source" }).click();
     await expect(page).toHaveURL(/\/sources$/);
 
-    // The sources list grows with every local run and can drop a first click while it
-    // hydrates; retry until the source is open (the guard knowledge and trust specs use).
+    // Past fifty rows the list is virtualised, so the source is found the way an operator
+    // finds it: by filtering.
+    await page.getByLabel("Filter").fill(`Detail Source ${RUN}`);
+
+    // A click that lands while the page is still hydrating can be dropped; retry until the
+    // source is open (the guard knowledge and trust specs use).
     await expect(async () => {
       await page.getByRole("link", { name: `Detail Source ${RUN}` }).click();
       await expect(page.getByRole("heading", { name: /^Captures \(\d+\)$/ })).toBeVisible({

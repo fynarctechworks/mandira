@@ -22,6 +22,9 @@ test.describe.serial("Trust and sources", () => {
     await page.getByRole("button", { name: "Register source" }).click();
 
     await expect(page).toHaveURL(/\/sources$/);
+    // The registry is paged past fifty rows, so the new source is found the way an operator
+    // finds it: by filtering.
+    await page.getByLabel("Filter").fill(`Temple Trust ${RUN}`);
     const row = page.getByRole("row").filter({ hasText: `Temple Trust ${RUN}` });
     await expect(row).toContainText("T1");
     await expect(row).toContainText("active");
@@ -80,15 +83,13 @@ test.describe.serial("Trust and sources", () => {
 
   test("verifying against a source yields high confidence", async ({ page }) => {
     await page.goto("/places");
+    await page.getByLabel("Filter").fill(`Trust Temple ${RUN}`);
     const panel = page.getByRole("group", { name: "Trust for Opening hours" });
     // The places list grows with every local run and hydrates slowly enough to drop a first
     // click; retry until the place is open (the guard knowledge.spec and publish.spec use).
-    await expect(async () => {
-      await page.getByRole("link", { name: `Trust Temple ${RUN}` }).click();
-      await expect(panel.getByRole("button", { name: "Edit trust" })).toBeVisible({
-        timeout: 5_000,
-      });
-    }).toPass({ timeout: 25_000 });
+    const href = await page.getByRole("link", { name: `Trust Temple ${RUN}` }).getAttribute("href");
+    await page.goto(href ?? "/places");
+    await expect(panel.getByRole("button", { name: "Edit trust" })).toBeVisible();
     await panel.getByRole("button", { name: "Edit trust" }).click();
     await panel.getByLabel("Status", { exact: true }).selectOption("verified");
     await panel.getByRole("button", { name: "Save trust record" }).click();
