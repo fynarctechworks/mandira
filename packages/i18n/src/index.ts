@@ -10,17 +10,20 @@
  * told about (PRD-KNOW-005), not hidden.
  */
 
-/** Launch locales (D-014). Adding one is a `locales` row plus a message file. */
-export const LOCALES = ["en", "te", "hi"] as const;
+import { GENERATED_LOCALES, GENERATED_LOCALE_LABELS } from "./locales.generated";
+
+/**
+ * The languages the app offers, generated from the `locales` table by `pnpm i18n:locales`
+ * (PRD-LANG-002, D-210). Adding one is a row in Ops and that script — never an edit here.
+ */
+export const LOCALES = GENERATED_LOCALES;
 export type Locale = (typeof LOCALES)[number];
 
+/** English is the default and the end of every fallback chain (TRD §1.4). */
 export const DEFAULT_LOCALE: Locale = "en";
 
-export const LOCALE_LABELS: Record<Locale, string> = {
-  en: "English",
-  te: "తెలుగు",
-  hi: "हिन्दी",
-};
+/** Each language named in its own script — someone looking for Telugu reads Telugu. */
+export const LOCALE_LABELS: Record<Locale, string> = GENERATED_LOCALE_LABELS;
 
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);

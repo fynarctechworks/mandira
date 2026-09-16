@@ -10,17 +10,22 @@ import { getRequestConfig } from "next-intl/server";
  * app, the other is an untranslated one (PRD-KNOW-005 applies the same principle to
  * content).
  *
- * te/hi ship as scaffolds until M4 (B-034), so today almost everything falls through.
+ * A language added in Ops (PRD-LANG-002) may have no catalog file yet. That is the same
+ * state as an untranslated key, so it reads in English rather than failing the route: the
+ * language appears the moment its row does, and fills in as `ui_strings` is translated.
  */
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
   const locale = requested && isLocale(requested) ? requested : DEFAULT_LOCALE;
 
   const english = (await import("../messages/en.json")).default;
-  const messages =
+  const translated =
     locale === DEFAULT_LOCALE
-      ? english
-      : mergeDefined(english, (await import(`../messages/${locale}.json`)).default);
+      ? null
+      : await import(`../messages/${locale}.json`)
+          .then((module) => module.default as Record<string, unknown>)
+          .catch(() => null);
+  const messages = translated ? mergeDefined(english, translated) : english;
 
   return { locale, messages };
 });

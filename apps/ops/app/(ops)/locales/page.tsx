@@ -26,9 +26,10 @@ export default async function LocalesPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-h1">Locales</h1>
-        <p className="text-body text-text-secondary">
-          The languages Mandhira offers. Switching one on makes it available to travelers and adds a
-          tab for it in every Ops editor.
+        <p className="max-w-prose text-body text-text-secondary">
+          The languages Mandhira offers. Switching one on adds a tab for it in every Ops editor
+          straight away. It reaches travelers at the next deploy, which is when the app picks up the
+          list — until its interface strings are translated they read in English.
         </p>
         {!canEdit ? (
           <p className="text-body-sm text-text-secondary">Only admins can change locales.</p>

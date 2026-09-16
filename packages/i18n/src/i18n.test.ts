@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LOCALE, LOCALES, getI18n, isLocale, t } from "./index";
+import { DEFAULT_LOCALE, LOCALES, LOCALE_LABELS, getI18n, isLocale, t } from "./index";
 
 describe("getI18n", () => {
   const value = { en: "Morning darshan", te: "ఉదయ దర్శనం" };
@@ -56,5 +56,24 @@ describe("locales", () => {
   it("defaults to the fallback locale the content model assumes", () => {
     expect(DEFAULT_LOCALE).toBe("en");
     expect(LOCALES).toContain(DEFAULT_LOCALE);
+  });
+});
+
+describe("the generated locale list", () => {
+  it("always offers English, because every fallback ends there", () => {
+    expect(LOCALES).toContain(DEFAULT_LOCALE);
+    expect(LOCALES[0]).toBe("en");
+  });
+
+  it("names every language it offers, in its own script", () => {
+    for (const locale of LOCALES) {
+      expect(LOCALE_LABELS[locale], `${locale} has no label`).toBeTruthy();
+    }
+  });
+
+  it("holds codes a URL can carry", () => {
+    for (const locale of LOCALES) {
+      expect(locale).toMatch(/^[a-z]{2,3}(-[A-Z]{2})?$/);
+    }
   });
 });
