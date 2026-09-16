@@ -187,6 +187,7 @@ function Signals({ signals, days }: { signals: ProductSignals; days: number }) {
 /** PRD F20's journey signals, with PRD §7's targets where it sets one. */
 function Outcomes({ outcomes }: { outcomes: ProductOutcomes }) {
   const { journeys, change_cards: cards, live, offline, reports } = outcomes;
+  const leaveBy = outcomes.leave_by ?? { sent: 0, acted: 0 };
   const reportRate = per1000(reports.total, reports.journey_days);
   const validRate = per1000(reports.valid, reports.journey_days);
   const departures = DEPARTURE_STATES.reduce(
@@ -220,6 +221,11 @@ function Outcomes({ outcomes }: { outcomes: ProductOutcomes }) {
             label="Journey-days with Live open"
             value={`${percent(live.journey_days_with_live, live.journey_days)}%`}
             note={`${live.journey_days_with_live} of ${live.journey_days} journey-days. ${live.opened_offline} of ${live.opened} opens were offline.`}
+          />
+          <Figure
+            label="Leave-by reminders acted on"
+            value={`${percent(leaveBy.acted, leaveBy.sent)}%`}
+            note={`${leaveBy.acted} of ${leaveBy.sent} reminders were followed by leaving within 20 minutes of the plan; target 70% or more.`}
           />
           <Figure
             label="Read offline"

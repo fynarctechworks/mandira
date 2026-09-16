@@ -55,6 +55,12 @@
     "trust": {
       "unverified": "{count, plural, one {# detail here hasn't been verified recently.} other {# details here haven't been verified recently.}}",
       "conflicting": "{count, plural, one {# detail here has sources that disagree.} other {# details here have sources that disagree.}}"
+    },
+    "day_state": {
+      "comfortable": "This day has room to breathe.",
+      "tight": "This day is tight — workable, but delays will have an effect.",
+      "at_risk": "This day is at risk — something may not fit. Let's look at options.",
+      "broken": "This day can't work as planned. Here's what would need to change."
     }
   },
   "change": {
@@ -555,7 +561,7 @@
     "context_help": "Help",
     "say_in": "In {language}",
     "means": "Means",
-    "not_in_language": "Not yet available in your language",
+    "not_in_language": "Not yet available in English",
     "play": "Play",
     "play_label": "Play the phrase: {phrase}",
     "show": "Show to someone",

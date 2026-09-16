@@ -27,6 +27,7 @@ export type ProductOutcomes = {
     opened: number;
     opened_offline: number;
   };
+  leave_by: { sent: number; acted: number };
   offline: { events: number; renders: number };
   reports: { total: number; valid: number; journey_days: number };
 };

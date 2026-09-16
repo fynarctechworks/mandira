@@ -127,7 +127,7 @@ export function DayHealthPanel({
           <SheetHeader>
             <SheetTitle className="text-base">{t("title", { day: dayLabel })}</SheetTitle>
             <SheetDescription className="text-sm">
-              {tAll(`health.state.${day.state}`)}
+              {tAll(`health.day_state.${day.state}`)}
             </SheetDescription>
           </SheetHeader>
 
