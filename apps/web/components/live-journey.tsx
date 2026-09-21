@@ -9,6 +9,7 @@ import type { ChangeCard, ChangeTrigger } from "@mandhira/journey-engine";
 
 import { track } from "../lib/analytics";
 import { useLeaveByReminder } from "../lib/leave-by-reminder";
+import { relativeTime as relative } from "../lib/present";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import type { PlainTranslate } from "../lib/present";
 import { ChangeSheet } from "./change-sheet";
@@ -679,29 +680,6 @@ function nowDetail(
     case "day_complete":
       return t("day_behind");
   }
-}
-
-/** "in 12 minutes" / "25 minutes ago" — never a bare timestamp for something imminent. */
-function relative(
-  instant: string,
-  now: number,
-  t: PlainTranslate,
-  tPresent: PlainTranslate,
-): string {
-  const minutes = Math.round((Date.parse(instant) - now) / 60_000);
-  const abs = Math.abs(minutes);
-
-  if (abs < 1) return t("relative_now");
-
-  const hours = Math.floor(abs / 60);
-  const said =
-    abs < 60
-      ? t("minutes_count", { count: abs })
-      : abs % 60
-        ? tPresent("hours_minutes", { hours, minutes: abs % 60 })
-        : tPresent("hours", { hours });
-
-  return minutes > 0 ? t("relative_in", { duration: said }) : t("relative_ago", { duration: said });
 }
 
 function clock(instant: string, locale: string): string {

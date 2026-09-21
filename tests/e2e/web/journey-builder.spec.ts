@@ -76,7 +76,10 @@ test.describe("Saving a journey", () => {
     await page.goto("/en/journeys");
     // The one this test just made. Other tests in the file save journeys for the same
     // traveler, so a bare "is there a journey" assertion would pass on somebody else's.
-    await expect(page.locator(`a[href$="/journeys/${journeyId}"]`)).toBeVisible();
+    const card = page.locator(`a[href$="/journeys/${journeyId}"]`);
+    await expect(card).toBeVisible();
+    // Which pilgrimage it is, not only that a journey exists (design review).
+    await expect(card).toContainText("Devagiri");
   });
 
   test("refuses a brief with nothing chosen, and says what to do", async ({ page }) => {

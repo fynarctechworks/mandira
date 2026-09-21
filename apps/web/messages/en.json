@@ -978,7 +978,8 @@
     "booking_opens": "{days, plural, one {Advance booking required — opens # day before} other {Advance booking required — opens # days before}}",
     "usually": "Usually {usual}",
     "allow_up_to": "Allow up to {max}",
-    "usually_allow": "Usually {usual} — allow up to {max}"
+    "usually_allow": "Usually {usual} — allow up to {max}",
+    "days_count": "{count, plural, one {# day} other {# days}}"
   },
   "trustBadge": {
     "verified": "Verified",

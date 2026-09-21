@@ -182,3 +182,33 @@ export function durationRange(
   if (!worst || max === likely) return t("usually", { usual });
   return t("usually_allow", { usual, max: worst });
 }
+
+/**
+ * "in 12 minutes", "25 minutes ago", "in 3 days" (PRD F8).
+ *
+ * Minutes within the hour, hours within two days, days beyond that. A journey three weeks
+ * out counted down as "in 487 h 30 m", which is a number nobody reads as three weeks — and
+ * Live is the screen a traveler checks while walking.
+ */
+export function relativeTime(
+  instant: string,
+  now: number,
+  t: PlainTranslate,
+  tPresent: PlainTranslate,
+): string {
+  const minutes = Math.round((Date.parse(instant) - now) / 60_000);
+  const abs = Math.abs(minutes);
+
+  if (abs < 1) return t("relative_now");
+
+  const said =
+    abs < 60
+      ? t("minutes_count", { count: abs })
+      : abs < 48 * 60
+        ? abs % 60
+          ? tPresent("hours_minutes", { hours: Math.floor(abs / 60), minutes: abs % 60 })
+          : tPresent("hours", { hours: Math.floor(abs / 60) })
+        : tPresent("days_count", { count: Math.round(abs / (60 * 24)) });
+
+  return minutes > 0 ? t("relative_in", { duration: said }) : t("relative_ago", { duration: said });
+}

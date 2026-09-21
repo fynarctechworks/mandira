@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getI18n } from "@mandhira/i18n";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { DraftRecovery } from "../../../components/draft-recovery";
@@ -35,6 +36,44 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
     getTranslations("addToJourney"),
     getTranslations("prepareHub"),
   ]);
+
+  /*
+   * Which pilgrimage each card is (design review): a list where every card read "Your
+   * journey" and a date gave a traveler nothing to tell one from another.
+   */
+  const destinationsOf = new Map<string, string>();
+  if (journeys.length > 0) {
+    // Two reads rather than an embed: a traveler reads destinations through the published
+    // view, never the table, so an embedded join comes back empty (0008).
+    const { data: links } = await supabase
+      .from("journey_destinations")
+      .select("journey_id, destination_id, sort_order")
+      .in(
+        "journey_id",
+        journeys.map((journey) => journey.id),
+      )
+      .order("sort_order");
+
+    const ids = [...new Set((links ?? []).map((link) => link.destination_id))];
+    const { data: destinations } = ids.length
+      ? await supabase.from("v_published_destinations").select("id, name_i18n, slug").in("id", ids)
+      : { data: [] };
+
+    const nameOf = new Map(
+      (destinations ?? []).map((destination) => [
+        destination.id as string,
+        getI18n(destination.name_i18n as Record<string, string>, locale).text ||
+          (destination.slug as string),
+      ]),
+    );
+
+    for (const link of links ?? []) {
+      const name = nameOf.get(link.destination_id);
+      if (!name) continue;
+      const existing = destinationsOf.get(link.journey_id);
+      destinationsOf.set(link.journey_id, existing ? `${existing} · ${name}` : name);
+    }
+  }
 
   /*
    * Grouped by where each journey stands, the one under way first. A flat list of cards
@@ -104,6 +143,11 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
                     >
                       <span className="flex min-w-0 flex-col gap-0.5">
                         <span className="text-h3">{journey.title ?? tJourney("untitled")}</span>
+                        {destinationsOf.get(journey.id) ? (
+                          <span className="truncate text-body-sm text-text-secondary">
+                            {destinationsOf.get(journey.id)}
+                          </span>
+                        ) : null}
                         <span className="text-caption text-text-secondary">{datesOf(journey)}</span>
                       </span>
                       <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />

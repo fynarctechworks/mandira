@@ -668,7 +668,8 @@
     "booking_opens": "{days, plural, one {पहले से बुकिंग ज़रूरी — # दिन पहले खुलती है} other {पहले से बुकिंग ज़रूरी — # दिन पहले खुलती है}}",
     "usually": "आमतौर पर {usual}",
     "allow_up_to": "{max} तक का समय रखें",
-    "usually_allow": "आमतौर पर {usual} — {max} तक का समय रखें"
+    "usually_allow": "आमतौर पर {usual} — {max} तक का समय रखें",
+    "days_count": "{count, plural, one {# दिन} other {# दिन}}"
   },
   "live": {
     "offline_missing": "यह यात्रा अभी ऑफ़लाइन इस्तेमाल के लिए सहेजी नहीं गई है। कनेक्शन होने पर इसे एक बार खोलें, अगली बार यह यहीं रहेगी।",
