@@ -70,3 +70,16 @@ export function getI18n(
 export function t(value: I18nValue, locale: string): string {
   return getI18n(value, locale).text;
 }
+
+/**
+ * Catalogue consistency checks (PRD-LANG-001). Structure only — see `./catalog` for why
+ * wording is a human's job and what `pnpm i18n:review` is for.
+ */
+export {
+  catalogProblems,
+  flattenCatalog,
+  messageArguments,
+  untranslatedKeys,
+  type CatalogProblem,
+  type MessageArgument,
+} from "./catalog";

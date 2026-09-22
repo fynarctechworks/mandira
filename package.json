@@ -18,6 +18,7 @@
     "db:types:check": "bash scripts/gen-types.sh --check",
     "i18n:locales": "node scripts/generate-locales.mjs",
     "i18n:locales:check": "node scripts/generate-locales.mjs --check",
+    "i18n:review": "node --experimental-strip-types scripts/translation-review-pack.mjs",
     "db:test": "supabase test db",
     "test:engine": "vitest run packages/journey-engine --coverage",
     "push:keys": "node scripts/generate-vapid-keys.mjs",

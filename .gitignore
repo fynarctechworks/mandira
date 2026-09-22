@@ -24,3 +24,7 @@ tests/e2e/.auth/
 # Encrypted database dumps produced by scripts/backup-verify.sh. Never committed —
 # an encrypted archive in a repository is one leaked passphrase from being plaintext.
 backups/
+
+# The translation review pack (`pnpm i18n:review`). Generated from the catalogues on
+# demand and sent to a reviewer; a stale copy in the repo is worse than none.
+translation-review/
