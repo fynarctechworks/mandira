@@ -181,6 +181,8 @@ export type TrustEntry = {
   confidence: "high" | "medium" | "low";
   freshness: "fresh" | "aging" | "stale";
   conflict_flag: boolean;
+  /** The value changed after it was verified, so nobody has checked the words shown. */
+  needs_reverification?: boolean;
   verified_at?: string | null;
   valid_until?: string | null;
 };

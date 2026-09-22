@@ -2965,6 +2965,7 @@ export type Database = {
           field_name: string | null
           freshness: Database["public"]["Enums"]["freshness_enum"]
           id: string
+          needs_reverification: boolean
           report_downgrade: boolean
           source_id: string | null
           source_tier: Database["public"]["Enums"]["source_tier_enum"] | null
@@ -2986,6 +2987,7 @@ export type Database = {
           field_name?: string | null
           freshness?: Database["public"]["Enums"]["freshness_enum"]
           id?: string
+          needs_reverification?: boolean
           report_downgrade?: boolean
           source_id?: string | null
           source_tier?: Database["public"]["Enums"]["source_tier_enum"] | null
@@ -3007,6 +3009,7 @@ export type Database = {
           field_name?: string | null
           freshness?: Database["public"]["Enums"]["freshness_enum"]
           id?: string
+          needs_reverification?: boolean
           report_downgrade?: boolean
           source_id?: string | null
           source_tier?: Database["public"]["Enums"]["source_tier_enum"] | null

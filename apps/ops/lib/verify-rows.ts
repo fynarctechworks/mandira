@@ -13,6 +13,7 @@ export type VerifyTrust = {
   evidence_url: string | null;
   evidence_excerpt: string | null;
   conflict_flag: boolean;
+  needs_reverification: boolean;
   freshness: string;
   confidence: string;
 };
@@ -53,12 +54,14 @@ const STATUS_RANK: Record<string, number> = {
 const FRESHNESS_RANK: Record<string, number> = { stale: 0, aging: 1, fresh: 2 };
 
 /**
- * Worst first: a disagreement, then a field whose source changed under it, then what
- * travelers can already see, then the weakest status, the stalest, the longest unchecked.
+ * Worst first: a disagreement, then a published value edited since it was verified (0053 —
+ * travelers are reading words nobody has checked), then what travelers can already see,
+ * then the weakest status, the stalest, the longest unchecked.
  */
 export function rankVerifyRows(rows: VerifyRow[]): VerifyRow[] {
   const score = (row: VerifyRow): number[] => [
     row.trust?.conflict_flag ? 0 : 1,
+    row.trust?.needs_reverification ? 0 : 1,
     row.task ? 0 : 1,
     row.entityStatus === "published" ? 0 : 1,
     STATUS_RANK[row.trust?.verification_status ?? "unverified"] ?? 1,

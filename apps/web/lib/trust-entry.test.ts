@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { weakestTrustEntry, type TrustEntry } from "./trust";
+import { trustStateOf, weakestTrustEntry, type TrustEntry } from "./trust";
 
 const entry = (over: Partial<TrustEntry>): TrustEntry => ({
   confidence: "high",
@@ -11,6 +11,25 @@ const entry = (over: Partial<TrustEntry>): TrustEntry => ({
   source_tier_label: "Official",
   conflict_flag: false,
   ...over,
+});
+
+describe("trustStateOf", () => {
+  it("drops a verified field to Check locally once its value has been edited", () => {
+    // The badge is a claim about the words on the screen. Someone changed them.
+    expect(trustStateOf(entry({ needs_reverification: true }))).toBe("check_locally");
+  });
+
+  it("leaves a field alone until something actually changes", () => {
+    expect(trustStateOf(entry({}))).toBe("verified");
+    expect(trustStateOf(entry({ needs_reverification: false }))).toBe("verified");
+  });
+
+  it("treats a bundle cached before the flag existed as unchanged, not as suspect", () => {
+    // An old offline snapshot predates the question; it is not evidence of an edit.
+    const cached: TrustEntry = entry({});
+    delete (cached as { needs_reverification?: boolean }).needs_reverification;
+    expect(trustStateOf(cached)).toBe("verified");
+  });
 });
 
 describe("weakestTrustEntry", () => {
@@ -26,6 +45,13 @@ describe("weakestTrustEntry", () => {
     const conflicted = entry({ conflict_flag: true });
 
     expect(weakestTrustEntry({ a: earlier, b: conflicted })).toBe(conflicted);
+  });
+
+  it("prefers an edited field over one that is merely older", () => {
+    const earlier = entry({ confidence: "medium" });
+    const changed = entry({ needs_reverification: true });
+
+    expect(weakestTrustEntry({ a: earlier, b: changed })).toBe(changed);
   });
 
   it("has nothing to show when nothing is recorded", () => {

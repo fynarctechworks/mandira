@@ -507,7 +507,12 @@ function trustExposureFor(items: JourneyItem[], knowledge: KnowledgeBundle): Tru
       if (!id) continue;
       for (const record of Object.values(trust[id] ?? {})) {
         if (record.conflict_flag) conflicted += 1;
-        else if (record.confidence === "low") lowConfidence += 1;
+        /*
+         * A field edited after it was verified counts as unverified, exactly as the badge
+         * over it says "Check locally" (0053). The two read the same records on purpose:
+         * a day that Health calls fully verified must not contain a badge that disagrees.
+         */
+        else if (record.confidence === "low" || record.needs_reverification) lowConfidence += 1;
       }
     }
   }

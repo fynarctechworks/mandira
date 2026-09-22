@@ -22,6 +22,8 @@ export type TrustEntry = {
   source_name: string | null;
   source_tier_label: string | null;
   conflict_flag: boolean;
+  /** The value changed after it was verified (0053); optional, so cached bundles still parse. */
+  needs_reverification?: boolean;
 };
 
 export type TrustMap = Record<string, TrustEntry>;
@@ -31,9 +33,14 @@ export type TrustMap = Record<string, TrustEntry>;
  *
  * A conflict or staleness forces "Check locally" regardless of confidence: a field two
  * sources disagree about is not something to reassure anyone about, whatever its tier.
+ *
+ * So does an edit after verification (0053). "Verified" is a claim about the words on the
+ * screen, not about the field they sit in; the moment the words change, nobody has checked
+ * these ones, and the honest badge is the one that says so.
  */
 export function trustStateOf(entry: TrustEntry | undefined): TrustState | null {
   if (!entry) return null;
+  if (entry.needs_reverification) return "check_locally";
   if (entry.conflict_flag || entry.freshness === "stale") return "check_locally";
   if (entry.confidence === "high") return "verified";
   if (entry.confidence === "medium") return "verified_earlier";

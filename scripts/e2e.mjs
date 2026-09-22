@@ -70,5 +70,13 @@ function resetRateLimits() {
 }
 
 resetRateLimits();
-run("pnpm", ["turbo", "run", "build"]);
+
+/*
+ * One build at a time. Turbo runs the two apps' builds in parallel by default, and two
+ * Next production builds together exhaust the heap on a 16 GB Windows machine — the Ops
+ * worker dies with "Fatal process out of memory: Zone" and an exit code (2147483651) that
+ * looks like a crash rather than a resource limit. Serial costs about forty seconds and
+ * removes a failure that reads as a code bug every time it happens.
+ */
+run("pnpm", ["turbo", "run", "build", "--concurrency=1"]);
 run("pnpm", ["exec", "playwright", "test", ...args]);

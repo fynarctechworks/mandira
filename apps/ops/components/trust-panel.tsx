@@ -17,6 +17,7 @@ export type TrustRecord = {
   evidence_url: string | null;
   evidence_excerpt: string | null;
   conflict_flag: boolean;
+  needs_reverification: boolean;
   freshness: string;
   confidence: string;
 };
@@ -146,10 +147,21 @@ export function TrustPanel({
         </Button>
       </div>
 
+      {/*
+        Outside the disclosure on purpose: this is the one thing a verifier must see without
+        opening anything, because until they act travelers are reading unchecked words.
+        Saving a verification with a fresh date is what clears it (0053).
+      */}
+      {record?.needs_reverification ? (
+        <p className="mt-2 rounded-card bg-status-tight/12 p-2 text-caption text-text-primary">
+          This value changed after it was verified, so travelers now see “Check locally”. Confirm
+          these words against the source to restore the badge.
+        </p>
+      ) : null}
+
       {open ? (
         <div className="mt-3 flex flex-col gap-3 border-t border-border-subtle pt-3">
           <p className="text-caption text-text-secondary">{field.why}</p>
-
           <div className="flex flex-wrap gap-3">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
               <label htmlFor={`${ids}-status`} className="text-body-sm font-medium">

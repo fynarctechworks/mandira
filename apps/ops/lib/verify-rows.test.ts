@@ -18,6 +18,7 @@ function trust(overrides: Partial<VerifyTrust> = {}): VerifyTrust {
     evidence_url: null,
     evidence_excerpt: null,
     conflict_flag: false,
+    needs_reverification: false,
     freshness: "fresh",
     confidence: "medium",
     ...overrides,
@@ -62,6 +63,16 @@ describe("rankVerifyRows", () => {
 
   it("puts a field whose source changed ahead of plain gaps", () => {
     const ranked = rankVerifyRows([row("plain"), row("changed", { task: task(null) })]);
+    expect(ranked[0]?.key).toBe("changed");
+  });
+
+  it("puts a published value edited since it was verified near the top", () => {
+    // Travelers are reading words nobody has checked, which is worse than a gap nobody
+    // has filled yet.
+    const ranked = rankVerifyRows([
+      row("gap", { task: task(null) }),
+      row("changed", { trust: trust({ needs_reverification: true }) }),
+    ]);
     expect(ranked[0]?.key).toBe("changed");
   });
 

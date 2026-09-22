@@ -755,7 +755,8 @@
   },
   "fieldTrust": {
     "badge_label": "{field} — where this comes from",
-    "conflict": "Two sources list different information for this. We show the official one."
+    "conflict": "Two sources list different information for this. We show the official one.",
+    "changed": "This was edited after it was last confirmed, so nobody has checked these exact words yet. Please check locally before you count on it."
   },
   "prepareList": {
     "due": "{title} — by {date}",

@@ -173,6 +173,7 @@ export function VerifyQueue({
                     <span className="block text-caption text-text-secondary">
                       {row.trust.freshness} · {row.trust.confidence} confidence
                       {row.trust.conflict_flag ? " · sources disagree" : ""}
+                      {row.trust.needs_reverification ? " · changed since it was verified" : ""}
                     </span>
                   ) : null}
                 </TableCell>

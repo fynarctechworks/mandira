@@ -12,7 +12,7 @@ import { rankVerifyRows, type VerifyRow, type VerifyTrust } from "./verify-rows"
 const TRUST_TABLES = ["places", "experiences", "availability_rules", "transport_connections"];
 const LIVE = new Set(["in_review", "published"]);
 const TRUST_COLUMNS =
-  "id, entity_table, entity_id, field_name, source_id, verification_status, verified_at, valid_until, evidence_url, evidence_excerpt, conflict_flag, freshness, confidence";
+  "id, entity_table, entity_id, field_name, source_id, verification_status, verified_at, valid_until, evidence_url, evidence_excerpt, conflict_flag, needs_reverification, freshness, confidence";
 
 type TrustRow = VerifyTrust & { entity_table: string; entity_id: string };
 type Named = { label: string; status: string; href: string | null };
@@ -203,6 +203,7 @@ export async function loadVerifyQueue(): Promise<{
             evidence_url: record.evidence_url,
             evidence_excerpt: record.evidence_excerpt,
             conflict_flag: record.conflict_flag,
+            needs_reverification: record.needs_reverification,
             freshness: record.freshness,
             confidence: record.confidence,
           }

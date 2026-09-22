@@ -128,6 +128,12 @@ export const trustEntry = z.object({
   source_name: z.string().nullable(),
   source_tier_label: z.string().nullable(),
   conflict_flag: z.boolean(),
+  /*
+   * The value changed after it was verified (0053). Defaulted, because a bundle cached
+   * offline before this column existed is still a perfectly good bundle — it simply
+   * predates the question, and an absent flag is an honest "not known to have changed".
+   */
+  needs_reverification: z.boolean().default(false),
 });
 
 export const trustBundle = z.record(z.string(), trustEntry);

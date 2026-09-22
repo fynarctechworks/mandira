@@ -89,6 +89,7 @@ export function FieldTrust({
         sourceTierLabel={entry.source_tier_label ?? ""}
         lastConfirmed={lastConfirmed}
         {...(validUntil ? { validUntil } : {})}
+        {...(entry.needs_reverification ? { changedNote: t("changed") } : {})}
         {...(entry.conflict_flag
           ? {
               /*

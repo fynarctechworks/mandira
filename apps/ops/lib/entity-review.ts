@@ -31,7 +31,7 @@ export async function trustForEntity(entityTable: string, entityId: string) {
   const { data, error } = await supabase
     .from("trust_records")
     .select(
-      "id, field_name, source_id, verification_status, verified_at, valid_until, evidence_url, evidence_excerpt, conflict_flag, freshness, confidence",
+      "id, field_name, source_id, verification_status, verified_at, valid_until, evidence_url, evidence_excerpt, conflict_flag, needs_reverification, freshness, confidence",
     )
     .eq("entity_table", entityTable)
     .eq("entity_id", entityId);

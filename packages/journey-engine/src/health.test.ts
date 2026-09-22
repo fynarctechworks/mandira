@@ -563,6 +563,30 @@ describe("computeHealth", () => {
       expect(report.days[0]!.state).toBe("comfortable");
     });
 
+    it("counts a field edited since it was verified as unverified", () => {
+      // What the traveler sees over it is "Check locally"; Health must not call the same
+      // day fully verified.
+      const report = computeHealth({
+        journey,
+        knowledge: {
+          ...emptyKnowledge,
+          trust: {
+            p1: {
+              opening_schedule: {
+                confidence: "high",
+                freshness: "fresh",
+                conflict_flag: false,
+                needs_reverification: true,
+              },
+            },
+          },
+        },
+        items: [item({ id: "a", sort_order: 0, place_id: "p1", duration_likely_minutes: 60 })],
+      });
+
+      expect(report.days[0]!.trustExposure).toEqual([{ key: "health.trust.unverified", count: 1 }]);
+    });
+
     it("is empty when the bundle carries no trust records", () => {
       const report = computeHealth({
         journey,

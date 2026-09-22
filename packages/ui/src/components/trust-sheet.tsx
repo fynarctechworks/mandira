@@ -14,6 +14,8 @@ type TrustSheetProps = {
   validUntil?: string;
   /** e.g. "Two sources list different evening timings. We show the official one." */
   conflictNote?: string;
+  /** Shown when the value was edited after it was last confirmed (0053). */
+  changedNote?: string;
   onReportChange?: () => void;
   labels?: Partial<{
     title: string;
@@ -36,6 +38,7 @@ export function TrustSheet({
   lastConfirmed,
   validUntil,
   conflictNote,
+  changedNote,
   onReportChange,
   labels,
 }: TrustSheetProps) {
@@ -68,6 +71,16 @@ export function TrustSheet({
           </div>
         ) : null}
       </dl>
+
+      {/*
+       * Above the conflict note, because it qualifies the "Last confirmed" date directly
+       * over it: that date is true of a value this one has since replaced.
+       */}
+      {changedNote ? (
+        <p className="mt-4 rounded-card bg-status-warning/12 p-3 text-body-sm text-text-primary">
+          {changedNote}
+        </p>
+      ) : null}
 
       {conflictNote ? (
         <p className="mt-4 rounded-card bg-status-info/12 p-3 text-body-sm text-text-primary">
