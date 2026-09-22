@@ -24,6 +24,8 @@ export function PlaceCard({
   const tTypes = useTranslations("placeTypes");
   const tPresent = useTranslations("present");
   const tSearch = useTranslations("search");
+  // PRD-ACCT-004: the card is handed its reason and renders it; it never invents one.
+  const tWhy = useTranslations("because");
   const duration = durationLabel(place.visitDurationLikelyMinutes, tPresent);
   const trust = weakestTrustState(place.trust);
   // A type added to the schema before the catalogs shows its raw value rather than a key path.
@@ -33,6 +35,11 @@ export function PlaceCard({
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
       {place.fitsJourney ? (
         <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
+      ) : null}
+      {place.because ? (
+        <p className="text-caption text-text-secondary">
+          {tWhy(place.because, { name: place.name.text })}
+        </p>
       ) : null}
       <div className="flex flex-col gap-1">
         <h3 className="text-h3">

@@ -6,6 +6,7 @@ import { decideChange } from "../../../../../../lib/changes";
 import { getJourney } from "../../../../../../lib/journeys";
 import { resyncNotifications } from "../../../../../../lib/notifications";
 import { rescheduleDays } from "../../../../../../lib/replan";
+import { recordSignal } from "../../../../../../lib/signals";
 
 /**
  * The traveler's decision on a Change Card (PRD-ADPT-005).
@@ -63,6 +64,27 @@ export const POST = withApi({
         user!.id,
         "POST /api/journeys/:id/changes/:eventId",
       );
+    }
+
+    /*
+     * PRD-ACCT-004. A Change Card decision is the most explicit thing in the product: the
+     * app named the item and asked, and the traveler answered. Both answers are recorded —
+     * removing one says something, and keeping one when the app pressed to remove it says
+     * rather more.
+     *
+     * Read from the items the option actually names, not from the card's prose, so this
+     * cannot drift from what was done. Best-effort, like every signal.
+     */
+    if (user) {
+      for (const signal of result.signals) {
+        await recordSignal(supabase, {
+          userId: user.id,
+          type: signal.type,
+          entityTable: signal.entityTable,
+          entityId: signal.entityId,
+          journeyId,
+        });
+      }
     }
 
     // Fresh items AND fresh health, like every other mutation — a screen showing the old

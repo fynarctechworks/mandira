@@ -1070,5 +1070,10 @@
     "rights_heading": "What you can do right now",
     "rights_body": "You can download everything we hold about you as a file, and you can delete your account. Deletion removes your journeys within 30 days, and you can cancel it at any point before that.",
     "rights_link": "Go to your profile"
+  },
+  "because": {
+    "protected": "Because you protected {name} last time",
+    "kept": "Because you kept {name} in a journey before",
+    "completed": "Because you visited {name} on an earlier journey"
   }
 }

@@ -10,6 +10,8 @@ import { getI18n } from "@mandhira/i18n";
 
 import { mustList, mustMaybe } from "./data-error";
 import { rankByJourneyFit, type JourneyToFit } from "./journey-fit";
+import { affinitiesFrom, rankByAffinity, type Affinity, type ShownReason } from "./personalization";
+import { readSignals } from "./signals";
 import { webSupabase } from "./supabase";
 import type { TrustEntry, TrustMap } from "./trust";
 import { nextOccurrence, todayIn, type NextOccurrence } from "./next-occurrence";
@@ -68,6 +70,11 @@ export type PlaceCard = {
   trust: TrustMap;
   /** Set by search when the traveler has a journey: this could go into it (PRD-DISC-006). */
   fitsJourney?: boolean;
+  /**
+   * Why this is where it is, when the traveler's own explicit signals moved it up
+   * (PRD-ACCT-004). Null unless they genuinely did — see `rankByAffinity`.
+   */
+  because?: ShownReason | null;
 };
 
 export type ExperienceCard = {
@@ -87,6 +94,8 @@ export type ExperienceCard = {
   availability: AvailabilityWindow[];
   /** Set by search when the traveler has a journey: this could go into it (PRD-DISC-006). */
   fitsJourney?: boolean;
+  /** As on PlaceCard: what the traveler told us that lifted this (PRD-ACCT-004). */
+  because?: ShownReason | null;
 };
 
 export type AvailabilityWindow = { kind: string; start: string | null; end: string | null };
@@ -975,13 +984,29 @@ export async function searchKnowledge(
    * run, so the cap below keeps the fitting results rather than cutting them.
    */
   const fitting = fit ? await journeyFit(supabase, fit, experienceRows, placeRows) : null;
-  const experienceCards = rankIfFitting(
-    experienceRows.map((row) => toExperienceCard(row, locale, [])),
-    fitting?.experiences,
+
+  /*
+   * PRD-ACCT-004, applied LAST and as a tie-breaker only.
+   *
+   * Order of authority: what fits the journey they are actually planning, then editorial
+   * weight, then what they have told us about themselves. Putting personalization last
+   * means it reorders within what the editors and the journey already decided rather than
+   * over them — a traveler cannot end up in a loop of their own past choices.
+   */
+  const affinities = affinitiesFrom(await readSignals(supabase), Date.now());
+  const experienceCards = withAffinity(
+    rankIfFitting(
+      experienceRows.map((row) => toExperienceCard(row, locale, [])),
+      fitting?.experiences,
+    ),
+    affinities,
   );
-  const placeCards = rankIfFitting(
-    placeRows.map((row) => toPlaceCard(row, locale)),
-    fitting?.places,
+  const placeCards = withAffinity(
+    rankIfFitting(
+      placeRows.map((row) => toPlaceCard(row, locale)),
+      fitting?.places,
+    ),
+    affinities,
   );
 
   return {
@@ -1071,6 +1096,18 @@ async function journeyFit(
   );
 
   return { experiences, places };
+}
+
+/** Reorders by the traveler's own signals and hands each card its reason. */
+function withAffinity<T extends { id: string; because?: ShownReason | null }>(
+  cards: T[],
+  affinities: Map<string, Affinity>,
+): T[] {
+  if (affinities.size === 0) return cards;
+  return rankByAffinity(cards, (card) => card.id, affinities).map((ranked) => ({
+    ...ranked.item,
+    because: ranked.because,
+  }));
 }
 
 function rankIfFitting<T extends { id: string }>(

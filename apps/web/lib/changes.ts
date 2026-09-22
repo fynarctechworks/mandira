@@ -102,7 +102,17 @@ export async function decideChange(
   eventId: string,
   optionId: string | null,
   locale: string,
-): Promise<{ applied: ItemChange[]; outcome: "applied" | "kept"; days: number[] } | null> {
+): Promise<{
+  applied: ItemChange[];
+  outcome: "applied" | "kept";
+  days: number[];
+  /**
+   * What the traveler explicitly said by answering (PRD-ACCT-004). Computed here, where
+   * the card and the items it names are both in hand — after the decision the removed
+   * items are gone, so the route could not work this out for itself.
+   */
+  signals: DecisionSignal[];
+} | null> {
   const event = mustMaybe(
     await supabase
       .from("journey_change_events")
@@ -130,7 +140,20 @@ export async function decideChange(
       "journey_change_events update",
     );
 
-    return { applied: [], outcome: "kept", days: [] };
+    /*
+     * Keeping things as they are is an answer about the items the card offered to remove.
+     * The journey is read for it because an entity id, not an item id, is what ranks a
+     * future list — and this branch has no other reason to read it.
+     */
+    const kept = offeredForRemoval(card);
+    const detail = kept.length > 0 ? await getJourney(supabase, journeyId, locale) : null;
+
+    return {
+      applied: [],
+      outcome: "kept",
+      days: [],
+      signals: signalsFor(kept, detail?.items ?? [], "item_kept"),
+    };
   }
 
   const index = card.options.findIndex((option) => option.id === optionId);
@@ -173,7 +196,55 @@ export async function decideChange(
     ),
   ];
 
-  return { applied: appliedChanges, outcome: "applied", days };
+  return {
+    applied: appliedChanges,
+    outcome: "applied",
+    days,
+    // `detail.items` is the plan BEFORE the option was applied, so a removed item is
+    // still there to name.
+    signals: signalsFor(
+      appliedChanges.filter((change) => change.op === "remove").map((change) => change.itemId),
+      detail.items,
+      "item_removed",
+    ),
+  };
+}
+
+/** One thing a traveler said by answering a Change Card. */
+export type DecisionSignal = {
+  type: "item_kept" | "item_removed";
+  entityTable: "experiences" | "places";
+  entityId: string;
+};
+
+/**
+ * The items an option would have removed — the ones "keep as is" is an answer ABOUT.
+ *
+ * `removedItemIds` rather than the option's wording: the prose is written for a person and
+ * has been wrong before (the audit found ladder step e labelled as a reorder), while this
+ * is the engine's own account of what the option does.
+ */
+function offeredForRemoval(card: ChangeCard): string[] {
+  return [...new Set(card.options.flatMap((option) => option.removedItemIds))];
+}
+
+function signalsFor(
+  itemIds: string[],
+  items: readonly { id: string; experience_id?: string | null; place_id?: string | null }[],
+  type: DecisionSignal["type"],
+): DecisionSignal[] {
+  const signals: DecisionSignal[] = [];
+  for (const itemId of itemIds) {
+    const item = items.find((i) => i.id === itemId);
+    const entityId = item?.experience_id ?? item?.place_id;
+    if (!entityId) continue;
+    signals.push({
+      type,
+      entityTable: item?.experience_id ? "experiences" : "places",
+      entityId,
+    });
+  }
+  return signals;
 }
 
 /**

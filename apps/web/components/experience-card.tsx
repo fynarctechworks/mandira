@@ -34,6 +34,8 @@ export function ExperienceCard({
   const tPresent = useTranslations("present");
   const tPhrases = useTranslations("phrases");
   const tSearch = useTranslations("search");
+  // PRD-ACCT-004: the card is handed its reason and renders it; it never invents one.
+  const tWhy = useTranslations("because");
   const availability = availabilityLine(experience.availability, locale, tPresent);
   const duration = durationLabel(experience.durationLikelyMinutes, tPresent);
   const booking = bookingLine(
@@ -47,6 +49,11 @@ export function ExperienceCard({
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4">
       {experience.fitsJourney ? (
         <p className="text-caption font-medium text-primary-text">{tSearch("fits_journey")}</p>
+      ) : null}
+      {experience.because ? (
+        <p className="text-caption text-text-secondary">
+          {tWhy(experience.because, { name: experience.name.text })}
+        </p>
       ) : null}
       <div className="flex flex-col gap-1">
         <h3 className="text-h3">

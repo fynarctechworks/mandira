@@ -7,6 +7,7 @@ import { withApi } from "../../../../../../lib/api";
 import { getJourney } from "../../../../../../lib/journeys";
 import { resyncNotifications } from "../../../../../../lib/notifications";
 import { rescheduleDays } from "../../../../../../lib/replan";
+import { recordSignal } from "../../../../../../lib/signals";
 
 /**
  * Item mutations (TRD §5.2, PRD-PLAN-003).
@@ -108,6 +109,22 @@ export const PATCH = withApi({
      * an hour on the wrong date and the leave-by reminders followed. Both the day it left
      * and the day it joined are rescheduled; a note moves nothing.
      */
+    /*
+     * PRD-ACCT-004. Setting a tier is the clearest thing a traveler ever says about what
+     * matters to them, so it is recorded — and nothing else here is. Best-effort: the
+     * retier is what they asked for, and a ranking nicety must not be able to fail it.
+     */
+    if (input.tier !== undefined && user) {
+      await recordSignal(supabase, {
+        userId: user.id,
+        type: "tier_set",
+        entityTable: item.experience_id ? "experiences" : "places",
+        entityId: item.experience_id ?? item.place_id,
+        journeyId,
+        value: { tier: input.tier },
+      });
+    }
+
     const onTheClock =
       input.dayIndex !== undefined ||
       input.preferredWindowStart !== undefined ||

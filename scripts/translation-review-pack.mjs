@@ -46,6 +46,7 @@ const WHERE = {
   advisoryNotice: "A notice about something affecting a destination right now",
   api: "What the app says back when a request does not work",
   boundary: "The screen shown when something in the app breaks",
+  because: 'Why a suggestion is where it is — "Because you protected X last time"',
   change: "Change Cards — what we offer when a plan stops working",
   common: "Buttons and words that appear on every screen",
   completeJourney: "Finishing a journey and looking back on it",
