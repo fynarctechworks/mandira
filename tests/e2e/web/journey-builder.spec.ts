@@ -202,8 +202,13 @@ test.describe("Editing", () => {
     const journeyId = await saveJourney(page);
     await page.goto(`/en/journeys/${journeyId}`);
 
-    // PRD-PLAN-005: buffers are visible AND editable.
+    // PRD-PLAN-005: buffers are visible AND editable — behind "Edit this stop", which is
+    // folded away so a day of five stops can be read on a phone (design review).
     const buffer = page.locator("select[id^='buffer-']").first();
+    await expect(buffer).toBeHidden();
+
+    await page.locator("summary").filter({ hasText: "Edit this stop" }).first().click();
+    await expect(buffer).toBeVisible();
     await buffer.selectOption("45");
 
     await expect(page.getByText(/45 min to get there/).first()).toBeVisible();

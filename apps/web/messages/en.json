@@ -966,7 +966,8 @@
     "after_save": "Save order",
     "note_label": "Note",
     "note_placeholder": "For example: carry the pooja items",
-    "note_save": "Save note"
+    "note_save": "Save note",
+    "edit_label": "Edit this stop"
   },
   "present": {
     "whenever_open": "Whenever the place is open",

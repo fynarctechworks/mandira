@@ -656,7 +656,8 @@
     "after_save": "क्रम सहेजें",
     "note_label": "नोट",
     "note_placeholder": "जैसे: पूजा का सामान साथ रखें",
-    "note_save": "नोट सहेजें"
+    "note_save": "नोट सहेजें",
+    "edit_label": "इस पड़ाव को बदलें"
   },
   "present": {
     "whenever_open": "जब भी जगह खुली हो",
