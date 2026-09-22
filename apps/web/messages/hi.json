@@ -295,7 +295,8 @@
     "not_recorded": "दर्ज नहीं है",
     "not_scheduled": "समय तय नहीं",
     "something_you_added": "आपकी जोड़ी हुई चीज़",
-    "free_time": "खाली समय"
+    "free_time": "खाली समय",
+    "loading": "लोड हो रहा है"
   },
   "signIn": {
     "title": "अपनी यात्रा रखें",

@@ -605,7 +605,8 @@
     "not_recorded": "Not recorded",
     "not_scheduled": "Not scheduled",
     "something_you_added": "Something you added",
-    "free_time": "Free time"
+    "free_time": "Free time",
+    "loading": "Loading"
   },
   "signIn": {
     "title": "Keep your journey",

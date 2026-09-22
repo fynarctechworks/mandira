@@ -42,6 +42,25 @@ export default defineConfig({
   use: { trace: "on-first-retry" },
   projects: [
     /*
+     * TRD §9's budgets (TRD-PERF-001, PRD-PLAN-009). Excluded from every other project by
+     * their `testMatch`, and run only by `pnpm perf`, which passes `--project=perf`.
+     *
+     * Its own project because these are wall-clock measurements: run beside forty other
+     * tests competing for the same four cores, the number describes the laptop rather than
+     * the product. `pnpm perf` also sets workers to 1 for the same reason.
+     */
+    {
+      name: "perf",
+      use: {
+        ...devices["Pixel 5"],
+        baseURL: `http://localhost:${WEB_PORT}`,
+        storageState: WEB_STORAGE_STATE,
+      },
+      testMatch: /perf[\\/].*\.spec\.ts/,
+      dependencies: ["web-setup"],
+    },
+
+    /*
      * Most traveler screens are guest-first, so this project signs in to NOTHING — that is
      * the state a first-time visitor arrives in, and testing it any other way would miss
      * every guest-facing path.

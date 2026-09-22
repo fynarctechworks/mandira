@@ -295,7 +295,8 @@
     "not_recorded": "నమోదు కాలేదు",
     "not_scheduled": "సమయం నిర్ణయించలేదు",
     "something_you_added": "మీరు జోడించినది",
-    "free_time": "ఖాళీ సమయం"
+    "free_time": "ఖాళీ సమయం",
+    "loading": "లోడ్ అవుతోంది"
   },
   "signIn": {
     "title": "మీ యాత్రను ఉంచుకోండి",

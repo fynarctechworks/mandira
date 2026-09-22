@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { getI18n } from "@mandhira/i18n";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { DraftRecovery } from "../../../components/draft-recovery";
-import { listJourneys } from "../../../lib/journeys";
-import { webSupabase } from "../../../lib/supabase";
+import { DraftRecovery } from "../../../../components/draft-recovery";
+import { listJourneys } from "../../../../lib/journeys";
+import { webSupabase } from "../../../../lib/supabase";
 
 /**
  * The traveler's journeys.

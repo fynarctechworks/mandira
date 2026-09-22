@@ -98,6 +98,8 @@ test.describe("The Prepare checklist", () => {
     // Editing the journey regenerates the checklist. The engine's stable ids are what
     // stop that regeneration from quietly unticking everything the traveler has done.
     await page.goto(`/en/journeys/${journeyId}`);
+    // The stop's controls fold away so a day can be read (D-212), so open one first.
+    await page.locator("summary").filter({ hasText: "Edit this stop" }).first().click();
     await page
       .getByRole("combobox", { name: "Time to leave before this" })
       .first()
