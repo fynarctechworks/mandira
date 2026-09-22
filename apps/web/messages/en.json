@@ -617,7 +617,9 @@
     "check_email": "Check your email",
     "sent": "We've sent a link to {email}. Opening it on this device signs you in.",
     "rate_limited": "That's a few links in a short time. Please wait a little and try again.",
-    "not_sent": "We couldn't send that link just now. Please try again in a moment."
+    "not_sent": "We couldn't send that link just now. Please try again in a moment.",
+    "adult_confirm": "I am 18 or older. Mandhira accounts are for adults; you can add children to your party as travellers.",
+    "privacy_link": "What we collect, and who to contact"
   },
   "journeysList": {
     "title": "Your journeys",
@@ -1057,5 +1059,16 @@
     "visible": "Travelers see this page now.",
     "hidden": "Travelers cannot see this yet. It appears once it is published and a person has reviewed its critical details.",
     "only_ops": "Only people in Ops can open this page."
+  },
+  "privacy": {
+    "title": "Your information",
+    "intro": "What Mandhira keeps, why it keeps it, and how to reach us about it. Your journeys and who you travel with are yours; we never share them with the people who maintain our content.",
+    "consent_heading": "What you are agreeing to",
+    "policy_heading": "Privacy policy",
+    "grievance_heading": "Who to contact",
+    "not_published": "This has not been published yet. Until it is, no account can be created on this app.",
+    "rights_heading": "What you can do right now",
+    "rights_body": "You can download everything we hold about you as a file, and you can delete your account. Deletion removes your journeys within 30 days, and you can cancel it at any point before that.",
+    "rights_link": "Go to your profile"
   }
 }

@@ -1720,6 +1720,30 @@ export type Database = {
           },
         ]
       }
+      legal_notices: {
+        Row: {
+          body_i18n: Json
+          created_at: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body_i18n?: Json
+          created_at?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body_i18n?: Json
+          created_at?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       live_feed_configs: {
         Row: {
           config: Json
@@ -2283,6 +2307,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          adult_confirmed_at: string | null
           created_at: string
           deleted_at: string | null
           display_name: string | null
@@ -2294,6 +2319,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          adult_confirmed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -2305,6 +2331,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          adult_confirmed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -4128,6 +4155,7 @@ export type Database = {
               error: true
             } & "the function public.latitude with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
           }
+      legal_notices_ready: { Args: never; Returns: boolean }
       longitude:
         | {
             Args: { "": Database["public"]["Tables"]["destinations"]["Row"] }

@@ -34,11 +34,29 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(
       `${origin}/?message=That+link+has+expired.+Please+request+a+new+one.`,
     );
+  }
+
+  /*
+   * PRD-PRIV-004: record that the account holder confirmed they are 18 or older.
+   *
+   * Here rather than at the request, because this is the first moment a profile row
+   * exists. Reaching this line means the link came from `/api/auth/magic-link`, which
+   * refuses to send one without the confirmation — so holding a working link IS the
+   * confirmation. Stamped once: a traveler signing in again is not asked to re-consent,
+   * and re-stamping would lose when they first told us.
+   */
+  const userId = data.user?.id;
+  if (userId) {
+    await supabase
+      .from("profiles")
+      .update({ adult_confirmed_at: new Date().toISOString() })
+      .eq("id", userId)
+      .is("adult_confirmed_at", null);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

@@ -16,8 +16,12 @@ select bag_eq(
         and c.relkind = 'r'
         and has_table_privilege('anon', c.oid, p.priv) $$,
   $$ values ('locales:select'), ('feature_flags:select'), ('entity_media:select'),
-            ('analytics_events:insert') $$,
-  'anon holds table privileges on exactly four tables, and no more');
+            ('analytics_events:insert'),
+            -- 0054: the consent notice and grievance contact. Deliberately public — a
+            -- notice a person cannot read before signing in is not a notice (PRD-PRIV-005).
+            -- The table holds no personal data and only an admin can write it.
+            ('legal_notices:select') $$,
+  'anon holds table privileges on exactly five tables, and no more');
 
 select is_empty(
   $$ select c.relname

@@ -21,6 +21,13 @@ type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message
 export function SignInForm({ next }: { next: string }) {
   const t = useTranslations("signIn");
   const [email, setEmail] = useState("");
+  /*
+   * PRD-PRIV-004. Unticked to begin with and required to submit: a pre-ticked box is not a
+   * confirmation of anything, and under DPDP a consent that was never actively given is
+   * not consent. The server refuses the request without it too (0054) — this is the
+   * courtesy, that is the control.
+   */
+  const [adult, setAdult] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   async function sendMagicLink(event: React.FormEvent) {
@@ -30,7 +37,7 @@ export function SignInForm({ next }: { next: string }) {
     const response = await fetch("/api/auth/magic-link", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, next }),
+      body: JSON.stringify({ email, next, adult }),
     }).catch(() => null);
     const payload = response ? await response.json().catch(() => null) : null;
 
@@ -73,7 +80,20 @@ export function SignInForm({ next }: { next: string }) {
         className="min-h-11 rounded-lg border border-border bg-bg-surface px-3 text-body"
       />
 
-      <Button type="submit" fullWidth disabled={status.kind === "sending"}>
+      <label htmlFor="adult" className="flex items-start gap-3 text-body-sm">
+        <input
+          id="adult"
+          name="adult"
+          type="checkbox"
+          required
+          checked={adult}
+          onChange={(event) => setAdult(event.target.checked)}
+          className="mt-0.5 size-5 shrink-0 rounded border-border accent-brand-primary"
+        />
+        <span className="text-text-secondary">{t("adult_confirm")}</span>
+      </label>
+
+      <Button type="submit" fullWidth disabled={status.kind === "sending" || !adult}>
         {status.kind === "sending" ? t("sending") : t("send")}
       </Button>
 

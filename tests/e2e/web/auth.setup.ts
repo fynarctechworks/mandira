@@ -58,6 +58,8 @@ setup("authenticate as a third traveler", async ({ page }) => {
 async function signIn(page: Page, email: string, storageState: string) {
   await page.goto("/en/sign-in");
   await page.getByLabel("Your email").fill(email);
+  // PRD-PRIV-004: no account without this, so signing in means ticking it (0054).
+  await page.getByLabel(/I am 18 or older/i).check();
   await page.getByRole("button", { name: /Email me a link/i }).click();
   await page.getByRole("heading", { name: "Check your email" }).waitFor();
 

@@ -17,12 +17,36 @@ import { appOrigin, hashEmail, safeNext } from "../../../../lib/magic-link";
 const schema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   next: z.string().max(500).optional(),
+  /*
+   * PRD-PRIV-004: Mandhira has no under-18 accounts. A literal `true` rather than a
+   * boolean, so an omitted or false value is refused by the schema instead of quietly
+   * creating the account it forbids. The confirmation is stamped on the profile at
+   * `/auth/callback` (0054), which is the first moment a user row exists to stamp.
+   */
+  adult: z.literal(true),
 });
 
 export const POST = withApi({
   schema,
   rateLimit: "auth_magic_link",
   handler: async ({ input, request, supabase }) => {
+    /*
+     * PRD-PRIV-005. Consent to nothing is not consent.
+     *
+     * Until an admin has published the notice and the grievance contact (0054), there is
+     * no lawful basis to open an account, so we do not open one. The privacy screen tells
+     * a traveler the same thing in the same words, and the Ops screen says which notice is
+     * missing — nobody has to guess why sign-in is closed.
+     */
+    const { data: ready } = await supabase.rpc("legal_notices_ready");
+    if (ready !== true) {
+      throw new ApiError(
+        // 403: nothing failed — the operation is simply not permitted in this state.
+        "forbidden",
+        "Signing in is not open yet, because we have not published what you would be agreeing to.",
+      );
+    }
+
     const perAddress = await rateLimit(
       createServiceRoleSupabase(),
       "auth_magic_link",

@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import Link from "next/link";
 
 import { SignInForm } from "./sign-in-form";
 
@@ -40,6 +41,17 @@ export default async function SignInPage({
       <SignInForm next={safeNext(next, locale)} />
 
       <p className="text-caption text-text-secondary">{t("email_use")}</p>
+
+      {/*
+        PRD-PRIV-005: the notice has to be reachable BEFORE consenting, so it sits on the
+        screen where consent is given rather than behind the account it creates.
+      */}
+      <Link
+        href={`/${locale}/privacy`}
+        className="focus-ring flex min-h-11 items-center self-start text-body-sm font-medium text-brand-primary-text underline"
+      >
+        {t("privacy_link")}
+      </Link>
     </main>
   );
 }

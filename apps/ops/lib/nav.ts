@@ -187,6 +187,19 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/team",
     keywords: ["team", "grant", "revoke", "feature flags"],
   },
+  /*
+   * Not a PRD §5 screen — that list ends at O22. PRD-PRIV-005 needs a consent notice and a
+   * named grievance contact, and both are text the company publishes rather than code, so
+   * they need somewhere to be published from (0054). Numbered after the PRD's own so the
+   * §5 map stays a map of §5.
+   */
+  {
+    id: "O23",
+    label: "Legal notices",
+    section: "admin",
+    href: "/legal",
+    keywords: ["dpdp", "consent", "grievance", "privacy", "contact"],
+  },
 ];
 
 /** A screen that has actually been built, so `href` is guaranteed present. */
