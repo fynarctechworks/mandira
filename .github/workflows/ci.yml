@@ -89,7 +89,7 @@ jobs:
           }
           probe web 3986
           probe ops 3987 NEXT_PUBLIC_TRAVELER_APP_URL=http://localhost:3986
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-traces
