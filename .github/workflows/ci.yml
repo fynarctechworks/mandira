@@ -50,9 +50,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # Pinned, not `latest`: the version developers run locally (npx supabase@2.117.0), so a
+      # CLI release cannot change what CI checks between two identical commits.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
       - run: pnpm install --frozen-lockfile
       - name: Start local Supabase with seed data
         run: supabase start && supabase db reset
@@ -102,9 +104,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      # Pinned, not `latest`: the version developers run locally (npx supabase@2.117.0), so a
+      # CLI release cannot change what CI checks between two identical commits.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
       # `db reset` proves the migrations apply cleanly to an empty database —
       # the same guarantee production gets, since migrations are forward-only (D-015).
       - name: Start local Supabase

@@ -84,9 +84,11 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      # Pinned, not `latest`: the version developers run locally (npx supabase@2.117.0), so a
+      # CLI release cannot change what CI checks between two identical commits.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
 
       - name: Link the production project
         env:
