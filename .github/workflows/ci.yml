@@ -5,6 +5,11 @@ on:
   push:
     branches: [main]
 
+# The job token reads packages so `docker login ghcr.io` can pull signed in; nothing writes.
+permissions:
+  contents: read
+  packages: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -56,15 +61,11 @@ jobs:
         with:
           version: 2.117.0
       - run: pnpm install --frozen-lockfile
+      # Signed-in pulls from ghcr.io: anonymous ones hit its rate limit (toomanyrequests).
+      - name: Sign in to the container registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - name: Start local Supabase with seed data
-        run: |
-          supabase start 2>&1 | tee /tmp/supabase-start.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=supabase start::$(tail -c 2500 /tmp/supabase-start.log | tr '\n' ' ')"
-            exit "$status"
-          fi
-          supabase db reset
+        run: bash scripts/ci-supabase-start.sh && supabase db reset
       # The apps read their Supabase endpoint and keys from the environment. Locally these
       # live in .env.local; here they come from the stack that was just started.
       - name: Export local Supabase environment
@@ -118,15 +119,11 @@ jobs:
           version: 2.117.0
       # `db reset` proves the migrations apply cleanly to an empty database —
       # the same guarantee production gets, since migrations are forward-only (D-015).
-      # On failure the CLI's own last words go to an annotation, readable without the raw log.
+      # Signed-in pulls from ghcr.io: anonymous ones hit its rate limit (toomanyrequests).
+      - name: Sign in to the container registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - name: Start local Supabase
-        run: |
-          supabase start 2>&1 | tee /tmp/supabase-start.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=supabase start::$(tail -c 2500 /tmp/supabase-start.log | tr '\n' ' ')"
-            exit "$status"
-          fi
+        run: bash scripts/ci-supabase-start.sh
       - name: Apply migrations from scratch
         run: supabase db reset
       # Scoped to `public`: the extensions schema carries PostGIS's own pre-existing
