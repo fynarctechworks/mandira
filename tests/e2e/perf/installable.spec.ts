@@ -56,11 +56,24 @@ test.describe("TRD-PERF-001 — the app is installable", () => {
   }) => {
     await page.goto("/en", { waitUntil: "load" });
 
-    const registered = await page.evaluate(async () => {
-      if (!("serviceWorker" in navigator)) return false;
-      const registration = await navigator.serviceWorker.getRegistration();
-      return Boolean(registration?.active || registration?.installing || registration?.waiting);
-    });
+    /*
+     * Polled, not read once. The app registers its worker a moment AFTER the load event,
+     * so a single read straight after load was a race — it passed twice and failed once on
+     * the same code. Ten seconds is far longer than registration takes; a worker that has
+     * not appeared by then is genuinely missing, which is the thing this checks.
+     */
+    const registered = await page
+      .waitForFunction(
+        async () => {
+          if (!("serviceWorker" in navigator)) return false;
+          const registration = await navigator.serviceWorker.getRegistration();
+          return Boolean(registration?.active || registration?.installing || registration?.waiting);
+        },
+        undefined,
+        { timeout: 10_000 },
+      )
+      .then(() => true)
+      .catch(() => false);
 
     expect(registered, "no service worker: no offline, and no install prompt").toBe(true);
   });

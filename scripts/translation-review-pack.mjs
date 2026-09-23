@@ -45,6 +45,7 @@ const WHERE = {
   addToJourney: "Adding a place or experience to a trip",
   advisoryNotice: "A notice about something affecting a destination right now",
   api: "What the app says back when a request does not work",
+  availabilityCalendar: "The next two weeks of an experience, day by day, on its own page",
   boundary: "The screen shown when something in the app breaks",
   because: 'Why a suggestion is where it is — "Because you protected X last time"',
   change: "Change Cards — what we offer when a plan stops working",
@@ -116,6 +117,7 @@ const WHERE = {
   trustBadge: "The word on a badge: verified, verified earlier, check locally",
   trustSheet: "The panel that opens from a badge and names the source",
   update: "Telling a traveler a new version of the app is ready",
+  voiceInput: "Speaking a journey instead of typing it, and where the speech goes",
   worstCase: "What the plan looks like if everything runs late",
 };
 

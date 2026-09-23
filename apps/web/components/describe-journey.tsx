@@ -17,6 +17,7 @@ import {
   type Pace,
 } from "../lib/brief-to-preview";
 import type { IntentExperience, IntentResult } from "../lib/intent";
+import { VoiceInput } from "./voice-input";
 
 type Destination = { id: string; slug: string; name: string };
 type Extracted = Extract<IntentResult, { status: "extracted" }>;
@@ -153,6 +154,20 @@ export function DescribeJourney({
       <p id={hintId} className="text-caption text-text-secondary">
         {t("input_hint")}
       </p>
+
+      {/*
+        PRD §5 A07's mic. What is heard is ADDED to the box above, where it can be read and
+        corrected before anything is sent — speaking is another way of typing, not a way
+        around reviewing what Mandhira understood.
+      */}
+      <VoiceInput
+        locale={locale}
+        onText={(heard) =>
+          setText((current) =>
+            (current.trim() ? `${current.trimEnd()} ${heard}` : heard).slice(0, 1000),
+          )
+        }
+      />
 
       {problem ? (
         <p role="alert" className="text-body-sm text-status-broken">

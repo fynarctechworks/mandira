@@ -15,6 +15,7 @@ import { readSignals } from "./signals";
 import { webSupabase } from "./supabase";
 import type { TrustEntry, TrustMap } from "./trust";
 import { nextOccurrence, todayIn, type NextOccurrence } from "./next-occurrence";
+import { availabilityCalendar, type CalendarDay } from "./availability-calendar";
 
 /*
  * Re-exported so a server component has one import for the whole read layer. The
@@ -654,6 +655,8 @@ export type ExperienceDetail = ExperienceCard & {
    * timing is about that timing, and not borrowed from whoever verified the booking note.
    */
   availabilityTrust: TrustEntry | undefined;
+  /** The next fortnight, day by day (PRD §5 A06), from the engine's own resolver. */
+  calendar: CalendarDay[];
   /** Every source behind the page and the oldest confirmation, for the footer (PRD F9). */
   sources: { name: string; tierLabel: string }[];
   oldestVerifiedAt: string | null;
@@ -725,7 +728,7 @@ export async function getExperienceDetail(
 
   if (!data?.id) return null;
 
-  const [availabilityResult, placeResult] = await Promise.all([
+  const [availabilityResult, placeResult, rules] = await Promise.all([
     supabase
       .from("v_published_availability_rules")
       .select("experience_id, kind, daily_times, trust")
@@ -733,10 +736,13 @@ export async function getExperienceDetail(
     data.place_id
       ? supabase
           .from("v_published_places")
-          .select("slug, name_i18n")
+          .select("slug, name_i18n, opening_schedule")
           .eq("id", data.place_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    // The full rules, for the calendar. The same helper the search filter uses, so the
+    // calendar and "available on my dates" read availability identically.
+    availabilityRulesFor(supabase, [data.id as string]),
   ]);
 
   const availability = mustList(availabilityResult, "v_published_availability_rules");
@@ -744,8 +750,22 @@ export async function getExperienceDetail(
 
   const windows = groupAvailability(availability).get(data.id as string) ?? [];
 
+  /*
+   * From today in India, which is where every launch destination is. A traveler abroad
+   * planning ahead still wants the temple's dates, not their own — a darshan closed on a
+   * Tuesday is closed on the temple's Tuesday.
+   */
+  const calendar = availabilityCalendar({
+    rules,
+    openingSchedule:
+      ((place.data as { opening_schedule?: unknown } | null)?.opening_schedule as
+        OpeningSchedule | null | undefined) ?? null,
+    from: todayIn("Asia/Kolkata"),
+  });
+
   return {
     ...toExperienceCard(data, locale, windows),
+    calendar,
     destinationSlug,
     description: text(data.description_i18n, locale),
     eligibility: text(data.eligibility_i18n, locale),
@@ -1585,13 +1605,15 @@ export async function getExperiencePreview(
       supabase.rpc("entity_trust", { p_entity_table: "experiences", p_entity_id: id }),
       supabase
         .from("availability_rules")
-        .select("id, experience_id, kind, daily_times")
+        .select(
+          "id, experience_id, kind, daily_times, weekly_pattern, date_start, date_end, calendar_dates, priority, valid_from, valid_to",
+        )
         .eq("experience_id", id)
         .order("priority", { ascending: false }),
       data.place_id
         ? supabase
             .from("places")
-            .select("slug, name_i18n")
+            .select("slug, name_i18n, opening_schedule")
             .eq("id", data.place_id)
             .is("deleted_at", null)
             .maybeSingle()
@@ -1633,6 +1655,18 @@ export async function getExperiencePreview(
   return {
     experience: {
       ...card,
+      /*
+       * The same calendar the published page shows, computed from the DRAFT rules — which
+       * is the point of preview-as-app: an editor who changes a weekly pattern sees the
+       * fortnight a traveler will see, before it is published.
+       */
+      calendar: availabilityCalendar({
+        rules: rules.map((row) => toAvailabilityRule(row as AvailabilityRuleRow)),
+        openingSchedule:
+          ((place as { opening_schedule?: unknown } | null)?.opening_schedule as
+            OpeningSchedule | null | undefined) ?? null,
+        from: todayIn("Asia/Kolkata"),
+      }),
       destinationSlug: mustMaybe(destination, "destinations")?.slug ?? "",
       description: text(data.description_i18n, locale),
       eligibility: text(data.eligibility_i18n, locale),

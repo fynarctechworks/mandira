@@ -294,3 +294,32 @@ async function itemsOf(
 
   return (await response.json()).data.items;
 }
+
+/**
+ * PRD-LIVE-005's machine-checkable half: "What / when / where in ≤ 5 s."
+ *
+ * Five seconds is a person's reading time, and `docs/USABILITY_STUDIES.md` measures that.
+ * What a test can prove is that the answer is ON the first screen — a traveler cannot read
+ * in five seconds what is below the fold on a Pixel 5. So whatever Live leads with, it has
+ * to fit in the first viewport without scrolling.
+ */
+test.describe("PRD-LIVE-005 — the answer is on the first screen", () => {
+  test("what to do now, or when the day starts, sits entirely above the fold", async ({ page }) => {
+    const journeyId = await saveJourney(page, todayInIndia());
+    await page.goto(`/en/journeys/${journeyId}/live`);
+
+    // Whichever Live is showing: the NOW card, or the line saying when the day begins.
+    const lead = page
+      .getByRole("region", { name: /Now/ })
+      .or(page.getByRole("heading", { name: /hasn't started yet|Today is complete/ }))
+      .first();
+    await expect(lead).toBeVisible();
+
+    const box = await lead.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box, "the lead element has no box").not.toBeNull();
+    expect(viewport).not.toBeNull();
+    // Entirely within the first screen: its bottom edge above the fold.
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+  });
+});

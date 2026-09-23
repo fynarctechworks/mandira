@@ -865,7 +865,11 @@
     "record": "Record",
     "buffer": "{minutes} min to get there",
     "stale_note": "Last confirmed {months, plural, one {# month} other {# months}} ago — worth checking locally.",
-    "stale_dismiss": "Got it"
+    "stale_dismiss": "Got it",
+    "days_label": "Days of this journey",
+    "day_n": "Day {n}",
+    "day_empty": "Nothing is planned for this day yet — it is free.",
+    "day_empty_add": "Find something to add"
   },
   "record": {
     "complete_title": "Your journey is complete",
@@ -1111,5 +1115,25 @@
     "updated": "Saved. This phone has the latest version of your journey.",
     "not_updated": "Couldn't update just now. The copy already on this phone still works.",
     "offline_hint": "You're offline. The saved copy is working; connect to update it."
+  },
+  "availabilityCalendar": {
+    "title": "The next two weeks",
+    "available": "Available",
+    "reason": {
+      "not_on_this_date": "Not on this day",
+      "outside_windows": "Not on this day",
+      "closed": "Closed",
+      "on_request": "On request",
+      "no_rules": "Times not recorded",
+      "available": "Available"
+    }
+  },
+  "voiceInput": {
+    "speak": "Speak instead",
+    "stop": "Stop",
+    "listening": "Listening — say it the way you would tell a friend.",
+    "privacy": "Speaking sends what you say to your browser's speech service to turn it into text. It is added to the box above for you to check.",
+    "not_allowed": "The microphone isn't allowed for this site. You can type instead.",
+    "not_heard": "That didn't come through. Try again, or type it."
   }
 }

@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
         headers: securityHeaders({
           supabaseUrl: process.env["NEXT_PUBLIC_SUPABASE_URL"],
           isDev: process.env.NODE_ENV !== "production",
+          // PRD §5 A07's mic, on the traveler's own pages only (D-227). Ops keeps it denied.
+          microphone: "self",
         }),
       },
     ];

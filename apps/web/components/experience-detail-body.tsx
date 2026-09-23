@@ -1,5 +1,7 @@
 import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
+
+import { AvailabilityCalendar } from "./availability-calendar";
 import { getTranslations } from "next-intl/server";
 import type { ComponentProps, ReactNode } from "react";
 import { SourcesFooter } from "@mandhira/ui";
@@ -156,6 +158,8 @@ export async function ExperienceDetailBody({
           <FactRow label={tFields("how_long")} value={duration} />
           <FactRow label={tFields("queue")} value={experience.queueExpectation} />
         </dl>
+        {/* PRD §5 A06: the fortnight, day by day — "is it on while I am there?" */}
+        <AvailabilityCalendar days={experience.calendar} locale={locale} />
       </section>
 
       {experience.description.text ||

@@ -70,7 +70,7 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], baseURL: `http://localhost:${WEB_PORT}` },
       testMatch: /web[\\/].*\.spec\.ts/,
       testIgnore:
-        /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record|add-to-journey|profile|saved-places|reorder|health-sheet|preview)\.spec\.ts/,
+        /web[\\/](journey-builder|prepare|live|offline|changes|notifications|record|add-to-journey|profile|saved-places|reorder|health-sheet|preview|day-tabs)\.spec\.ts/,
     },
 
     // Signing a traveler in once, for the same reason the Ops setup exists: GoTrue
@@ -105,7 +105,7 @@ export default defineConfig({
         baseURL: `http://localhost:${WEB_PORT}`,
         storageState: WEB_STORAGE_STATE_C,
       },
-      testMatch: /web[\\/](add-to-journey|profile|reorder)\.spec\.ts/,
+      testMatch: /web[\\/](add-to-journey|profile|reorder|day-tabs)\.spec\.ts/,
       dependencies: ["web-setup"],
     },
 

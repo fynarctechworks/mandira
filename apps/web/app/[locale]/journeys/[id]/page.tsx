@@ -6,6 +6,7 @@ import { HealthPill, TierChip } from "@mandhira/ui";
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
 
 import { DayHealthSheet } from "../../../../components/day-health-sheet";
+import { DayPanel, DayTabs } from "../../../../components/day-tabs";
 import { ItemActions } from "../../../../components/item-actions";
 import { AdvisoryNotices } from "../../../../components/advisory-notices";
 import { getJourneyAdvisories } from "../../../../lib/knowledge";
@@ -17,6 +18,8 @@ import { StaleNote } from "../../../../components/stale-note";
 import { causeText, JourneyHealth, trustText } from "../../../../components/journey-health";
 import { journeyVersion } from "../../../../lib/journey-version";
 import { getJourney, toEngineJourney } from "../../../../lib/journeys";
+import { dayCountOf } from "../../../../lib/journey-types";
+import { todayIn } from "../../../../lib/next-occurrence";
 import { durationLabel } from "../../../../lib/present";
 import { staleNoteFor, staleNoteKey } from "../../../../lib/stale-note";
 import { webSupabase } from "../../../../lib/supabase";
@@ -125,8 +128,18 @@ export default async function JourneyPage({
       : [],
   );
   const engineJourney = toEngineJourney(journey);
-  const dayCount = Math.max(1, new Set(items.map((i) => i.day_index)).size);
-  const dayIndexes = [...new Set(items.map((i) => i.day_index))].sort((a, b) => a - b);
+  /*
+   * Every day of the journey, not every day that happens to have a stop on it.
+   *
+   * Both used to be counted from the ITEMS. So a three-day journey whose two stops were on
+   * day one showed one day — days two and three did not exist on screen — and the item
+   * editor's "Move to day" offered only day one, because it was handed the same count. A
+   * traveler could not move a stop onto a free day of their own journey. The journey's
+   * dates say how many days it has; `dayCountOf` falls back to the items only when a
+   * journey has no dates yet.
+   */
+  const dayCount = dayCountOf(journey, items);
+  const dayIndexes = Array.from({ length: dayCount }, (_, index) => index);
   const itemNames = Object.fromEntries(
     items.map((item) => [
       item.id,
@@ -224,156 +237,201 @@ export default async function JourneyPage({
         </Link>
       </div>
 
-      {dayIndexes.map((dayIndex) => {
-        const day = health.days.find((d) => d.dayIndex === dayIndex);
-        const date = dateForDay(engineJourney.start_date, dayIndex);
-        const dayLabel = new Intl.DateTimeFormat(locale, {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        }).format(new Date(`${date}T00:00:00Z`));
-        const causes = [
-          ...new Set((day?.causes ?? []).map((c) => causeText(t, c)).filter(Boolean)),
-        ];
-        const trust = [
-          ...new Set((day?.trustExposure ?? []).map((c) => trustText(t, c)).filter(Boolean)),
-        ];
+      {/*
+        PRD §5 A10: day tabs. Today first when the journey is under way — someone opening
+        their plan on day two wants day two, not the day they already finished.
+      */}
+      <DayTabs
+        label={t("journeyPage.days_label")}
+        initialDayIndex={(() => {
+          const today = todayIn(journey.timezone);
+          const running = dayIndexes.find(
+            (index) => dateForDay(engineJourney.start_date, index) === today,
+          );
+          return running ?? dayIndexes[0] ?? 0;
+        })()}
+        days={dayIndexes.map((index) => ({
+          dayIndex: index,
+          label: t("journeyPage.day_n", { n: index + 1 }),
+          date: new Intl.DateTimeFormat(locale, {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            timeZone: "UTC",
+          }).format(new Date(`${dateForDay(engineJourney.start_date, index)}T00:00:00Z`)),
+        }))}
+      >
+        {dayIndexes.map((dayIndex) => {
+          const day = health.days.find((d) => d.dayIndex === dayIndex);
+          const date = dateForDay(engineJourney.start_date, dayIndex);
+          const dayLabel = new Intl.DateTimeFormat(locale, {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }).format(new Date(`${date}T00:00:00Z`));
+          const causes = [
+            ...new Set((day?.causes ?? []).map((c) => causeText(t, c)).filter(Boolean)),
+          ];
+          const trust = [
+            ...new Set((day?.trustExposure ?? []).map((c) => trustText(t, c)).filter(Boolean)),
+          ];
 
-        return (
-          <section
-            key={dayIndex}
-            aria-labelledby={`day-${dayIndex}`}
-            className="flex flex-col gap-3"
-          >
-            {/* Wraps rather than squeezing: a long weekday in Telugu at 390px put the
+          return (
+            <DayPanel key={dayIndex} dayIndex={dayIndex}>
+              <section aria-labelledby={`day-${dayIndex}`} className="flex flex-col gap-3">
+                {/* Wraps rather than squeezing: a long weekday in Telugu at 390px put the
                 heading on three lines beside the health pill. */}
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <h2 id={`day-${dayIndex}`} className="min-w-0 text-h2">
-                {dayLabel}
-              </h2>
-              {day ? (
-                <div className="flex items-center gap-1">
-                  <HealthPill state={day.state} />
-                  <DayHealthSheet
-                    journeyId={journey.id}
-                    dayIndex={dayIndex}
-                    dayLabel={dayLabel}
-                    day={day}
-                    itemNames={itemNames}
-                    timeZone={engineJourney.timezone}
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            {causes.length > 0 || trust.length > 0 ? (
-              <ul className="flex flex-col gap-1 rounded-lg border border-border bg-bg-surface p-3">
-                {causes.map((text) => (
-                  <li key={text} className="text-body-sm">
-                    {text}
-                  </li>
-                ))}
-                {trust.map((text) => (
-                  <li key={text} className="text-body-sm text-text-secondary">
-                    {text}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            <ul className="flex flex-col gap-3">
-              {items
-                .filter((i) => i.day_index === dayIndex)
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .map((item, index, dayItems) => {
-                  const label = item.experience_id
-                    ? (labels.get(item.experience_id) ?? t("common.something_you_added"))
-                    : t("common.free_time");
-                  const duration = durationLabel(item.duration_likely_minutes ?? null, tPresent);
-
-                  return (
-                    <li
-                      key={item.id}
-                      className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex flex-col gap-1">
-                          <h3 className="text-h3">{label}</h3>
-                          <p className="text-caption text-text-secondary">
-                            {clock(
-                              item.planned_start_at,
-                              date,
-                              engineJourney.timezone,
-                              locale,
-                              t("common.not_scheduled"),
-                            )}
-                            {duration ? ` · ${duration}` : ""}
-                            {/* PRD-PLAN-005: the buffer is visible, not just editable. */}
-                            {item.buffer_minutes
-                              ? ` · ${t("journeyPage.buffer", { minutes: item.buffer_minutes })}`
-                              : ""}
-                          </p>
-                        </div>
-                        {/*
-                         * The engine speaks the database's lowercase enum; the design
-                         * system speaks PRD §12.1's displayed keywords. Mapped at the
-                         * boundary rather than bending either to the other.
-                         */}
-                        <TierChip
-                          tier={TIER_CHIP[item.tier]}
-                          label={tTier(`${item.tier}.label`)}
-                          readOnly
-                        />
-                      </div>
-
-                      {staleNotes.has(item.id) ? (
-                        <StaleNote
-                          storageKey={staleNoteKey(item.id, staleNotes.get(item.id)!)}
-                          text={t("journeyPage.stale_note", {
-                            months: staleNotes.get(item.id)!.months,
-                          })}
-                          dismissLabel={t("journeyPage.stale_dismiss")}
-                        />
-                      ) : null}
-
-                      {dayItems.length > 1 ? (
-                        <ReorderButtons
-                          journeyId={journey.id}
-                          dayIndex={item.day_index}
-                          orderedIds={dayItems.map((entry) => entry.id)}
-                          index={index}
-                          name={label}
-                        />
-                      ) : null}
-
-                      <ItemActions
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                  <h2 id={`day-${dayIndex}`} className="min-w-0 text-h2">
+                    {dayLabel}
+                  </h2>
+                  {day ? (
+                    <div className="flex items-center gap-1">
+                      <HealthPill state={day.state} />
+                      <DayHealthSheet
                         journeyId={journey.id}
-                        itemId={item.id}
-                        tier={item.tier}
-                        bufferMinutes={item.buffer_minutes ?? 15}
-                        dayIndex={item.day_index}
-                        dayCount={dayCount}
-                        preferredWindowStart={item.preferred_window_start ?? null}
-                        note={item.note ?? null}
-                        afterItemId={
-                          dependencies.find((dep) => dep.item_id === item.id)?.after_item_id ?? null
-                        }
-                        sameDay={dayItems
-                          .filter((other) => other.id !== item.id)
-                          .map((other) => ({
-                            id: other.id,
-                            label: other.experience_id
-                              ? (labels.get(other.experience_id) ?? t("common.something_you_added"))
-                              : t("common.free_time"),
-                          }))}
+                        dayIndex={dayIndex}
+                        dayLabel={dayLabel}
+                        day={day}
+                        itemNames={itemNames}
+                        timeZone={engineJourney.timezone}
                       />
-                    </li>
-                  );
-                })}
-            </ul>
-          </section>
-        );
-      })}
+                    </div>
+                  ) : null}
+                </div>
+
+                {causes.length > 0 || trust.length > 0 ? (
+                  <ul className="flex flex-col gap-1 rounded-lg border border-border bg-bg-surface p-3">
+                    {causes.map((text) => (
+                      <li key={text} className="text-body-sm">
+                        {text}
+                      </li>
+                    ))}
+                    {trust.map((text) => (
+                      <li key={text} className="text-body-sm text-text-secondary">
+                        {text}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                {/*
+                  A day with nothing on it is a real day of the journey, not an absence —
+                  a free day, or one still to plan. Said in words, with the way to add to
+                  it, rather than an empty box that looks like something failed to load.
+                */}
+                {items.every((i) => i.day_index !== dayIndex) ? (
+                  <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
+                    <p className="text-body-sm text-text-secondary">{t("journeyPage.day_empty")}</p>
+                    <Link
+                      href={`/${locale}/search`}
+                      className="focus-ring flex min-h-11 items-center self-start text-body-sm font-medium text-brand-primary-text"
+                    >
+                      {t("journeyPage.day_empty_add")}
+                    </Link>
+                  </div>
+                ) : null}
+
+                <ul className="flex flex-col gap-3">
+                  {items
+                    .filter((i) => i.day_index === dayIndex)
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((item, index, dayItems) => {
+                      const label = item.experience_id
+                        ? (labels.get(item.experience_id) ?? t("common.something_you_added"))
+                        : t("common.free_time");
+                      const duration = durationLabel(
+                        item.duration_likely_minutes ?? null,
+                        tPresent,
+                      );
+
+                      return (
+                        <li
+                          key={item.id}
+                          className="flex flex-col gap-2 rounded-lg border border-border bg-bg-surface p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col gap-1">
+                              <h3 className="text-h3">{label}</h3>
+                              <p className="text-caption text-text-secondary">
+                                {clock(
+                                  item.planned_start_at,
+                                  date,
+                                  engineJourney.timezone,
+                                  locale,
+                                  t("common.not_scheduled"),
+                                )}
+                                {duration ? ` · ${duration}` : ""}
+                                {/* PRD-PLAN-005: the buffer is visible, not just editable. */}
+                                {item.buffer_minutes
+                                  ? ` · ${t("journeyPage.buffer", { minutes: item.buffer_minutes })}`
+                                  : ""}
+                              </p>
+                            </div>
+                            {/*
+                             * The engine speaks the database's lowercase enum; the design
+                             * system speaks PRD §12.1's displayed keywords. Mapped at the
+                             * boundary rather than bending either to the other.
+                             */}
+                            <TierChip
+                              tier={TIER_CHIP[item.tier]}
+                              label={tTier(`${item.tier}.label`)}
+                              readOnly
+                            />
+                          </div>
+
+                          {staleNotes.has(item.id) ? (
+                            <StaleNote
+                              storageKey={staleNoteKey(item.id, staleNotes.get(item.id)!)}
+                              text={t("journeyPage.stale_note", {
+                                months: staleNotes.get(item.id)!.months,
+                              })}
+                              dismissLabel={t("journeyPage.stale_dismiss")}
+                            />
+                          ) : null}
+
+                          {dayItems.length > 1 ? (
+                            <ReorderButtons
+                              journeyId={journey.id}
+                              dayIndex={item.day_index}
+                              orderedIds={dayItems.map((entry) => entry.id)}
+                              index={index}
+                              name={label}
+                            />
+                          ) : null}
+
+                          <ItemActions
+                            journeyId={journey.id}
+                            itemId={item.id}
+                            tier={item.tier}
+                            bufferMinutes={item.buffer_minutes ?? 15}
+                            dayIndex={item.day_index}
+                            dayCount={dayCount}
+                            preferredWindowStart={item.preferred_window_start ?? null}
+                            note={item.note ?? null}
+                            afterItemId={
+                              dependencies.find((dep) => dep.item_id === item.id)?.after_item_id ??
+                              null
+                            }
+                            sameDay={dayItems
+                              .filter((other) => other.id !== item.id)
+                              .map((other) => ({
+                                id: other.id,
+                                label: other.experience_id
+                                  ? (labels.get(other.experience_id) ??
+                                    t("common.something_you_added"))
+                                  : t("common.free_time"),
+                              }))}
+                          />
+                        </li>
+                      );
+                    })}
+                </ul>
+              </section>
+            </DayPanel>
+          );
+        })}
+      </DayTabs>
     </main>
   );
 }

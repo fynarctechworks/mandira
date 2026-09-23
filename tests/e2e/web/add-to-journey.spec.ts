@@ -80,7 +80,10 @@ test.describe("Adding from an experience", () => {
     await expect(sheet.getByText("Added to your journey.")).toBeVisible();
 
     await sheet.getByRole("link", { name: "Open the journey" }).click();
-    await expect(page).toHaveURL(new RegExp(`/journeys/${journey.id}$`));
+    // Lands on the day it was added to (day index 1), not on the first day with the new
+    // stop hidden behind a tab (PRD §5 A10).
+    await expect(page).toHaveURL(new RegExp(`/journeys/${journey.id}#day-1$`));
+    await expect(page.getByRole("tab", { name: /Day 2/ })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("heading", { name: "Dawn Darshan (fixture)" })).toBeVisible();
 
     // Persisted, not just shown: the route now refuses the same experience again.

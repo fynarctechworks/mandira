@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { largestContentfulPaint, timeInPage, useReferenceDevice } from "./reference-device";
+import { report } from "./report";
 
 /**
  * TRD §9's Milestone 1 targets, measured (TRD-PERF-001, PRD-PLAN-009).
@@ -14,7 +15,7 @@ import { largestContentfulPaint, timeInPage, useReferenceDevice } from "./refere
  * artefact this requirement was asking for.
  */
 
-/** TRD §9, Milestone 1 column. */
+/** TRD §9, Milestone 1 column — asserted. */
 const BUDGET = {
   homeLcpMs: 3000,
   repeatTtiMs: 1500,
@@ -23,13 +24,13 @@ const BUDGET = {
   searchMs: 600,
 };
 
-function report(metric: string, measured: number, budget: number): void {
-  const verdict = measured <= budget ? "within" : "OVER";
-  // eslint-disable-next-line no-console -- the measurement IS the output of this suite.
-  console.log(
-    `  ${metric.padEnd(34)} ${Math.round(measured).toString().padStart(6)} ms  ${verdict} ${budget} ms`,
-  );
-}
+/** TRD §9, production column (TRD-PERF-002) — reported beside it. */
+const PRODUCTION = {
+  homeLcpMs: 2000,
+  repeatTtiMs: 1000,
+  routeTransitionMs: 200,
+  searchMs: 400,
+};
 
 test.describe("TRD §9 Milestone 1 budgets, on the reference device", () => {
   test("first load of Home, cold, over 4G", async ({ page }) => {
@@ -39,7 +40,7 @@ test.describe("TRD §9 Milestone 1 budgets, on the reference device", () => {
       const lcp = await largestContentfulPaint(page);
 
       expect(lcp, "the browser reported no LCP at all").not.toBeNull();
-      report("Home LCP (cold, 4G)", lcp!, BUDGET.homeLcpMs);
+      report("Home LCP (cold, 4G)", lcp!, BUDGET.homeLcpMs, PRODUCTION.homeLcpMs);
       expect(lcp!).toBeLessThanOrEqual(BUDGET.homeLcpMs);
     } finally {
       await restore();
@@ -59,7 +60,7 @@ test.describe("TRD §9 Milestone 1 budgets, on the reference device", () => {
       await page.locator("main").first().waitFor();
       const tti = Date.now() - started;
 
-      report("Home repeat load", tti, BUDGET.repeatTtiMs);
+      report("Home repeat load", tti, BUDGET.repeatTtiMs, PRODUCTION.repeatTtiMs);
       expect(tti).toBeLessThanOrEqual(BUDGET.repeatTtiMs);
     } finally {
       await restore();
@@ -88,7 +89,12 @@ test.describe("TRD §9 Milestone 1 budgets, on the reference device", () => {
         await page.waitForURL(/\/en\/journeys/);
       });
 
-      report("Route transition (client nav)", elapsed, BUDGET.routeTransitionMs);
+      report(
+        "Route transition (client nav)",
+        elapsed,
+        BUDGET.routeTransitionMs,
+        PRODUCTION.routeTransitionMs,
+      );
       expect(elapsed).toBeLessThanOrEqual(BUDGET.routeTransitionMs);
     } finally {
       await restore();
@@ -105,7 +111,7 @@ test.describe("TRD §9 Milestone 1 budgets, on the reference device", () => {
       const elapsed = Date.now() - started;
 
       expect(response.ok(), `search answered ${response.status()}`).toBe(true);
-      report("Search response", elapsed, BUDGET.searchMs);
+      report("Search response", elapsed, BUDGET.searchMs, PRODUCTION.searchMs);
       expect(elapsed).toBeLessThanOrEqual(BUDGET.searchMs);
     } finally {
       await restore();

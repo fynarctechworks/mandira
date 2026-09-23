@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { useReferenceDevice } from "./reference-device";
+import { report } from "./report";
 
 /**
  * PRD-PLAN-009: "3-day/12-item journey built + retiered ≤ 5 min mobile; Health updates
@@ -47,13 +48,8 @@ const MACHINE_BUDGET_MS = 90_000;
 /** PRD-PLAN-009's other half, measured through the API that serves the screen. */
 const HEALTH_BUDGET_MS = 500;
 
-function report(what: string, measured: number, budget: number): void {
-  const verdict = measured <= budget ? "within" : "OVER";
-  // eslint-disable-next-line no-console -- the measurement IS the output of this suite.
-  console.log(
-    `  ${what.padEnd(34)} ${Math.round(measured).toString().padStart(6)} ms  ${verdict} ${budget} ms`,
-  );
-}
+/** TRD §9's production column for health recompute (TRD-PERF-002), reported beside M1. */
+const HEALTH_PRODUCTION_MS = 300;
 
 async function addItem(page: Page, journeyId: string, experienceId: string, dayIndex: number) {
   const response = await page.request.post(`/api/journeys/${journeyId}/items`, {
@@ -100,7 +96,8 @@ test.describe("PRD-PLAN-009 — building a real journey on the reference device"
       await page.getByRole("heading", { level: 1 }).first().waitFor();
 
       const elapsed = Date.now() - started;
-      report("Build + re-tier (machine share)", elapsed, MACHINE_BUDGET_MS);
+      // The five minutes is the same promise at both milestones, so both columns are equal.
+      report("Build + re-tier (machine share)", elapsed, MACHINE_BUDGET_MS, MACHINE_BUDGET_MS);
       expect(elapsed).toBeLessThanOrEqual(MACHINE_BUDGET_MS);
     } finally {
       await restore();
@@ -126,7 +123,7 @@ test.describe("PRD-PLAN-009 — building a real journey on the reference device"
       }
 
       const worst = Math.max(...samples);
-      report("Add item → items + health (worst)", worst, HEALTH_BUDGET_MS);
+      report("Add item → items + health (worst)", worst, HEALTH_BUDGET_MS, HEALTH_PRODUCTION_MS);
       expect(worst).toBeLessThanOrEqual(HEALTH_BUDGET_MS);
     } finally {
       await restore();

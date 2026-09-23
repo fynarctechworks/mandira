@@ -101,11 +101,15 @@ export function contentSecurityPolicy({ supabaseUrl, isDev = false } = {}) {
 }
 
 /**
- * @param {{ supabaseUrl?: string | undefined, isDev?: boolean | undefined }} options
+ * @param {{
+ *   supabaseUrl?: string | undefined,
+ *   isDev?: boolean | undefined,
+ *   microphone?: "self" | "none" | undefined,
+ * }} options
  * @returns {{ key: string, value: string }[]}
  */
 export function securityHeaders(options = {}) {
-  const { isDev = false } = options;
+  const { isDev = false, microphone = "none" } = options;
 
   return [
     { key: "Content-Security-Policy", value: contentSecurityPolicy(options) },
@@ -133,14 +137,18 @@ export function securityHeaders(options = {}) {
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 
     /*
-     * Nothing in either app asks for a camera, a microphone or a location — including the
-     * Live screen, which hands navigation off to the traveler's own maps app rather than
-     * tracking them (D-106). Denying them outright means a future dependency cannot
-     * quietly start asking.
+     * Camera, location and payment are denied outright in both apps — including the Live
+     * screen, which hands navigation to the traveler's own maps app rather than tracking
+     * them (D-106). Denying them means a future dependency cannot quietly start asking.
+     *
+     * The MICROPHONE is the one exception, and only where asked for (D-227). PRD §5 A07
+     * puts a mic on the plan screen, so the traveler app passes `microphone: "self"`:
+     * its own pages may ask, no embedded frame may, and the browser's own permission
+     * prompt still stands between the page and the device. Ops never asks for it.
      */
     {
       key: "Permissions-Policy",
-      value: "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=()",
+      value: `camera=(), microphone=(${microphone === "self" ? "self" : ""}), geolocation=(), interest-cohort=(), payment=()`,
     },
   ];
 }

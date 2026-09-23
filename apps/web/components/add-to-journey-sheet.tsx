@@ -66,9 +66,12 @@ export function AddToJourneySheet({
   const [time, setTime] = useState("");
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const [added, setAdded] = useState<{ journeyId: string; health: HealthReport | null } | null>(
-    null,
-  );
+  const [added, setAdded] = useState<{
+    journeyId: string;
+    /** Which day it went on, so "Open the journey" lands on that day's tab (A10). */
+    dayIndex: number;
+    health: HealthReport | null;
+  } | null>(null);
 
   const chosen = journeys.find((journey) => journey.id === journeyId);
 
@@ -90,7 +93,7 @@ export function AddToJourneySheet({
     const payload = response ? await response.json().catch(() => ({ ok: false })) : { ok: false };
 
     if (payload.ok) {
-      setAdded({ journeyId, health: payload.data.health ?? null });
+      setAdded({ journeyId, dayIndex, health: payload.data.health ?? null });
     } else {
       setProblem(payload.error?.message ?? t("not_added"));
     }
@@ -123,7 +126,12 @@ export function AddToJourneySheet({
                 </p>
               ) : null}
               <Link
-                href={`/${locale}/journeys/${added.journeyId}`}
+                /*
+                  To the day it was added to. With day tabs (A10), opening the journey on
+                  day one after adding something to day two would show the traveler
+                  everything except the thing they just added.
+                */
+                href={`/${locale}/journeys/${added.journeyId}#day-${added.dayIndex}`}
                 className={cn(buttonVariants({ variant: "outline" }), "min-h-11 text-sm")}
               >
                 {t("open_journey")}
