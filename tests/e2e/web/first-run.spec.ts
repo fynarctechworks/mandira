@@ -57,6 +57,23 @@ test.describe("A01 — Welcome & language", () => {
     expect(indic.every((status) => status === "unloaded")).toBe(true);
   });
 
+  test("a Hindi page downloads Devanagari and not Telugu", async ({ page }) => {
+    // Hindi's danda and joiners sit inside the Telugu face's range as well; with Telugu
+    // first in the shared stack, every Hindi page fetched the Telugu font for punctuation.
+    await page.goto("/hi");
+    await page.waitForLoadState("networkidle");
+    const status = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const of = (script: string) =>
+        [...document.fonts]
+          .filter((face) => face.family.includes(`Noto Sans ${script}`))
+          .map((face) => face.status);
+      return { telugu: of("Telugu"), devanagari: of("Devanagari") };
+    });
+    expect(status.devanagari).toContain("loaded");
+    expect(status.telugu.every((value) => value === "unloaded")).toBe(true);
+  });
+
   test("a Telugu page still draws Telugu in its web font", async ({ page }) => {
     await page.goto("/te");
     await page.waitForLoadState("networkidle");
