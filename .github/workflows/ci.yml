@@ -57,7 +57,14 @@ jobs:
           version: 2.117.0
       - run: pnpm install --frozen-lockfile
       - name: Start local Supabase with seed data
-        run: supabase start && supabase db reset
+        run: |
+          supabase start 2>&1 | tee /tmp/supabase-start.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=supabase start::$(tail -c 2500 /tmp/supabase-start.log | tr '\n' ' ')"
+            exit "$status"
+          fi
+          supabase db reset
       # The apps read their Supabase endpoint and keys from the environment. Locally these
       # live in .env.local; here they come from the stack that was just started.
       - name: Export local Supabase environment
@@ -111,8 +118,15 @@ jobs:
           version: 2.117.0
       # `db reset` proves the migrations apply cleanly to an empty database —
       # the same guarantee production gets, since migrations are forward-only (D-015).
+      # On failure the CLI's own last words go to an annotation, readable without the raw log.
       - name: Start local Supabase
-        run: supabase start
+        run: |
+          supabase start 2>&1 | tee /tmp/supabase-start.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=supabase start::$(tail -c 2500 /tmp/supabase-start.log | tr '\n' ' ')"
+            exit "$status"
+          fi
       - name: Apply migrations from scratch
         run: supabase db reset
       # Scoped to `public`: the extensions schema carries PostGIS's own pre-existing
