@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { OfflineDownloads } from "../../../../../components/offline-downloads";
 import { PrepareList } from "../../../../../components/prepare-list";
 import { getPrepareChecklist } from "../../../../../lib/prepare";
 import { formatDate } from "../../../../../lib/present";
@@ -86,6 +87,13 @@ export default async function PreparePage({
       ) : (
         <PrepareList journeyId={id} groups={checklist.groups} dateLabels={dateLabels} />
       )}
+
+      {/*
+        PRD F11's Downloads section. Its own panel rather than a checklist row, because what
+        it reports — is this journey on the phone, how old is the copy, how big — is a fact
+        about the device, not a task the traveler ticks.
+      */}
+      <OfflineDownloads journeyId={id} locale={locale} />
 
       <Link
         href={`/${locale}/journeys/${id}/summary`}

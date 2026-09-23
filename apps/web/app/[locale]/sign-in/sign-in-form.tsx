@@ -18,7 +18,7 @@ type Status = { kind: "idle" | "sending" | "sent" } | { kind: "problem"; message
  *
  * Copy follows PRD §12.7 — no "error"/"failed", and each state says what to do next.
  */
-export function SignInForm({ next }: { next: string }) {
+export function SignInForm({ next, google }: { next: string; google: boolean }) {
   const t = useTranslations("signIn");
   const [email, setEmail] = useState("");
   /*
@@ -50,6 +50,27 @@ export function SignInForm({ next }: { next: string }) {
     }
 
     setStatus({ kind: "sent" });
+  }
+
+  /*
+   * PRD-ACCT-001: Google as the second way in (D-009). The same adult confirmation governs
+   * it — the box sits above both buttons, and a single tick answers for either — and the
+   * server checks it again, as it does for the link.
+   */
+  async function continueWithGoogle() {
+    setStatus({ kind: "sending" });
+    const response = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ next, adult }),
+    }).catch(() => null);
+    const payload = response ? await response.json().catch(() => null) : null;
+
+    if (!payload?.ok || typeof payload.data?.url !== "string") {
+      setStatus({ kind: "problem", message: payload?.error?.message ?? t("google_unavailable") });
+      return;
+    }
+    window.location.assign(payload.data.url);
   }
 
   if (status.kind === "sent") {
@@ -96,6 +117,26 @@ export function SignInForm({ next }: { next: string }) {
       <Button type="submit" fullWidth disabled={status.kind === "sending" || !adult}>
         {status.kind === "sending" ? t("sending") : t("send")}
       </Button>
+
+      {/*
+        Only when the auth server has Google switched on. Without an OAuth client the
+        button would send a traveler to an error page from Google, which is worse than not
+        offering it — the email link works on its own (LAUNCH_KEYS row 10).
+      */}
+      {google ? (
+        <>
+          <p className="text-center text-caption text-text-secondary">{t("or")}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            disabled={status.kind === "sending" || !adult}
+            onClick={() => void continueWithGoogle()}
+          >
+            {t("google")}
+          </Button>
+        </>
+      ) : null}
 
       {status.kind === "problem" ? (
         <p role="alert" className="text-body-sm text-status-broken">

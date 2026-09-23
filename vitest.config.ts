@@ -2,6 +2,14 @@ import { defineConfig } from "vitest/config";
 
 // Root runner: every package/app owns its tests next to its source.
 export default defineConfig({
+  /*
+   * The automatic JSX runtime for every test. `apps/web`'s tsconfig says `jsx: preserve`
+   * (Next compiles JSX itself), and esbuild falls back to the classic `React.createElement`
+   * when it reads that — so a component test there failed with "React is not defined"
+   * though the same component builds fine. `packages/ui` already compiled this way through
+   * its own tsconfig; this makes the two agree.
+   */
+  esbuild: { jsx: "automatic" },
   test: {
     include: ["apps/**/*.test.{ts,tsx}", "packages/**/*.test.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/.next/**", "tests/e2e/**"],

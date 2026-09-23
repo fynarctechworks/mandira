@@ -173,7 +173,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 ## PRD-ACCT — Accounts & Personalization (F13)
 | ID | Name | Description / Acceptance | Priority | Deps |
 |---|---|---|---|---|
-| PRD-ACCT-001 | Auth methods | Magic link primary, Google secondary; guest mode; draft migrates on sign-in; model extensible to phone/social later | P0 | —  **Implemented (B-007):** magic link + Google per D-009 (no phone/SMS in M1); guest browsing needs no account; draft claim-on-sign-in wired in B-019. |
+| PRD-ACCT-001 | Auth methods | Magic link primary, Google secondary; guest mode; draft migrates on sign-in; model extensible to phone/social later | P0 | —  **Implemented (B-007, Google completed D-224 — the earlier checkmark claimed it before any code existed):** magic link + Google per D-009 (no phone/SMS in M1); guest browsing needs no account; draft claim-on-sign-in wired in B-019. |
 | PRD-ACCT-002 | Profile | Name, locale, notification prefs, journeys by status, saved places | P0 | ACCT-001 |
 | PRD-ACCT-003 | Traveler profiles | Label/mobility/age_band/dietary/locale; owner-only sensitivity | P0 | PRIV-002 |
 | PRD-ACCT-004 | Explicit-signal personalization | Only explicit signals; "Because you protected X" explanations; no dwell-time inference | P1 | — |

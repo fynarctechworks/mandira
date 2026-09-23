@@ -357,7 +357,7 @@
     "leave_by_body": "Leave by {time} for {label}.",
     "offline_missing": "This journey hasn't been saved for offline use yet. Open it once with a connection and it'll be here next time.",
     "not_saved": "That didn't save. Please try again.",
-    "still_fits": "That still fits — nothing else needs to move.",
+    "still_fits": "Still on track — nothing else needs to move.",
     "why": "Why?",
     "queued": "{count, plural, one {One change saved on this device, waiting for a signal.} other {# changes saved on this device, waiting for a signal.}}",
     "eyebrow_now": "Now",
@@ -399,7 +399,8 @@
       "restroom": "Restroom {distance}",
       "drinking_water": "Water {distance}",
       "cloakroom": "Cloakroom {distance}"
-    }
+    },
+    "actions_label": "Actions"
   },
   "prepare": {
     "documents": {
@@ -620,7 +621,10 @@
     "rate_limited": "That's a few links in a short time. Please wait a little and try again.",
     "not_sent": "We couldn't send that link just now. Please try again in a moment.",
     "adult_confirm": "I am 18 or older. Mandhira accounts are for adults; you can add children to your party as travellers.",
-    "privacy_link": "What we collect, and who to contact"
+    "privacy_link": "What we collect, and who to contact",
+    "or": "or",
+    "google": "Continue with Google",
+    "google_unavailable": "Google sign-in isn't available just now. You can use the email link instead."
   },
   "journeysList": {
     "title": "Your journeys",
@@ -828,7 +832,8 @@
       "hired": "Hired vehicle",
       "other": "Other ways"
     },
-    "nearby": "Nearby places worth the journey"
+    "nearby": "Nearby places worth the journey",
+    "advisory_updated": "Updated {date}"
   },
   "notFound": {
     "title": "This page isn't here",
@@ -1018,7 +1023,8 @@
     "source": "Source: {source}",
     "between": "{from} to {to}",
     "from": "From {date}",
-    "until": "Until {date}"
+    "until": "Until {date}",
+    "updated": "Updated {date}"
   },
   "api": {
     "invalid": "Some details need a second look.",
@@ -1053,7 +1059,9 @@
     "fixed_cannot_remove": "That one can’t be removed while it’s fixed. Change its tier first if it really can go.",
     "protected_cannot_remove": "You marked that as something you must do, so Mandhira won’t remove it. Change its tier if that’s no longer true.",
     "cannot_change": "That can’t be changed.",
-    "journey_max_days": "A journey can be up to {days} days."
+    "journey_max_days": "A journey can be up to {days} days.",
+    "sign_in_not_open": "Signing in is not open yet, because we have not published what you would be agreeing to.",
+    "google_unavailable": "Google sign-in isn't available just now. You can use the email link instead."
   },
   "preview": {
     "label": "Preview",
@@ -1076,5 +1084,29 @@
     "protected": "Because you protected {name} last time",
     "kept": "Because you kept {name} in a journey before",
     "completed": "Because you visited {name} on an earlier journey"
+  },
+  "delayPicker": {
+    "late_title": "How late are you?",
+    "late_hint": "Your options depend on this, so a rough guess is better than none.",
+    "longer_title": "How much longer would you like?",
+    "longer_hint": "We'll show you what that means for the rest of your day before anything changes.",
+    "presets_label": "Common amounts",
+    "plus_minutes": "+{minutes} min",
+    "custom_label": "Or a different amount, in minutes",
+    "custom_submit": "Use this",
+    "custom_hint": "Up to {max} minutes. Longer than that is a different day — try Simplify this day."
+  },
+  "offlineDownloads": {
+    "title": "Downloads",
+    "checking": "Checking what is saved on this phone",
+    "size": "Size",
+    "last_updated": "Last updated",
+    "not_saved": "This journey is not saved on this phone yet. Save it before you go, so it works without a signal.",
+    "update_now": "Update now",
+    "save_now": "Save for offline",
+    "updating": "Updating",
+    "updated": "Saved. This phone has the latest version of your journey.",
+    "not_updated": "Couldn't update just now. The copy already on this phone still works.",
+    "offline_hint": "You're offline. The saved copy is working; connect to update it."
   }
 }

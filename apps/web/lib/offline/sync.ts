@@ -201,6 +201,28 @@ export async function readSnapshot(journeyId: string): Promise<LocalSnapshot | n
   }
 }
 
+/**
+ * What this device is holding for one journey, for Prepare's Downloads section (PRD F11:
+ * "shows size, last updated, and 'Update now'").
+ *
+ * Size is the serialised snapshot: what was fetched and written, measured the same way it
+ * travelled. It is not the bytes IndexedDB spends on disk — engines add their own overhead
+ * and do not report it per record — but it is the number that answers the traveler's
+ * actual question, "how much of my phone is this", to within that overhead, and it is the
+ * number TRD §9 budgets (≤ 5 MB for a three-day journey).
+ *
+ * Null when nothing is saved, which the screen says in words rather than as "0 KB".
+ */
+export async function offlineFootprint(
+  journeyId: string,
+): Promise<{ bytes: number; syncedAt: string } | null> {
+  const snapshot = await readSnapshot(journeyId);
+  if (!snapshot) return null;
+
+  const bytes = new TextEncoder().encode(JSON.stringify(snapshot)).length;
+  return { bytes, syncedAt: snapshot.syncedAt };
+}
+
 /** When the stored information is from — what the offline banner should report. */
 export async function lastSyncAt(): Promise<string | null> {
   if (!offlineAvailable()) return null;

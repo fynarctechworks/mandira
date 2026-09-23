@@ -12,6 +12,8 @@ export type AdvisoryNoticeView = {
   /** Already worded in the reader's language, or null when the advisory has no window. */
   dates: string | null;
   sourceName: string | null;
+  /** "Updated [date]" — PRD F10's label for curated information, already worded. */
+  updated: string | null;
 };
 
 const dismissedKey = (id: string) => `mandhira:advisory-dismissed:${id}`;
@@ -77,9 +79,14 @@ export function AdvisoryNotices({ advisories }: { advisories: AdvisoryNoticeView
             {advisory.dates ? (
               <p className="text-caption text-text-secondary">{advisory.dates}</p>
             ) : null}
-            {advisory.sourceName ? (
+            {advisory.sourceName || advisory.updated ? (
               <p className="text-caption text-text-secondary">
-                {t("source", { source: advisory.sourceName })}
+                {[
+                  advisory.sourceName ? t("source", { source: advisory.sourceName }) : null,
+                  advisory.updated,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             ) : null}
             <button

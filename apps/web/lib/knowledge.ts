@@ -105,6 +105,13 @@ export type Advisory = {
   title: Text;
   body: Text;
   severity: "info" | "caution" | "important";
+  /**
+   * When Ops last published it (PRD F10). An advisory is DYNAMIC, curated information, and
+   * F10 labels that category "Updated [date]" so a traveler can tell a notice written this
+   * morning from one written last season. `published_at` is stamped on every publish, so
+   * a revised advisory carries the revision's date rather than the first one's.
+   */
+  updatedAt: string | null;
 };
 
 export type GuidanceBlock = { id: string; guidanceType: string; body: Text };
@@ -217,7 +224,7 @@ export async function getDestinationPage(
       .order("sort_order"),
     supabase
       .from("v_published_advisories")
-      .select("id, title_i18n, body_i18n, severity")
+      .select("id, title_i18n, body_i18n, severity, published_at")
       .eq("destination_id", destination.id),
     supabase
       .from("v_published_availability_rules")
@@ -323,6 +330,7 @@ export async function getDestinationPage(
       title: text(row.title_i18n, locale),
       body: text(row.body_i18n, locale),
       severity: row.severity as Advisory["severity"],
+      updatedAt: (row.published_at as string | null) ?? null,
     })),
     ...collectSources([...experienceCards, ...placeCards]),
   };
@@ -1407,7 +1415,7 @@ export async function getJourneyAdvisories(
   const rows = mustList(
     await supabase
       .from("v_published_advisories")
-      .select("id, title_i18n, body_i18n, severity, starts_at, ends_at, trust")
+      .select("id, title_i18n, body_i18n, severity, starts_at, ends_at, trust, published_at")
       .eq("destination_id", destinationId)
       .order("starts_at", { ascending: true, nullsFirst: true }),
     "v_published_advisories",
@@ -1426,6 +1434,7 @@ export async function getJourneyAdvisories(
       title: text(row.title_i18n, locale),
       body: text(row.body_i18n, locale),
       severity: (row.severity as Advisory["severity"] | null) ?? "info",
+      updatedAt: (row.published_at as string | null) ?? null,
       startsAt: (row.starts_at as string | null) ?? null,
       endsAt: (row.ends_at as string | null) ?? null,
       sourceName:

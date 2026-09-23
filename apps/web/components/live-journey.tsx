@@ -13,6 +13,7 @@ import { relativeTime as relative } from "../lib/present";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import type { PlainTranslate } from "../lib/present";
 import { ChangeSheet } from "./change-sheet";
+import { DelayPicker } from "./delay-picker";
 import { readLiveViewLocally } from "../lib/offline/live-local";
 import { enqueue, flushOutbox, pendingCount } from "../lib/offline/outbox";
 import { replanLocally } from "../lib/offline/replan-local";
@@ -83,6 +84,14 @@ export function LiveJourney({
     trigger: ChangeTrigger;
   } | null>(null);
   const [quiet, setQuiet] = useState<string | null>(null);
+  /*
+   * PRD F6: the traveler says HOW late. Held here rather than in the sheet because the
+   * item it is about has to survive the sheet closing, and the answer goes to `act`.
+   */
+  const [asking, setAsking] = useState<{
+    kind: "running_late" | "stay_longer";
+    itemId: string;
+  } | null>(null);
   /** How many actions are waiting to be sent (PRD-OFFL-004). */
   const [queued, setQueued] = useState(0);
   const journeyId = serverView?.journeyId ?? "";
@@ -416,6 +425,18 @@ export function LiveJourney({
         </p>
       ) : null}
 
+      {/* Always mounted: it is what "Running late" and "Stay longer" open (PRD F6). */}
+      <DelayPicker
+        open={asking !== null}
+        onOpenChange={(open) => {
+          if (!open) setAsking(null);
+        }}
+        kind={asking?.kind ?? "running_late"}
+        onPick={(minutes) => {
+          if (asking) void act(asking.itemId, asking.kind, minutes);
+        }}
+      />
+
       {change ? (
         <ChangeSheet
           card={change.card}
@@ -460,6 +481,7 @@ export function LiveJourney({
          * actions; offering "Done" on a travel leg or on free time would be offering to
          * complete something that is not a task.
          */
+        actionsLabel={t("actions_label")}
         actions={
           kind === "item" && nowView.itemId && !pending
             ? [
@@ -470,11 +492,11 @@ export function LiveJourney({
                 },
                 {
                   label: t("action_running_late"),
-                  onClick: () => void act(nowView.itemId!, "running_late", 15),
+                  onClick: () => setAsking({ kind: "running_late", itemId: nowView.itemId! }),
                 },
                 {
                   label: t("action_stay_longer"),
-                  onClick: () => void act(nowView.itemId!, "stay_longer", 30),
+                  onClick: () => setAsking({ kind: "stay_longer", itemId: nowView.itemId! }),
                 },
               ]
             : []

@@ -94,6 +94,11 @@ export default async function JourneyPage({
       body: advisory.body.text,
       severity: advisory.severity,
       sourceName: advisory.sourceName,
+      updated: advisory.updatedAt
+        ? t("advisoryNotice.updated", {
+            date: advisoryDate.format(new Date(advisory.updatedAt)),
+          })
+        : null,
       dates:
         from && to
           ? t("advisoryNotice.between", { from, to })

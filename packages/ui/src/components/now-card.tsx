@@ -15,6 +15,11 @@ type NowCardProps = {
   detail?: string;
   /** PRD 12.5 caps this at three actions in a row. */
   actions?: NowCardAction[];
+  /**
+   * The name of the action row, read by a screen reader ("Actions"). Passed in rather than
+   * hard-coded because this package renders no copy of its own — the app translates it.
+   */
+  actionsLabel?: string;
   trailing?: ReactNode;
   className?: string;
 };
@@ -25,6 +30,7 @@ export function NowCard({
   title,
   detail,
   actions = [],
+  actionsLabel = "Actions",
   trailing,
   className,
 }: NowCardProps) {
@@ -48,8 +54,14 @@ export function NowCard({
         {trailing}
       </div>
 
+      {/*
+        A named group, because PRD F8's rule is about ACTIONS — "maximum 3 actions on any
+        card" — and the card also carries things that are not actions, such as the trust
+        badge on its timing, which F8 requires. Counting every button would make the rule
+        fail precisely when a timing is verified, which is backwards.
+      */}
       {shownActions.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div role="group" aria-label={actionsLabel} className="mt-4 flex flex-wrap gap-2">
           {shownActions.map((action) => (
             <Button
               key={action.label}

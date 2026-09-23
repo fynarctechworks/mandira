@@ -52,6 +52,11 @@ export default async function DestinationPage({
     minute: "2-digit",
     timeZone: "UTC",
   });
+  const updatedOn = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
   const nextLine = (next: (typeof page.rituals)[number]["next"]) => {
     if (!next) return tPage("no_upcoming");
     const date = day.format(new Date(`${next.date}T00:00:00Z`));
@@ -107,6 +112,18 @@ export default async function DestinationPage({
               <div className="flex flex-col gap-1">
                 <h2 className="text-body font-medium">{advisory.title.text}</h2>
                 <p className="text-body-sm text-text-secondary">{advisory.body.text}</p>
+                {/*
+                  PRD F10: an advisory is curated information, so it says when it was
+                  last updated — a notice from last season read as today's would be worse
+                  than no notice at all.
+                */}
+                {advisory.updatedAt ? (
+                  <p className="text-caption text-text-secondary">
+                    {tPage("advisory_updated", {
+                      date: updatedOn.format(new Date(advisory.updatedAt)),
+                    })}
+                  </p>
+                ) : null}
               </div>
             </div>
           ))}

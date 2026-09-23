@@ -49,6 +49,12 @@ export const API_MESSAGE_KEYS: Record<string, string> = {
   "There's no travel time between those places yet.": "no_travel_time",
   "This is you, so it stays on your account.": "self_stays",
   "That photo can't be used. Try another one, or send the report without it.": "photo_unusable",
+  // Sign-in (0054, PRD-PRIV-005). The same sentence from both the magic-link and the Google
+  // route, so one key serves both — a traveler is told the same thing however they tried.
+  "Signing in is not open yet, because we have not published what you would be agreeing to.":
+    "sign_in_not_open",
+  "Google sign-in isn't available just now. You can use the email link instead.":
+    "google_unavailable",
   // item rules (items route `refusal`)
   "That one can't move — it's a fixed time. Change its tier first if it really can.":
     "fixed_cannot_move",

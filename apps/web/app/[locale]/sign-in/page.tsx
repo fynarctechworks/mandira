@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 
+import { googleSignInEnabled } from "../../../lib/auth-providers";
 import { SignInForm } from "./sign-in-form";
 
 /**
@@ -24,7 +25,7 @@ export default async function SignInPage({
   setRequestLocale(locale);
 
   const { next } = await searchParams;
-  const t = await getTranslations("signIn");
+  const [t, google] = await Promise.all([getTranslations("signIn"), googleSignInEnabled()]);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -38,7 +39,7 @@ export default async function SignInPage({
        * it through here keeps a traveler on the path they were on rather than dropping them
        * at the home screen having lost the plan they were saving.
        */}
-      <SignInForm next={safeNext(next, locale)} />
+      <SignInForm next={safeNext(next, locale)} google={google} />
 
       <p className="text-caption text-text-secondary">{t("email_use")}</p>
 

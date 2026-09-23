@@ -57,3 +57,23 @@ test.describe("Before an account exists", () => {
     expect(seriousViolations(results)).toEqual([]);
   });
 });
+
+/**
+ * PRD-ACCT-001: Google is the second way in (D-009) — but only when the auth server has it
+ * switched on. Locally there is no OAuth client, so the right behaviour is no button: one
+ * that sent a traveler to an error page from Google would be worse than none.
+ */
+test.describe("Signing in with Google", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("is not offered while the provider is switched off", async ({ page }) => {
+    await page.goto("/en/sign-in");
+    await expect(page.getByRole("button", { name: /Email me a link/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Continue with Google/i })).toHaveCount(0);
+  });
+
+  test("the server still refuses without the adult confirmation", async ({ page }) => {
+    const response = await page.request.post("/api/auth/google", { data: {} });
+    expect(response.status()).toBe(400);
+  });
+});

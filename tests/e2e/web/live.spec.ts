@@ -139,10 +139,20 @@ test.describe("What the screen says", () => {
     // A week view inside Live is explicitly forbidden — the whole point is three questions.
     await expect(page.getByText(/Monday.*Tuesday.*Wednesday/s)).toHaveCount(0);
 
-    // The NOW card caps at three; anything more means a card started growing.
+    /*
+     * The NOW card caps at three ACTIONS; anything more means a card started growing.
+     *
+     * Counted inside the action group, not across every button on the card. The card also
+     * carries the trust badge on its timing, which PRD F8 requires — so counting all
+     * buttons failed whenever the current item happened to have a verified timing, which
+     * made this test depend on what time of day it ran.
+     */
     const nowCard = page.getByRole("region", { name: /Now|Today/ });
     if (await nowCard.isVisible()) {
-      expect(await nowCard.getByRole("button").count()).toBeLessThanOrEqual(3);
+      const actions = nowCard.getByRole("group", { name: "Actions" });
+      if (await actions.isVisible()) {
+        expect(await actions.getByRole("button").count()).toBeLessThanOrEqual(3);
+      }
     }
   });
 
