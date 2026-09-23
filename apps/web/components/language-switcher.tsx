@@ -51,13 +51,14 @@ export function LanguageSwitcher({
       </label>
       <NativeSelect
         id={id}
+        data-endonyms
         value={locale}
         disabled={pending}
         onChange={(event) => void choose(event.target.value)}
         className={cn(compact ? "w-auto" : "w-full", "[&_select]:h-11 [&_select]:text-sm")}
       >
         {LOCALES.map((code) => (
-          <NativeSelectOption key={code} value={code} lang={code}>
+          <NativeSelectOption key={code} value={code} lang={code} data-endonym>
             {LOCALE_LABELS[code]}
           </NativeSelectOption>
         ))}

@@ -7,7 +7,12 @@ import { useEffect, useState, useTransition } from "react";
 
 import { usePathname, useRouter } from "@/i18n/routing";
 
-const CHOSEN_KEY = "mandhira:language-chosen";
+import { LANGUAGE_CHOSEN_COOKIE } from "../lib/first-run";
+
+// A year, like any other device preference; nothing in it identifies anyone.
+const CHOSEN = `${LANGUAGE_CHOSEN_COOKIE}=1; path=/; max-age=31536000; samesite=lax`;
+/** Where devices that chose before the cookie existed remembered it. */
+const LEGACY_KEY = "mandhira:language-chosen";
 
 /**
  * Welcome & language (PRD A01), once per device.
@@ -16,33 +21,43 @@ const CHOSEN_KEY = "mandhira:language-chosen";
  * for. Choosing a tile switches the whole app to it; Continue keeps the language the
  * browser already asked for. Either way it is not asked again on this device.
  *
- * Remembered in localStorage, not a cookie or an account: it is a device convenience, and
- * the language itself lives in the URL (and the profile, once signed in). Rendered only
- * after mount, so the server and the first client render agree, and it never appears when
- * storage is unavailable rather than appearing on every visit.
+ * Remembered in a first-party cookie, not an account: it is a device convenience, and the
+ * language itself lives in the URL (and the profile, once signed in). A cookie rather than
+ * localStorage because the server has to know: drawn only after scripts ran, the card
+ * appeared at the top of Home 4.5 s into Lighthouse's reference-device load and pushed the
+ * whole page down (layout shift 0.32; Google counts 0.1 as good), which held Lighthouse to 60
+ * against TRD §9's 80 (D-233). Now the server decides, and the card is in the first paint or
+ * not there at all.
  */
-export function FirstRunLanguage() {
+export function FirstRunLanguage({ chosen }: { chosen: boolean }) {
   const t = useTranslations("firstRun");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(!chosen);
   const [pending, startTransition] = useTransition();
 
+  /*
+   * A device that chose before the cookie existed: carry the choice over once, so nobody is
+   * asked a second time. Also covers a Home page served from the offline cache after the
+   * choice was made — the cached HTML still has the card, and the cookie says otherwise.
+   */
   useEffect(() => {
+    if (chosen) return;
+    let legacy = false;
     try {
-      if (!window.localStorage.getItem(CHOSEN_KEY)) setShow(true);
+      legacy = window.localStorage.getItem(LEGACY_KEY) !== null;
     } catch {
-      // Storage blocked: better never to ask than to ask on every visit.
+      // Storage blocked: the cookie is the record from here on.
     }
-  }, []);
+    if (legacy || document.cookie.split("; ").includes(`${LANGUAGE_CHOSEN_COOKIE}=1`)) {
+      document.cookie = CHOSEN;
+      setShow(false);
+    }
+  }, [chosen]);
 
   function remember() {
-    try {
-      window.localStorage.setItem(CHOSEN_KEY, "1");
-    } catch {
-      // Nothing to do: the card simply closes for this visit.
-    }
+    document.cookie = CHOSEN;
     setShow(false);
   }
 
@@ -69,6 +84,7 @@ export function FirstRunLanguage() {
             key={code}
             type="button"
             lang={code}
+            data-endonym
             aria-pressed={code === locale}
             disabled={pending}
             onClick={() => choose(code)}

@@ -70,6 +70,25 @@ jobs:
           echo "CRON_SECRET=ci-only-cron-secret-not-a-real-credential" >> "$GITHUB_ENV"
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+      # When Playwright reports only "Timed out waiting … from config.webServer", say why:
+      # start each app the way the config does, probe it, and put the status and the app's
+      # own output in annotations, which anyone can read without opening the raw log.
+      - name: Explain a server that never answered
+        if: failure()
+        run: |
+          probe() {
+            name=$1; port=$2; shift 2
+            (cd "apps/$name" && env "$@" NEXT_DIST_DIR=.next-e2e timeout 60 npx next start --port "$port" > "/tmp/$name.log" 2>&1 &)
+            sleep 20
+            code=$(curl -s -o "/tmp/$name.body" -w '%{http_code}' "http://localhost:$port/" || echo "no answer")
+            v4=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/" || echo "no answer")
+            v6=$(curl -s -o /dev/null -w '%{http_code}' "http://[::1]:$port/" || echo "no answer")
+            out=$(tail -c 1500 "/tmp/$name.log" | tr '\n' ' ')
+            body=$(head -c 300 "/tmp/$name.body" 2>/dev/null | tr '\n' ' ')
+            echo "::error title=$name server probe::localhost $code, 127.0.0.1 $v4, ::1 $v6. Output: $out Body: $body"
+          }
+          probe web 3986
+          probe ops 3987 NEXT_PUBLIC_TRAVELER_APP_URL=http://localhost:3986
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -28,11 +28,20 @@ export const outfit = Outfit({
   display: "swap",
 });
 
+/*
+ * The two Indic faces are NOT preloaded. next/font preloads by default, and a preload is
+ * unconditional: every English page spent 242 kB on Telugu and Devanagari it never draws,
+ * at the highest priority, ahead of its own text. On Lighthouse's reference device (4G at
+ * 1.6 Mbps) that alone was well over a second of Home's largest paint (D-233). Without
+ * the preload the @font-face rules stay, and their unicode-range means a Telugu or Hindi
+ * page fetches its face as soon as it renders that script — and an English page never does.
+ */
 export const notoSansTelugu = Noto_Sans_Telugu({
   subsets: ["telugu"],
   weight: ["400", "500", "600"],
   variable: "--font-noto-telugu",
   display: "swap",
+  preload: false,
 });
 
 export const notoSansDevanagari = Noto_Sans_Devanagari({
@@ -40,6 +49,7 @@ export const notoSansDevanagari = Noto_Sans_Devanagari({
   weight: ["400", "500", "600"],
   variable: "--font-noto-devanagari",
   display: "swap",
+  preload: false,
 });
 
 export const fontVariables = [

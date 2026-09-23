@@ -1,9 +1,11 @@
 import { ArrowRight, Search } from "lucide-react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { FirstRunLanguage } from "../../components/first-run-language";
 import { LanguageSwitcher } from "../../components/language-switcher";
+import { LANGUAGE_CHOSEN_COOKIE } from "../../lib/first-run";
 import { listJourneys } from "../../lib/journeys";
 import { getDestinationCards } from "../../lib/knowledge";
 import { webSupabase } from "../../lib/supabase";
@@ -22,13 +24,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, tSearch, tHub, tJourney, destinations, supabase] = await Promise.all([
+  const [t, tSearch, tHub, tJourney, destinations, supabase, cookieStore] = await Promise.all([
     getTranslations("home"),
     getTranslations("search"),
     getTranslations("prepareHub"),
     getTranslations("addToJourney"),
     getDestinationCards(locale),
     webSupabase(),
+    cookies(),
   ]);
   const {
     data: { user },
@@ -47,7 +50,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
-      <FirstRunLanguage />
+      <FirstRunLanguage chosen={cookieStore.get(LANGUAGE_CHOSEN_COOKIE)?.value === "1"} />
 
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
