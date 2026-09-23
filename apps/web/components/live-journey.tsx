@@ -1,6 +1,7 @@
 "use client";
 
 import { HealthPill, NowCard, TierChip } from "@mandhira/ui";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -12,18 +13,33 @@ import { useLeaveByReminder } from "../lib/leave-by-reminder";
 import { relativeTime as relative } from "../lib/present";
 import type { LiveItemView, LiveView } from "../lib/live-view";
 import type { PlainTranslate } from "../lib/present";
-import { ChangeSheet } from "./change-sheet";
-import { DelayPicker } from "./delay-picker";
 import { readLiveViewLocally } from "../lib/offline/live-local";
 import { enqueue, flushOutbox, pendingCount } from "../lib/offline/outbox";
 import { replanLocally } from "../lib/offline/replan-local";
 import { syncJourneyOffline } from "../lib/offline/sync";
 import { useOfflineFirst } from "../lib/offline/use-offline-first";
 import { FieldTrust } from "./field-trust";
-import { ReportAChange } from "./report-a-change";
+import { ReportAChangeLink } from "./report-a-change-link";
 import { OfflineNotice } from "./offline-notice";
 import { OpenInMaps } from "./open-in-maps";
 import { PhraseShortcut } from "./phrase-shortcut";
+
+/*
+ * Deferred: both are invisible until the traveler taps something, and Live is the heaviest
+ * route in the app — it carries the engine, the offline read path and the outbox so it can
+ * replan with no signal. With these two, the trust sheet and the report form in its first
+ * load it measured 191.6 kB against a 190 kB allowance, and CI failed on every push (D-232).
+ *
+ * Safe offline, which is the one thing this screen cannot compromise: the service worker
+ * precaches every chunk of the build, deferred ones included, so the first tap on "Running
+ * late" on a hillside with no signal finds the picker already on the phone.
+ */
+const ChangeSheet = dynamic(() => import("./change-sheet").then((m) => m.ChangeSheet), {
+  ssr: false,
+});
+const DelayPicker = dynamic(() => import("./delay-picker").then((m) => m.DelayPicker), {
+  ssr: false,
+});
 
 /**
  * Live Journey — NOW / NEXT / LATER (PRD F8, LIVE-01..04).
@@ -425,17 +441,17 @@ export function LiveJourney({
         </p>
       ) : null}
 
-      {/* Always mounted: it is what "Running late" and "Stay longer" open (PRD F6). */}
-      <DelayPicker
-        open={asking !== null}
-        onOpenChange={(open) => {
-          if (!open) setAsking(null);
-        }}
-        kind={asking?.kind ?? "running_late"}
-        onPick={(minutes) => {
-          if (asking) void act(asking.itemId, asking.kind, minutes);
-        }}
-      />
+      {/* What "Running late" and "Stay longer" open (PRD F6) — mounted once asked for. */}
+      {asking ? (
+        <DelayPicker
+          open
+          onOpenChange={(open) => {
+            if (!open) setAsking(null);
+          }}
+          kind={asking.kind}
+          onPick={(minutes) => void act(asking.itemId, asking.kind, minutes)}
+        />
+      ) : null}
 
       {change ? (
         <ChangeSheet
@@ -537,7 +553,7 @@ export function LiveJourney({
         other than the plan. Queued with no signal, like every other Live action.
       */}
       {kind === "item" && nowView.entity ? (
-        <ReportAChange
+        <ReportAChangeLink
           entityTable={nowView.entity.table}
           entityId={nowView.entity.id}
           entityName={nowView.label}

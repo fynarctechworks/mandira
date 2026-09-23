@@ -26,23 +26,13 @@ const BUDGET_KB = 180;
  */
 const ALLOWANCES = {
   /*
-   * One entry, and it should stay that way.
+   * Live used to have an allowance of 190 kB here, for the engine, the Dexie read path and
+   * the outbox it needs to replan with no network. By September it measured 191.6 kB and CI
+   * had failed on it for every push. The engine stayed; the sheets that are only opened by a
+   * tap (delay picker, change sheet, trust sheet, report form) moved out of the first load
+   * and it measured 167.2 kB — inside the ordinary budget, so the allowance went (D-232).
+   * The service worker precaches every chunk, so the deferred sheets still open offline.
    *
-   * Live is the only screen that must produce a PLAN with no network (PRD-OFFL-002), so it
-   * carries the journey engine, the Dexie read path and the offline outbox in its first
-   * load. None of that is deferrable: the engine is what renders the screen at all, and
-   * code that only loads after an interaction is code a traveler on a hillside cannot
-   * reach.
-   *
-   * It measured 177.4 kB at B-024 and 182.3 kB once B-033 added the outbox and offline
-   * replanning. Raised deliberately rather than quietly, and kept tight — 190 leaves room
-   * for a small addition and not for a careless one.
-   */
-  "/[locale]/journeys/[id]/live": {
-    kb: 190,
-    why: "Carries the engine, the Dexie read path and the offline outbox because it must compute a plan with no network (PRD-OFFL-002/005). Deferring any of it means the airplane-mode screen cannot do the one thing it exists for.",
-  },
-  /*
    * Not a traveler route. `/design-system` sits outside `[locale]`, is `noindex`, and exists
    * so the team can see every preset component in both themes at once (D-148). Rendering the
    * whole library IS its job, so its first load is the library; a traveler never requests it.

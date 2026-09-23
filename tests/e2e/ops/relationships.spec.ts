@@ -15,7 +15,8 @@ async function createDestination(page: Page, name: string, slug: string): Promis
   await page.getByRole("tabpanel").first().getByRole("textbox").fill(name);
   await page.getByLabel("Slug").fill(slug);
   await page.getByRole("button", { name: "Create destination" }).click();
-  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  // A write and a redirect; beside two other workers it has taken longer than the default.
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible({ timeout: 15_000 });
   return page.url();
 }
 
