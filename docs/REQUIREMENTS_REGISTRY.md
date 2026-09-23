@@ -286,7 +286,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-SEC-002 | Headers & CSP | §6.1 CSP; storage bucket policies; signed URLs 15 min | P0 | — |
 | TRD-SEC-003 | Secrets & audit hygiene | Env-only secrets; .env.example; ip_hash salted; pnpm audit in CI | P0 | — |
 | TRD-SEC-004 ✅ | Share-token safety | 32-byte, expiring, revocable; excludes profiles/notes | P0 | — |
-| TRD-PERF-001 ✅ | M1 targets | LCP ≤3.0 s ref-device; ≤180 kB route JS; Live-from-cache ≤800 ms; Lighthouse ≥80/95/installable | P0 | — |
+| TRD-PERF-001 ◐ | M1 targets | LCP ≤3.0 s ref-device; ≤180 kB route JS; Live-from-cache ≤800 ms; Lighthouse ≥80/95/installable | P0 | — |
 | TRD-PERF-002 | Production targets | TRD §9 production column + 99.5% availability | P1 | PERF-001 |
 | TRD-PERF-003 | Mandated techniques | RSC-first, dynamic imports, font subsetting, virtualisation, memoized timeline, worker offload | P0 | — |
 | TRD-DEPL-001 | Environments & CI/CD | §8 steps 1–7; migration job gates deploy; preview strategy | P0 | — |
@@ -294,5 +294,7 @@ Every meaningful requirement from `PRD.md` and `TRD.md`, with stable IDs. **No r
 | TRD-DEPL-003 ◐ | Backup & rollback | Nightly encrypted pg_dump until Pro; Vercel instant rollback; runbook | P0 | — |
 | TRD-OBSV-001 | Sentry + analytics events | Both apps; allowlisted event names; queue-age alerts | P1 | — |
 | TRD-COST-001 | Cost controls | Quota alerts at 70%; caches per §10; $0 M1 infra | P1 | — |
+
+> TRD-PERF-001 was ✅ until 2026-09-23, when Lighthouse — the measure TRD §9 names, never run before — was run on the reference-device profile (D-233). After fixes: Performance 93–96 on English pages and 86–87 on Telugu and Hindi (≥ 80), Accessibility 100 everywhere (≥ 95), installable (asserted by `tests/e2e/perf/installable.spec.ts`; Lighthouse 12 no longer has a PWA category), every route ≤ 180 kB (D-232). **Not met: LCP ≤ 3.0 s** — 3.01–3.03 s on English Home and Plan, 3.5–3.6 s on Telugu and Hindi pages. Live from the offline cache: 230 ms on the emulated reference device (≤ 800 ms, and ≤ 500 ms production), measured by `tests/e2e/perf/budgets.spec.ts`.
 
 **Registry totals: 146 unique requirement IDs across 168 table rows** (133 PRD rows, 35 TRD rows; some IDs appear in more than one section's table). Counted from the file on 2026-09-13 — the earlier "132 requirements (PRD 95 / TRD 37)" had not been updated as requirements were added. Phase-18 cross-check: every PRD F1–F20 feature, principle, privacy rule, and design mandate above; every TRD section §2–§12 represented. Any newly discovered requirement must be added here with the next free ID — never tracked ad hoc.
