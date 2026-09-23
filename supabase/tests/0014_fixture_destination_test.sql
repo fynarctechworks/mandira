@@ -69,8 +69,11 @@ select isnt_empty(
   'even though its status says published — which is what makes it a real test of the gate'
 );
 
+-- Scoped to the fixture destination: seed 0004 publishes a place of its own elsewhere, for
+-- `pnpm perf`, and this assertion is about THESE four — one of which must fail the gate.
 select is(
-  (select count(*)::int from v_published_places), 3,
+  (select count(*)::int from v_published_places
+    where destination_id = 'd0000000-0000-4000-8000-00000000f001'), 3,
   'three of the four fixture places clear the gate'
 );
 

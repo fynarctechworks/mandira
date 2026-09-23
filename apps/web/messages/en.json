@@ -520,7 +520,10 @@
     },
     "report_resolved": {
       "title": "Thanks — we checked that",
-      "body": "What you told us about has been looked at."
+      "body": "What you told us about has been looked at.",
+      "body_updated": "You were right — we have updated it. Thank you for telling us.",
+      "body_confirmed": "We checked with the source, and what we show is still correct. Thank you for asking.",
+      "body_unverified": "We couldn't confirm it either way yet, so please check locally. We will keep looking."
     },
     "advisory": {
       "title": "Worth knowing before you go",
