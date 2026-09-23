@@ -2,6 +2,7 @@ import { Button } from "@mandhira/ui";
 import Link from "next/link";
 import { EntityTable, type EntityRow } from "@/components/entity-table";
 import { opsSupabase } from "@/lib/supabase";
+import { humanLabel } from "@/lib/labels";
 
 export const metadata = { title: "Routes · Mandhira Ops" };
 
@@ -20,7 +21,7 @@ export default async function RoutesPage() {
     name_i18n: route.name_i18n,
     status: route.status,
     columns: {
-      Mode: route.mode.replace(/_/g, " "),
+      Mode: humanLabel(route.mode),
       Difficulty: route.difficulty ?? "—",
       Stops: String(((route.route_places as { place_id: string }[] | null) ?? []).length),
     },

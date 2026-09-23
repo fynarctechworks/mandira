@@ -21,10 +21,70 @@
 @import "@mandhira/config/tailwind/preset.css";
 @import "./design-system.css";
 
+/*
+ * Line height for Telugu and Hindi (design review: "tight Telugu line height").
+ *
+ * The type scale's line heights were set for Latin — display text at 1.25× its size. Telugu
+ * stacks vowel signs and conjuncts above AND below the letter, and at 1.25× those marks
+ * crowd the line above or are cut off where a container clips; Devanagari's headstroke and
+ * lower matras need room too, if a little less. So under `lang="te"` and `lang="hi"` every
+ * text size gets the room its script needs.
+ *
+ * Scoped by language rather than raised for everyone: English at these heights reads loose
+ * and wastes a phone's height. In the utilities layer, one class of specificity above the
+ * size utility, so it wins over the scale's built-in value — which is the whole point.
+ */
+@layer utilities {
+  :lang(te) .text-display {
+    line-height: 2.875rem;
+  }
+  :lang(te) .text-h1 {
+    line-height: 2.375rem;
+  }
+  :lang(te) .text-h2 {
+    line-height: 2rem;
+  }
+  :lang(te) .text-h3 {
+    line-height: 1.75rem;
+  }
+  :lang(te) .text-body {
+    line-height: 1.75rem;
+  }
+  :lang(te) .text-body-sm {
+    line-height: 1.5rem;
+  }
+  :lang(te) .text-caption {
+    line-height: 1.25rem;
+  }
+
+  :lang(hi) .text-display {
+    line-height: 2.75rem;
+  }
+  :lang(hi) .text-h1 {
+    line-height: 2.25rem;
+  }
+  :lang(hi) .text-body {
+    line-height: 1.625rem;
+  }
+  :lang(hi) .text-body-sm {
+    line-height: 1.375rem;
+  }
+  :lang(hi) .text-caption {
+    line-height: 1.125rem;
+  }
+}
+
 @layer base {
   html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
+  }
+  /* Running text without a size utility still gets the room its script needs. */
+  :lang(te) body {
+    line-height: 1.75;
+  }
+  :lang(hi) body {
+    line-height: 1.625;
   }
   body {
     min-height: 100dvh;

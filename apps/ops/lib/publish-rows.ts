@@ -1,4 +1,5 @@
 import { labelOf } from "./entities";
+import { humanLabel, inSentence } from "./labels";
 
 /**
  * Naming what is waiting to be published, for all eight publishable tables (0032). Pure, so
@@ -23,18 +24,13 @@ export function candidateLabel(
     case "transport_connections": {
       const from = placeNames.get(text("from_place_id"));
       const to = placeNames.get(text("to_place_id"));
-      return [
-        text("operator"),
-        text("mode").replace(/_/g, " "),
-        from && `from ${from}`,
-        to && `to ${to}`,
-      ]
+      return [text("operator"), inSentence(text("mode")), from && `from ${from}`, to && `to ${to}`]
         .filter(Boolean)
         .join(" ");
     }
     case "guidance_blocks": {
       const body = labelOf(row["body_i18n"], "");
-      const kind = text("guidance_type").replace(/_/g, " ");
+      const kind = humanLabel(text("guidance_type"));
       return body ? `${kind}: ${truncate(body, 60)}` : kind;
     }
     case "phrases":

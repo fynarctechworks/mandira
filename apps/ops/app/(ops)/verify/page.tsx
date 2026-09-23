@@ -5,6 +5,8 @@ import { VerifyQueue } from "@/components/verify-queue";
 import { opsSupabase } from "@/lib/supabase";
 import { loadVerifyQueue } from "@/lib/verify-queue";
 import { filterVerifyRows, type VerifyFilter } from "@/lib/verify-rows";
+import { Filter, ShieldCheck } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Verify queue · Mandhira Ops" };
 export const dynamic = "force-dynamic";
@@ -77,11 +79,19 @@ export default async function VerifyPage({
       {!loaded.ok ? (
         <LoadProblem />
       ) : rows.length === 0 ? (
-        <p className="text-body text-text-secondary">
-          {filter === "all"
-            ? "Nothing waiting to be verified. That is the healthy state, not an empty one."
-            : "Nothing matches that filter."}
-        </p>
+        filter === "all" ? (
+          <QueueEmpty
+            icon={ShieldCheck}
+            title="Nothing waiting to be verified"
+            description="That is the healthy state, not an empty one. Critical fields short of verified, and re-verification tasks, appear here."
+          />
+        ) : (
+          <QueueEmpty
+            icon={Filter}
+            title="Nothing matches that filter"
+            description="Try All to see everything waiting to be verified."
+          />
+        )
       ) : (
         <VerifyQueue rows={rows} sources={loaded.value.sources} userId={user?.id ?? ""} />
       )}

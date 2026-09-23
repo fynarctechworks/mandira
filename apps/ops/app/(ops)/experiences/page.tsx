@@ -2,6 +2,7 @@ import { Button } from "@mandhira/ui";
 import Link from "next/link";
 import { EntityTable, type EntityRow } from "@/components/entity-table";
 import { opsSupabase } from "@/lib/supabase";
+import { humanLabel } from "@/lib/labels";
 
 export const metadata = { title: "Experiences · Mandhira Ops" };
 
@@ -24,7 +25,7 @@ export default async function ExperiencesPage() {
       name_i18n: experience.name_i18n,
       status: experience.status,
       columns: {
-        Type: experience.experience_type.replace(/_/g, " "),
+        Type: humanLabel(experience.experience_type),
         Booking: experience.advance_booking_required ? "Required" : "—",
         // Availability gates scheduling entirely, so its absence belongs in the list
         // rather than being discovered at approval time.

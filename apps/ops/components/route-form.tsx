@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createRoute, updateRoute } from "@/app/(ops)/routes/actions";
 import { I18nFields, type LocaleOption } from "./i18n-fields";
+import { humanLabel } from "@/lib/labels";
 
 const MODES = ["walk", "vehicle", "public_transport", "hired", "other"] as const;
 const DIFFICULTIES = ["easy", "moderate", "hard"] as const;
@@ -111,7 +112,7 @@ export function RouteForm({
           >
             {MODES.map((m) => (
               <option key={m} value={m}>
-                {m.replace(/_/g, " ")}
+                {humanLabel(m)}
               </option>
             ))}
           </select>

@@ -1,5 +1,7 @@
 import { ReviewQueue, type CandidateRow } from "@/components/review-queue";
 import { opsSupabase } from "@/lib/supabase";
+import { CircleCheck } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Review queue · Mandhira Ops" };
 export const dynamic = "force-dynamic";
@@ -96,10 +98,11 @@ export default async function ReviewPage() {
           That list didn&apos;t load. Please refresh to try again.
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-body text-text-secondary">
-          Nothing waiting. That is the healthy state, not an empty one — it means every watched
-          source still says what we recorded.
-        </p>
+        <QueueEmpty
+          icon={CircleCheck}
+          title="Nothing waiting for review"
+          description="That is the healthy state, not an empty one — every watched source still says what we recorded. Changes a source makes appear here."
+        />
       ) : (
         <ReviewQueue rows={rows} />
       )}

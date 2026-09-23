@@ -38,7 +38,13 @@ export function ItemCard({
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="flex gap-3">
-        <div className="w-14 shrink-0 pt-3 text-body-sm font-medium text-text-secondary tabular-nums">
+        {/*
+          A minimum, not a fixed width, and never wrapped. The rail was 56 px, which holds
+          "06:30" but not "6:30 AM" — nor the Telugu and Hindi forms, which put the part of
+          the day before the time — so a time broke across two lines (design review).
+          Every time in one list shares a locale, so the rail stays even down the day.
+        */}
+        <div className="min-w-16 shrink-0 whitespace-nowrap pt-3 text-body-sm font-medium text-text-secondary tabular-nums">
           {time}
         </div>
 

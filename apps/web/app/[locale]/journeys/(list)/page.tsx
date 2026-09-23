@@ -1,10 +1,11 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getI18n } from "@mandhira/i18n";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { DraftRecovery } from "../../../../components/draft-recovery";
+import { JourneyCardMeta } from "../../../../components/journey-card-meta";
+import { summariseJourneys } from "../../../../lib/journey-summary";
 import { listJourneys } from "../../../../lib/journeys";
 import { webSupabase } from "../../../../lib/supabase";
 
@@ -37,43 +38,8 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
     getTranslations("prepareHub"),
   ]);
 
-  /*
-   * Which pilgrimage each card is (design review): a list where every card read "Your
-   * journey" and a date gave a traveler nothing to tell one from another.
-   */
-  const destinationsOf = new Map<string, string>();
-  if (journeys.length > 0) {
-    // Two reads rather than an embed: a traveler reads destinations through the published
-    // view, never the table, so an embedded join comes back empty (0008).
-    const { data: links } = await supabase
-      .from("journey_destinations")
-      .select("journey_id, destination_id, sort_order")
-      .in(
-        "journey_id",
-        journeys.map((journey) => journey.id),
-      )
-      .order("sort_order");
-
-    const ids = [...new Set((links ?? []).map((link) => link.destination_id))];
-    const { data: destinations } = ids.length
-      ? await supabase.from("v_published_destinations").select("id, name_i18n, slug").in("id", ids)
-      : { data: [] };
-
-    const nameOf = new Map(
-      (destinations ?? []).map((destination) => [
-        destination.id as string,
-        getI18n(destination.name_i18n as Record<string, string>, locale).text ||
-          (destination.slug as string),
-      ]),
-    );
-
-    for (const link of links ?? []) {
-      const name = nameOf.get(link.destination_id);
-      if (!name) continue;
-      const existing = destinationsOf.get(link.journey_id);
-      destinationsOf.set(link.journey_id, existing ? `${existing} · ${name}` : name);
-    }
-  }
+  // Where, when and how it stands, for every card at once (shared with the Prepare hub).
+  const summaries = await summariseJourneys(supabase, journeys, locale);
 
   /*
    * Grouped by where each journey stands, the one under way first. A flat list of cards
@@ -84,19 +50,6 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
     status,
     journeys: journeys.filter((journey) => journey.status === status),
   })).filter((group) => group.journeys.length > 0);
-
-  const day = new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-  const datesOf = (journey: (typeof journeys)[number]) => {
-    if (!journey.startDate) return tHub("no_date");
-    const first = new Date(`${journey.startDate}T00:00:00Z`);
-    if (!journey.endDate || journey.endDate === journey.startDate) return day.format(first);
-    return day.formatRange(first, new Date(`${journey.endDate}T00:00:00Z`));
-  };
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -143,12 +96,11 @@ export default async function JourneysPage({ params }: { params: Promise<{ local
                     >
                       <span className="flex min-w-0 flex-col gap-0.5">
                         <span className="text-h3">{journey.title ?? tJourney("untitled")}</span>
-                        {destinationsOf.get(journey.id) ? (
-                          <span className="truncate text-body-sm text-text-secondary">
-                            {destinationsOf.get(journey.id)}
-                          </span>
-                        ) : null}
-                        <span className="text-caption text-text-secondary">{datesOf(journey)}</span>
+                        <JourneyCardMeta
+                          summary={summaries.get(journey.id)}
+                          showHealth={group.status !== "completed" && group.status !== "archived"}
+                          noDateLabel={tHub("no_date")}
+                        />
                       </span>
                       <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
                     </Link>

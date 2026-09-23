@@ -26,6 +26,12 @@ export type StoredJourney = {
   destinationId: string | null;
   /** When this journey was last compared against published knowledge (PRD-OPS-WF-007). */
   knowledgeCheckedAt: string | null;
+  /**
+   * The engine's latest verdict on the whole journey, as last stored. Read by lists that
+   * cannot afford to run the engine per card; kept current by `getJourney`, which writes
+   * it back whenever the verdict changes.
+   */
+  healthState: Database["public"]["Enums"]["health_state_enum"] | null;
 };
 
 /**

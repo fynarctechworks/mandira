@@ -2,6 +2,7 @@ import { criticalFieldsFor } from "@mandhira/db";
 import { editorPath, labelOf } from "./entities";
 import { opsSupabase } from "./supabase";
 import { rankVerifyRows, type VerifyRow, type VerifyTrust } from "./verify-rows";
+import { inSentence } from "./labels";
 
 /**
  * Loads the Verify queue (O11, PRD-OPS-WF-002): critical-field trust records still short of
@@ -134,7 +135,7 @@ export async function loadVerifyQueue(): Promise<{
     const from = leg.from_place_id ? named.get(`places:${leg.from_place_id}`)?.label : null;
     const to = leg.to_place_id ? named.get(`places:${leg.to_place_id}`)?.label : null;
     named.set(`transport_connections:${leg.id}`, {
-      label: [leg.operator, leg.mode.replace(/_/g, " "), from && `from ${from}`, to && `to ${to}`]
+      label: [leg.operator, inSentence(leg.mode), from && `from ${from}`, to && `to ${to}`]
         .filter(Boolean)
         .join(" "),
       status: leg.status,

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { archiveMedia, registerMedia } from "@/app/(ops)/media/actions";
+import { Image as ImageIcon } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export type MediaRow = {
   id: string;
@@ -114,7 +116,7 @@ export function MediaLibrary({
             accept="image/jpeg,image/png,image/webp,image/avif,audio/mpeg,audio/ogg"
             aria-describedby="media-file-hint"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 py-2 text-body"
+            className="focus-ring min-h-11 rounded-input border border-border-subtle bg-surface px-3 py-2 text-body file:mr-3 file:rounded-input file:border-0 file:bg-muted file:px-3 file:py-1 file:text-body-sm file:font-medium file:text-text-primary"
           />
           <span id="media-file-hint" className="text-caption text-text-secondary">
             Up to 5 MB. Sizes for different screens are produced on delivery, so upload the
@@ -161,7 +163,13 @@ export function MediaLibrary({
       <section>
         <h2 className="text-h3">Library ({items.length})</h2>
         {items.length === 0 ? (
-          <p className="mt-2 text-body-sm text-text-secondary">Nothing uploaded yet.</p>
+          <div className="mt-3">
+            <QueueEmpty
+              icon={ImageIcon}
+              title="Nothing uploaded yet"
+              description="Photos and audio you upload with their licence appear here, with every page that uses them."
+            />
+          </div>
         ) : (
           <ul className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
             {items.map((item) => (

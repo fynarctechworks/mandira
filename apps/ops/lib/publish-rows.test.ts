@@ -39,7 +39,8 @@ describe("candidateLabel", () => {
       guidance_type: "what_to_carry",
       body_i18n: { en: long },
     });
-    expect(label.startsWith("what to carry: Carry a shawl")).toBe(true);
+    // Sentence case at the start of a label, like everywhere else (design review).
+    expect(label.startsWith("What to carry: Carry a shawl")).toBe(true);
     expect(label.endsWith("…")).toBe(true);
   });
 

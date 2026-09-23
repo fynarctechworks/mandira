@@ -190,6 +190,9 @@ export async function readSnapshot(journeyId: string): Promise<LocalSnapshot | n
          * advance the mark and swallow an update it never saw (PRD-OPS-WF-007).
          */
         knowledgeCheckedAt: null,
+        // Not carried offline either: a stored verdict could only be older than the one
+        // the engine computes from this snapshot on the device.
+        healthState: null,
       },
       items: items.map((row) => row.item as unknown as StoredItem),
       bundle,

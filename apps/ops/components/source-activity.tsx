@@ -62,7 +62,7 @@ export function SourceActivity({
           <p className="text-body-sm text-text-secondary">
             Nothing has been fetched from this source yet. A source set to watch its page is fetched
             on its re-check cadence, or straight away from{" "}
-            <Link href="/ingestion" className="underline">
+            <Link href="/ingestion" className="focus-ring underline">
               Ingestion
             </Link>
             .

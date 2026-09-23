@@ -52,7 +52,7 @@ export type JourneyDetail = {
 };
 
 const JOURNEY_COLUMNS =
-  "id, title, start_date, end_date, timezone, day_start_time, day_end_time, pace, status, knowledge_checked_at";
+  "id, title, start_date, end_date, timezone, day_start_time, day_end_time, pace, status, knowledge_checked_at, health_state";
 
 const ITEM_COLUMNS =
   "id, day_index, sort_order, item_type, tier, experience_id, place_id, route_id, transport_connection_id, fixed_start_at, fixed_end_at, preferred_window_start, preferred_window_end, planned_start_at, planned_end_at, duration_likely_minutes, duration_max_minutes, travel_mode, buffer_minutes, note, status, actual_start_at, actual_end_at";
@@ -166,6 +166,32 @@ export async function getJourney(
     ...inputs,
   });
 
+  /*
+   * Keep the stored verdict current.
+   *
+   * `journeys.health_state` existed from 0005 and nothing ever wrote it. That left two
+   * things quietly broken: lists could not say how a journey stood without running the
+   * engine for every card, and 0048's `health_at_departure` — copied from this column
+   * when a journey starts — was always null, so the Ops product signal "health at
+   * departure" (PRD §7, F20) had never once had a value.
+   *
+   * Here because every read AND every mutation's response passes through this function,
+   * so the stored value is always the latest one computed. Written only when it changes,
+   * so an unchanged plan costs no write; best-effort, because a read must never fail over
+   * a cache.
+   */
+  if (journey.healthState !== health.journeyState) {
+    await supabase
+      .from("journeys")
+      .update({ health_state: health.journeyState })
+      .eq("id", journeyId)
+      .then(
+        () => undefined,
+        () => undefined,
+      );
+    journey.healthState = health.journeyState;
+  }
+
   return {
     journey,
     items,
@@ -243,6 +269,7 @@ function toJourney(row: Record<string, unknown>): StoredJourney {
     status: row["status"] as StoredJourney["status"],
     destinationId: null,
     knowledgeCheckedAt: (row["knowledge_checked_at"] as string | null) ?? null,
+    healthState: (row["health_state"] as StoredJourney["healthState"]) ?? null,
   };
 }
 

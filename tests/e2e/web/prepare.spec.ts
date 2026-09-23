@@ -128,7 +128,9 @@ test.describe("The Journey Summary", () => {
     await page.goto(`/en/journeys/${journeyId}/summary`);
 
     await expect(page.getByText("Dawn Darshan (fixture)")).toBeVisible();
-    await expect(page.getByText("PROTECTED")).toBeVisible();
+    // The shared tier chip, in the traveler's language — not the hard-coded English
+    // "PROTECTED" the summary used to print in every language (design review).
+    await expect(page.getByText("Must do", { exact: true }).first()).toBeVisible();
 
     /*
      * Requirements appear once per DAY, not once per item (D-100). Both items are at the

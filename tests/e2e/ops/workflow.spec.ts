@@ -62,7 +62,7 @@ test.describe.serial("O13 — Approve & publish", () => {
     await expect(page.getByRole("heading", { name: `WF Notice ${RUN}` })).toBeVisible();
 
     await page.getByRole("button", { name: "Submit for review" }).click();
-    await expect(page.getByRole("region", { name: "Publishing" })).toContainText("in review");
+    await expect(page.getByRole("region", { name: "Publishing" })).toContainText("In review");
 
     await page.goto("/publish");
     const item = page

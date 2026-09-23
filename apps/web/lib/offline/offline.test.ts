@@ -29,6 +29,7 @@ function snapshot(over: Partial<JourneySnapshot> = {}): JourneySnapshot {
       pace: "balanced",
       status: "draft",
       knowledgeCheckedAt: null,
+      healthState: null,
       destinationId: "d1",
     },
     items: [

@@ -113,8 +113,14 @@ export default async function EntityHistoryPage({
                   return (
                     <TableRow key={row.version} data-state={current ? "selected" : undefined}>
                       <TableCell>
+                        {/*
+                          The whole path, not a bare "?v=1". A query-only link on the same
+                          route was resolved unreliably by the router: the link took focus
+                          and the page stayed on the version it was already showing, which
+                          an operator would read as the click doing nothing.
+                        */}
                         <Link
-                          href={`?v=${row.version}`}
+                          href={`/audit/${table}/${id}?v=${row.version}`}
                           aria-current={current ? "true" : undefined}
                           className="focus-ring font-medium underline"
                         >

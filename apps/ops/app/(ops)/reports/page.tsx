@@ -4,6 +4,8 @@ import { createServiceRoleSupabase } from "@mandhira/db/client/server";
 import { ReportsQueue, type ReportRow } from "@/components/reports-queue";
 import { mayViewReportPhotos, signReportPhotos } from "@/lib/report-photos";
 import { opsSupabase } from "@/lib/supabase";
+import { Inbox } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Reports · Mandhira Ops" };
 
@@ -76,9 +78,11 @@ export default async function ReportsPage() {
           That list didn&apos;t load. Please refresh to try again.
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-body text-text-secondary">
-          Nothing reported yet. That is the healthy state, not an empty one.
-        </p>
+        <QueueEmpty
+          icon={Inbox}
+          title="Nothing reported"
+          description="That is the healthy state, not an empty one. When a traveler reports that something on the ground differs from what we show, it appears here."
+        />
       ) : (
         <ReportsQueue rows={rows} />
       )}

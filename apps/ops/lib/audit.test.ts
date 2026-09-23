@@ -81,7 +81,7 @@ describe("versionDiff", () => {
   it("prefers the fields the trigger recorded", () => {
     expect(
       versionDiff({ status: "draft", slug: "a" }, { status: "in_review", slug: "b" }, ["status"]),
-    ).toEqual([{ field: "status", before: "draft", after: "in_review" }]);
+    ).toEqual([{ field: "status", before: "Draft", after: "In review" }]);
   });
 
   it("falls back to comparing the snapshots", () => {

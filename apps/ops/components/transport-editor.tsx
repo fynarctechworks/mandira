@@ -4,6 +4,7 @@ import { Button } from "@mandhira/ui";
 import { useState } from "react";
 import { deleteTransportConnection, saveTransportConnection } from "@/app/(ops)/routes/actions";
 import { I18nFields, type LocaleOption } from "./i18n-fields";
+import { humanLabel } from "@/lib/labels";
 
 const MODES = ["walk", "vehicle", "public_transport", "hired", "other"] as const;
 
@@ -95,7 +96,7 @@ export function TransportEditor({
                   {placeLabel(connection.from_place_id)} → {placeLabel(connection.to_place_id)}
                 </span>
                 <span className="block text-caption text-text-tertiary">
-                  {connection.mode.replace(/_/g, " ")} ·{" "}
+                  {humanLabel(connection.mode)} ·{" "}
                   {connection.duration_likely_minutes != null
                     ? `${connection.duration_likely_minutes} min`
                     : "○ no duration — the engine can't use this yet"}
@@ -173,7 +174,7 @@ export function TransportEditor({
             >
               {MODES.map((m) => (
                 <option key={m} value={m}>
-                  {m.replace(/_/g, " ")}
+                  {humanLabel(m)}
                 </option>
               ))}
             </select>

@@ -88,7 +88,17 @@ export default async function LivePage({
        * screen works whether or not the journey has been marked `active` — so this asks
        * only when the traveler has not said so themselves.
        */}
-      {view && !view.isActive && view.onJourneyDates ? <StartToday journeyId={id} /> : null}
+      {/*
+       * Not once the day is over. Opened in the evening on a journey nobody started, the
+       * screen used to say "Start today" directly above "Today is complete" — two
+       * instructions that cannot both be true (design review). The day's own verdict wins.
+       */}
+      {view &&
+      !view.isActive &&
+      view.onJourneyDates &&
+      view.projection.now.kind !== "day_complete" ? (
+        <StartToday journeyId={id} />
+      ) : null}
 
       <LiveConditions conditions={conditions} />
 

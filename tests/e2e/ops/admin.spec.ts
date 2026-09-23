@@ -19,7 +19,8 @@ test.describe("O21 — Users, roles & flags", () => {
 
     const row = page.getByRole("row").filter({ hasText: ADMIN });
     await expect(row).toBeVisible();
-    await expect(row.getByRole("cell", { name: /^admin\b/ })).toBeVisible();
+    // Roles read as words now, like every stored value in Ops ("Admin", not "admin").
+    await expect(row.getByRole("cell", { name: /^Admin\b/ })).toBeVisible();
   });
 
   test("never offers an admin the removal of their own admin role", async ({ page }) => {
@@ -116,14 +117,21 @@ test.describe.serial("O20 — Audit log & versions", () => {
       page.getByRole("heading", { name: `History of Audit After ${RUN}` }),
     ).toBeVisible();
 
-    // A click that lands while the History navigation is still settling can be dropped, so the
-    // step is retried until the version it asked for is on screen.
+    /*
+     * A click that lands while the History navigation is still settling can be dropped, so
+     * the step is retried until the version it asked for is on screen.
+     *
+     * Clicked, not followed by its href with page.goto: a full page load there left the
+     * restore below unable to refresh the page's title, so the in-app navigation is the one
+     * that matches what an operator does. The window is 30 s because under full-suite load
+     * the settle can outlast 15 s; alone it takes well under one.
+     */
     await expect(async () => {
       await page.getByRole("link", { name: "v1", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible({
-        timeout: 2_000,
+        timeout: 3_000,
       });
-    }).toPass({ timeout: 15_000 });
+    }).toPass({ timeout: 30_000 });
 
     await page.getByRole("button", { name: "Restore this version" }).click();
     const dialog = page.getByRole("alertdialog");

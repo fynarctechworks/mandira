@@ -1,5 +1,7 @@
 import { ConflictsQueue, type ConflictRow } from "@/components/conflicts-queue";
 import { opsSupabase } from "@/lib/supabase";
+import { Scale } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Conflicts · Mandhira Ops" };
 export const dynamic = "force-dynamic";
@@ -77,15 +79,11 @@ export default async function ConflictsPage() {
           That list didn&apos;t load. Please refresh to try again.
         </p>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-body text-text-secondary">
-            No source disagreements recorded. That is the healthy state, not an empty one.
-          </p>
-          <p className="text-body-sm text-text-secondary">
-            Conflicts are raised from a field&apos;s trust panel when you read two sources that do
-            not match. Automatic detection needs AI extraction, which is waiting on a provider key.
-          </p>
-        </div>
+        <QueueEmpty
+          icon={Scale}
+          title="No source disagreements recorded"
+          description="That is the healthy state, not an empty one. Conflicts are raised from a field's trust panel when two sources do not match; automatic detection needs AI extraction, which is waiting on a provider key."
+        />
       ) : (
         <ConflictsQueue rows={rows} sources={sources ?? []} />
       )}

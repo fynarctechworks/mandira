@@ -4,7 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { listJourneys } from "../../../lib/journeys";
 import { getPrepareChecklist } from "../../../lib/prepare";
-import { formatDate } from "../../../lib/present";
+import { JourneyCardMeta } from "../../../components/journey-card-meta";
+import { summariseJourneys } from "../../../lib/journey-summary";
 import { webSupabase } from "../../../lib/supabase";
 
 /**
@@ -52,9 +53,11 @@ export default async function PrepareHubPage({ params }: { params: Promise<{ loc
     return lastDay >= today;
   });
 
-  const checklists = await Promise.all(
-    upcoming.map((journey) => getPrepareChecklist(supabase, journey.id, locale)),
-  );
+  const [checklists, summaries] = await Promise.all([
+    Promise.all(upcoming.map((journey) => getPrepareChecklist(supabase, journey.id, locale))),
+    // Which pilgrimage, when, and how it stands — the same lines as the Journeys list.
+    summariseJourneys(supabase, upcoming, locale),
+  ]);
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6">
@@ -90,9 +93,11 @@ export default async function PrepareHubPage({ params }: { params: Promise<{ loc
                     <span className="text-h3">{journey.title ?? t("untitled")}</span>
                     <ArrowRight className="size-5 shrink-0 text-text-secondary" aria-hidden />
                   </span>
-                  <span className="text-caption text-text-secondary">
-                    {formatDate(journey.startDate, locale) ?? t("no_date")}
-                  </span>
+                  <JourneyCardMeta
+                    summary={summaries.get(journey.id)}
+                    showHealth
+                    noDateLabel={t("no_date")}
+                  />
                   <span className="flex items-center gap-2 text-body-sm">
                     <ListChecks className="size-4 shrink-0" aria-hidden />
                     {total > 0 ? t("progress", { done, total }) : t("nothing")}

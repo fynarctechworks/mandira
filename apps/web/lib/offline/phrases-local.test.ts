@@ -44,6 +44,7 @@ function snapshot(phrases: PhraseRow[] | null): JourneySnapshot {
       pace: "balanced",
       status: "draft",
       knowledgeCheckedAt: null,
+      healthState: null,
       destinationId: "d1",
     },
     items: [],

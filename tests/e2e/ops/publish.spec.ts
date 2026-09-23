@@ -61,7 +61,7 @@ test.describe.serial("Publishing", () => {
     await openPlace(page, `Pub Temple ${RUN}`);
 
     await page.getByRole("button", { name: "Submit for review" }).click();
-    await expect(page.getByRole("region", { name: "Publishing" })).toContainText("in review");
+    await expect(page.getByRole("region", { name: "Publishing" })).toContainText("In review");
 
     // With problems outstanding, publishing must not be offered as available.
     await expect(page.getByRole("button", { name: "Approve and publish" })).toBeDisabled();

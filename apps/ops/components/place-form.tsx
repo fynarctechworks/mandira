@@ -8,6 +8,7 @@ import { createPlace, updatePlace } from "@/app/(ops)/places/actions";
 import { I18nFields, type LocaleOption } from "./i18n-fields";
 import { LocationPicker } from "./location-picker";
 import { OpeningScheduleBuilder } from "./opening-schedule-builder";
+import { humanLabel } from "@/lib/labels";
 
 const PLACE_TYPES = [
   "temple",
@@ -35,7 +36,7 @@ const FACILITY_SUBTYPES = [
 const CROWD_SLOTS = ["morning", "midday", "evening"] as const;
 const CROWD_LEVELS = ["low", "medium", "high"] as const;
 
-const humanise = (value: string) => value.replace(/_/g, " ");
+const humanise = (value: string) => humanLabel(value);
 
 export type PlaceDraft = {
   id?: string;

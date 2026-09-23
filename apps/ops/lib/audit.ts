@@ -1,3 +1,4 @@
+import { humanLabel } from "./labels";
 /**
  * The audit trail and version history (O20, PRD-OPS-WF-008). Pure helpers: filter parsing
  * for a URL an operator can share, and the field-by-field comparison both views render.
@@ -149,14 +150,42 @@ export function versionDiff(
   const fields = recordedFields.length > 0 ? [...recordedFields].sort() : changedKeys(left, right);
   return fields.map((field) => ({
     field,
-    before: displayValue(left[field]),
-    after: displayValue(right[field]),
+    before: displayValue(left[field], field),
+    after: displayValue(right[field], field),
   }));
 }
 
-export function displayValue(value: unknown): string {
+/**
+ * Fields that hold a stored CODE rather than something an operator wrote. Only these are
+ * put into words in the history (design review: "draft→in_review"); everything else is
+ * shown exactly as stored, because a slug or an excerpt in an audit log must be the
+ * literal value — "tirumala" and "Tirumala" are different slugs.
+ */
+const CODED_FIELDS = new Set([
+  "status",
+  "place_type",
+  "experience_type",
+  "facility_subtype",
+  "guidance_type",
+  "mode",
+  "travel_mode",
+  "kind",
+  "tier",
+  "source_type",
+  "ingestion_method",
+  "verification_status",
+  "freshness",
+  "confidence",
+  "severity",
+  "report_type",
+]);
+
+export function displayValue(value: unknown, field?: string): string {
   if (value === null || value === undefined) return "—";
-  if (typeof value === "string") return value === "" ? "(empty)" : value;
+  if (typeof value === "string") {
+    if (value === "") return "(empty)";
+    return field && CODED_FIELDS.has(field) ? humanLabel(value) : value;
+  }
   return JSON.stringify(value, null, 2);
 }
 

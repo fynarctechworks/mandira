@@ -15,7 +15,7 @@ export default function OpsNotFound() {
       <p className="text-body text-text-secondary">
         It may have been removed, or the link may be out of date.
       </p>
-      <Link href="/" className="text-body font-medium text-brand-primary-text underline">
+      <Link href="/" className="focus-ring text-body font-medium text-brand-primary-text underline">
         Back to the dashboard
       </Link>
     </main>

@@ -1,4 +1,5 @@
 import { dateForDay, fromInstant } from "@mandhira/journey-engine";
+import { TierChip } from "@mandhira/ui";
 
 import type { SharedItem, SharedSummary } from "../lib/share";
 import { useTranslations } from "next-intl";
@@ -17,7 +18,8 @@ import { durationLabel, type PlainTranslate } from "../lib/present";
  * purpose: this component cannot render a traveler profile or an item note because it is
  * never handed one.
  */
-const TIER_WORD = {
+/** `priority_tier_enum` → the TierChip keyword (the same map the journey page uses). */
+const TIER_CHIP = {
   fixed: "FIXED",
   protected: "PROTECTED",
   important: "IMPORTANT",
@@ -90,9 +92,18 @@ export function SummarySheet({ summary, locale }: { summary: SharedSummary; loca
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <h3 className="text-h3">{item.label ?? t("common.something_you_added")}</h3>
-                    <span className="summary-tier rounded-full border border-border px-2 py-0.5 text-caption font-medium">
-                      {TIER_WORD[item.tier]}
-                    </span>
+                    {/*
+                      The shared chip, not a third style of its own (design review): icon,
+                      word and the traveler's language on screen, like everywhere else.
+                      `summary-tier` still turns it black-on-white when printed, so the
+                      tier survives a monochrome printer by its word and icon.
+                    */}
+                    <TierChip
+                      tier={TIER_CHIP[item.tier]}
+                      label={t(`itemActions.tiers.${item.tier}.label`)}
+                      readOnly
+                      className="summary-tier shrink-0"
+                    />
                   </div>
 
                   <p className="text-body-sm text-text-secondary">

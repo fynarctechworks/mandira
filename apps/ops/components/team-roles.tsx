@@ -30,6 +30,7 @@ import { useState, useTransition } from "react";
 import { grantRole, revokeRole } from "@/app/(ops)/team/actions";
 import { formatWhen } from "@/lib/entities";
 import { OPS_ROLES, ROLE_SUMMARY, revokeRefusal, type OpsRoleName } from "@/lib/team";
+import { humanLabel } from "@/lib/labels";
 
 export type TeamRow = {
   user_id: string;
@@ -158,11 +159,17 @@ export function TeamRoles({ team, userId }: { team: TeamRow[]; userId: string })
                     const refusal = revokeRefusal(team, userId, member.user_id, held);
                     return (
                       <li key={held}>
+                        {/*
+                          The base badge is 20 px tall with overflow hidden, which clipped
+                          the remove button inside it (design review) and left a 20 px
+                          target — under WCAG 2.2's 24 px minimum. Grown to fit a 24 px
+                          button, and named in words like every other stored value.
+                        */}
                         <Badge
                           variant={held === "admin" ? "default" : "secondary"}
-                          className="pr-0"
+                          className="h-auto min-h-7 overflow-visible py-0.5 pr-0.5"
                         >
-                          {held}
+                          {humanLabel(held)}
                           {refusal ? (
                             <span className="sr-only"> (cannot be removed: {refusal})</span>
                           ) : (
@@ -171,7 +178,7 @@ export function TeamRoles({ team, userId }: { team: TeamRow[]; userId: string })
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="icon-xs"
                                     disabled={pending}
                                     aria-label={`Remove ${held} from ${member.email}`}
                                   />

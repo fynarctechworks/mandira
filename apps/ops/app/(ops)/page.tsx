@@ -221,7 +221,7 @@ function Dashboard({ health }: { health: KnowledgeHealth }) {
         {health.destinations.length === 0 ? (
           <p className="text-body-sm text-text-secondary">
             No destinations yet.{" "}
-            <Link href="/destinations/new" className="underline">
+            <Link href="/destinations/new" className="focus-ring underline">
               Create one
             </Link>{" "}
             to start.

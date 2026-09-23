@@ -3,6 +3,8 @@ import { FeatureFlags, type FlagRow } from "@/components/feature-flags";
 import { LoadProblem, RoleNotice } from "@/components/load-problem";
 import { TeamRoles, type TeamRow } from "@/components/team-roles";
 import { opsSupabase } from "@/lib/supabase";
+import { ToggleLeft } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Users, roles & flags · Mandhira Ops" };
 export const dynamic = "force-dynamic";
@@ -73,10 +75,11 @@ export default async function TeamPage() {
         {flags.error ? (
           <LoadProblem />
         ) : (flags.data ?? []).length === 0 ? (
-          <p className="text-body-sm text-text-secondary">
-            No feature flags are defined. A flag is added with its migration, alongside the code it
-            switches.
-          </p>
+          <QueueEmpty
+            icon={ToggleLeft}
+            title="No feature flags are defined"
+            description="A flag is added with its migration, alongside the code it switches."
+          />
         ) : (
           <FeatureFlags flags={flags.data as FlagRow[]} />
         )}

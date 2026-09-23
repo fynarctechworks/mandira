@@ -4,6 +4,7 @@ import { EntityTable, type EntityRow } from "@/components/entity-table";
 import { LoadProblem } from "@/components/load-problem";
 import { labelOf } from "@/lib/entities";
 import { opsSupabase } from "@/lib/supabase";
+import { humanLabel } from "@/lib/labels";
 
 export const metadata = { title: "Places · Mandhira Ops" };
 
@@ -27,7 +28,7 @@ export default async function PlacesPage() {
       status: place.status,
       columns: {
         Destination: destination ? labelOf(destination.name_i18n, destination.slug) : "—",
-        Type: place.place_type.replace(/_/g, " "),
+        Type: humanLabel(place.place_type),
         // Opening hours gate publication, so their absence belongs in the list rather than
         // being discovered at approval time.
         Hours: place.opening_schedule != null ? "● Recorded" : "○ Missing",

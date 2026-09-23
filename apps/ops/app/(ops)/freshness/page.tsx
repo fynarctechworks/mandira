@@ -1,5 +1,7 @@
 import { FreshnessMonitor, type FreshnessRow } from "@/components/freshness-monitor";
 import { opsSupabase } from "@/lib/supabase";
+import { CircleCheck, Clock } from "lucide-react";
+import { QueueEmpty } from "@/components/queue-empty";
 
 export const metadata = { title: "Freshness · Mandhira Ops" };
 export const dynamic = "force-dynamic";
@@ -114,11 +116,19 @@ export default async function FreshnessPage({
           That list didn&apos;t load. Please refresh to try again.
         </p>
       ) : list.length === 0 ? (
-        <p className="text-body text-text-secondary">
-          {filter === "all"
-            ? "Nothing published here has a critical field yet, so there is nothing to keep an eye on."
-            : "Nothing matches that filter. That is the healthy state, not an empty one."}
-        </p>
+        filter === "all" ? (
+          <QueueEmpty
+            icon={Clock}
+            title="Nothing to keep an eye on yet"
+            description="Nothing published has a critical field yet. Opening hours, closures and entry rules appear here once a place is published."
+          />
+        ) : (
+          <QueueEmpty
+            icon={CircleCheck}
+            title="Nothing matches that filter"
+            description="That is the healthy state, not an empty one."
+          />
+        )
       ) : (
         <FreshnessMonitor rows={list} />
       )}

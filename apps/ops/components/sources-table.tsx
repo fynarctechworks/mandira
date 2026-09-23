@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { OpsDataTable } from "@mandhira/ui";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { humanLabel } from "@/lib/labels";
 
 export type SourceRow = {
   id: string;
@@ -55,7 +56,7 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
       {
         accessorKey: "source_type",
         header: "Kind",
-        cell: ({ row }) => row.original.source_type.replace(/_/g, " "),
+        cell: ({ row }) => humanLabel(row.original.source_type),
       },
       {
         id: "cadence",

@@ -4,6 +4,7 @@ import { Button } from "@mandhira/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { publishEntity, returnToDraft, submitForReview } from "@/app/(ops)/publish/actions";
+import { humanLabel } from "@/lib/labels";
 
 export type ValidationProblem = { field: string; message: string };
 
@@ -82,7 +83,7 @@ export function PublishPanel({
         <div>
           <h2 className="text-h3">Publishing</h2>
           <p className="mt-1 text-body-sm text-text-secondary">
-            Currently <strong className="text-text-primary">{status.replace(/_/g, " ")}</strong>.
+            Currently <strong className="text-text-primary">{humanLabel(status)}</strong>.
             {status === "published"
               ? " Travelers can see this."
               : " Travelers cannot see this yet."}
